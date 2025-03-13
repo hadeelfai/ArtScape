@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join our gallery - ArtScape</title>
+    <link rel="stylesheet" href="../css-folder/submission.css"> 
+    <script src="../backend-folder/subserver.js" defer></script>
+    <script src="/js-folder/submissionValidation.js" defer></script>
+</head>
+<body>
+
+    <header>
+        <h1>ArtScape</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="aboutus.html">About Us</a></li>
+                <li><a href="blog.html">Blog</a></li>
+                <li><a href="contactus.html">Contact Us</a></li>
+                <li><a href="submission.html">Join Our Gallery</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <video muted autoplay width="850">
+                <source src="/media-folder/u1.mp4" type="video/mp4">
+                <source src="/media-folder/g3.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+
+            <h4>We are thrilled to welcome submissions from artists across all backgrounds. Whether your medium is painting, photography, printmaking, digital art, sculpture, poetry, illustration, or beyond, we invite you to share your creative vision with us.</h4>
+            <h2>Excited to See Your Art!</h2>
+
+            <p>Please fill out the form below to submit your artwork for consideration in our gallery.</p>
+
+            <form action="/process" method="POST" enctype="multipart/form-data" id="submissionForm">
+                
+                <label for="name">Full Name:</label>
+                <input type="text" id="name" name="name" required autocomplete="on" placeholder="Write your full name">
+
+                <label for="email">Email Address:</label>
+                <input type="email" id="email" name="email" required autocomplete="on" placeholder="e.g. email@address.com">
+
+                <label for="phone">Phone Number:</label>
+                <input type="tel" id="phone" name="phone" autocomplete="on" placeholder="e.g. 0512345678">
+
+                <label for="art-category">Art Category:</label>
+                <select id="art-category" name="artc" required>
+                    <option value="">Select a category</option>
+                    <option value="painting">Painting</option>
+                    <option value="sculpture">Sculpture</option>
+                    <option value="digital-art">Digital Art</option>
+                    <option value="photography">Photography</option>
+                </select>
+
+                <label for="art-title">Artwork Title:</label>
+                <input type="text" id="art-title" name="artt" required placeholder="Title for your artwork">
+
+                <label for="creation-year">Creation Year:</label>
+                <input type="number" id="creation-year" name="year" required min="1900" max="2024">
+
+                <label for="description">Description:</label>
+                <textarea id="description" name="desc" rows="4" required placeholder="Describe your artwork"></textarea>
+
+                <label for="art-image">Upload Artwork Image:</label>
+                <input type="file" id="art-image" name="art_image" accept="image/*" required>
+
+                <label for="price">Price (if applicable):</label>
+                <input type="text" id="price" name="price">
+
+                <label for="availability">Availability:</label>
+                <select id="availability" name="availability">
+                    <option value="for-sale">For Sale</option>
+                    <option value="display-only">Display Only</option>
+                </select>
+
+                <div id="msg"></div>
+                <button type="submit">Submit Artwork</button>
+            </form>
+
+            <hr>
+
+        <h3>Display Your Submission</h3>
+        <!-- This form for displaying data from database-->
+            <form id="displayForm">
+              <label for="emailDisplay">Enter your Email to display submission info:</label>
+              <input type="email" id="emailDisplay" name="emailDisplay" required placeholder="e.g. email@address.com">
+              <button type="button" id="fetchSubmission">Display Submission</button>
+            </form>
+
+<div id="submissionDetails" style="display: none;">
+    <h4>Submission Details:</h4>
+    <p id="details"></p>
+    <button type="button" id="clearDetails" style="display: none;">Clear</button>
+</div>
+
+
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 ArtScape. All rights reserved.</p>
+    </footer>
+</body>
+</html>
