@@ -102,19 +102,19 @@ section {
 }
 
 .image-placeholder1 {
-    background-image: url(..//media-folder/davinci.jpg);
+    background-image: url(davinci.jpg);
     background-repeat: no-repeat;
     background-size: cover;
 }
 
 .image-placeholder2 {
-    background-image: url(..//media-folder/night.jpg);
+    background-image: url(night.jpg);
     background-repeat: no-repeat;
     background-size: cover;
 }
 
 .image-placeholder3 {
-    background-image: url(..//media-folder/hayjameel.jpg);
+    background-image: url(hayjameel.jpg);
     background-repeat: no-repeat;
     background-size: cover;
 }
