@@ -1,0 +1,165 @@
+* {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+header {
+    background-color: black;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    color: green;
+}
+
+body {
+    background-color: black;
+    color: white;
+    margin: 0;
+}
+
+.container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+h2 {
+    color: green;
+    margin-top: 40px;
+}
+
+p {
+    line-height: 1.6;
+    font-size: 1em;
+}
+
+a {
+    text-decoration: none;
+    color: black;
+}
+
+#stories-behind-paintings a {
+    color: white;
+}
+
+a:hover {
+    color: green;
+}
+
+#stories-behind-paintings a:hover {
+    color: green;
+}
+
+section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.img-p {
+    align-items: center;
+    padding: 25px;
+    display: flex;
+    gap: 30px;
+    flex-direction: row;
+}
+
+.paragraph {
+    max-width: 400px;
+    padding: 40px;
+}
+
+#famous-artists, #art-news {
+    background-color: white;
+    color: black;
+}
+
+.image-placeholder1, .image-placeholder2, .image-placeholder3 {
+    height: 400px;
+    width: 400px;
+    margin: 15px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-placeholder1 {
+    background-image: url(davinci.jpg);
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.image-placeholder2 {
+    background-image: url(night.jpg);
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.image-placeholder3 {
+    background-image: url(hayjameel.jpg);
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+footer {
+    text-align: center;
+    padding: 30px;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    nav ul li {
+        display: block;
+        margin: 10px 0;
+    }
+
+    .img-p {
+        flex-direction: column;
+    }
+
+    .image-placeholder1, .image-placeholder2, .image-placeholder3 {
+        height: 300px;
+        width: 100%;
+    }
+
+    .paragraph {
+        padding: 20px;
+        max-width: 100%;
+    }
+
+    .container {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.5em;
+    }
+
+    h2 {
+        font-size: 1.2em;
+    }
+
+    .paragraph {
+        font-size: 0.9em;
+    }
+}

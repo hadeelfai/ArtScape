@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Art Gallery</title>
+    <link rel="stylesheet" href="contact.css">
+    <script src="../backend-folder/contactserver.js" defer></script>
+    <script src="contactusvalidation.js" defer></script>
+</head>
+
+<body>
+    <header>
+        <h1>ArtScape</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="aboutus.html">About us</a></li>
+                <li><a href="blog.html">Blog</a></li>
+                <li><a href="contactus.html">Contact us</a></li>
+                <li><a href="submission.html">Join our gallery</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <video class="background-video" autoplay loop muted playsinline>
+        <source src="contact.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <!-- Content Section -->
+    <div class="content">
+        <section class="contact-message">
+            <h1 class="contact">Contact Us</h1>
+            <h2>We're Here to Help!</h2>
+            <p>If you have any questions or would like to connect, our team at ArtSpace is just 
+an email away. We’re excited to assist you and make your experience memorable.
+ Reach out, and we’ll get back to you shortly.</p>
+        </section>
+
+        <!-- Contact Form Section -->
+        <section class="contact-form-section">
+          <h2>Get in Touch</h2>
+           <form method="post" action="/submit-contact" id="contact-form">
+               <input type="text" id="first-name" name="firstName" placeholder="First Name">
+               <input type="text" id="last-name" name="lastName" placeholder="Last Name">
+               <select id="gender" name="gender">
+                   <option value="">Select Gender</option>
+                   <option value="male">Male</option>
+                   <option value="female">Female</option>
+               </select>
+               <input type="tel" id="mobile" name="mobile" placeholder="Your mobile number (+123456789000)">
+               <input type="date" id="dob" name="dob">
+               <input type="email" id="email" name="email" placeholder="Your email">
+               <select id="language" name="language">
+                   <option value="">Select Language</option>
+                   <option value="english">English</option>
+                   <option value="arabic">Arabic</option>
+                   <option value="french">French</option>
+               </select>
+               <textarea id="message" name="message" rows="4" placeholder="Write your message here"></textarea>
+               <button type="submit">Submit</button>
+          </form>
+        </section>
+
+        <footer>
+            <p>&copy; 2024 ArtScape. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
