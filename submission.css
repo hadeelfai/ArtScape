@@ -1,0 +1,203 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    line-height: 1.6;
+    background-color: #f9f9f9;
+    background-image: url('p3.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: black;
+}
+
+
+
+header {
+    background-color: black;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;  
+    justify-content: center;  
+}
+
+nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+
+nav ul li a:hover {
+    color: green;
+}
+
+/* Main Section Styles */
+main {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+h2 {
+    margin-bottom: 30px;
+    color: black;
+    text-align: center;
+}
+
+h1,
+h2,
+nav,
+h3,
+h4 {
+    text-align: center;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+h4 {
+    text-align: center;
+    font-size: 1em;
+    /* Adjusts the font size */
+    color: darkgreen;
+    /* Changes the font color */
+    text-transform: uppercase;
+    /* Makes the text uppercase */
+
+    letter-spacing: 1px;
+    /* Adds spacing between letters */
+    margin-bottom: 30px;
+}
+
+
+/* Form Styles */
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+select,
+textarea {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+input[type="file"] {
+    padding: 5px;
+}
+
+/* Button Styles */
+button {
+    padding: 5px;
+    background-color: darkgreen;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: grey;
+}
+
+/* Footer Styles */
+
+footer {
+    text-align: center;
+    padding: 30px;
+    color: white;
+    background-color: black;
+}
+
+.video-container {
+    display: flex;
+    justify-content: center;
+    /* Center horizontally */
+    align-items: center;
+    /* Center vertically */
+    margin: 20px 0;
+    /* Optional: add some margin above and below the video */
+    width: 100%;
+    /* Full width */
+}
+
+.responsive-video {
+    width: 100%;
+    /* Make video take full width of its container */
+    max-width: 600px;
+    /* Set a max width for the video */
+    height: auto;
+    /* Maintain aspect ratio */
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    nav ul li {
+        display: inline;
+        margin: 10px 10px;
+        font-size: x-small;
+    }
+
+    main {
+        margin: 10px;
+        padding: 15px;
+    }
+
+    button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+   
+    
+  footer{
+    font-size: 0.9em;
+  }
+
+    h1 {
+        font-size: 1.2em;
+    }
+
+    h2 {
+        font-size: 1em;
+    }
+
+    .paragraph {
+        font-size: 0.9em;
+    }
+
+    .responsive-video {
+        max-width: 100%;
+        /* Adjust max width for very small screens */
+    }
+}
