@@ -3,11 +3,9 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 
 const Navbar = () => {
-  // Toggle the menu open/close
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => setIsOpen(!isOpen);
 
-  // Navigation items
   const navigationItems = [
     { name: "Home", path: "/" },
     { name: "Gallery", path: "/GalleryPage" },
@@ -137,17 +135,14 @@ const Navbar = () => {
               onClick={toggleMenu}
               className="p-2 relative w-6 h-6 flex items-center justify-center"
             >
-              {/* Line 1 */}
               <span
                 className={`absolute h-0.5 w-6 transition-all duration-300 
                   ${isOpen ? "rotate-45 bg-white" : "-translate-y-2 bg-black"}`}
               ></span>
-              {/* Line 2 */}
               <span
                 className={`absolute h-0.5 w-6 transition-all duration-300 
                   ${isOpen ? "opacity-0" : "bg-black"}`}
               ></span>
-              {/* Line 3 */}
               <span
                 className={`absolute h-0.5 w-6 transition-all duration-300 
                   ${isOpen ? "-rotate-45 bg-white" : "translate-y-2 bg-black"}`}
@@ -165,7 +160,6 @@ const Navbar = () => {
         className={`fixed inset-0 bg-black z-40 lg:hidden md:hidden flex flex-col ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'
           }`}
       >
-        {/* Centered Menu Items */}
         <div className="flex flex-col items-center justify-center flex-1 space-y-16">
           {navigationItems.map((item, index) => (
             <motion.div
