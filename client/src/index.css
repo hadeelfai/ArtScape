@@ -1,3 +1,70 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+/* HighCruiser */
+@font-face {
+  font-family: 'HighCruiser';
+  src: url('/fonts/HighCruiser-PersonalUseOnly.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Akshar */
+@font-face {
+  font-family: 'Akshar';
+  src: url('/fonts/Akshar-Variable_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Albert Sans - Regular */
+@font-face {
+  font-family: 'AlbertSans';
+  src: url('/fonts/AlbertSans-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Albert Sans - Italic */
+@font-face {
+  font-family: 'AlbertSans';
+  src: url('/fonts/AlbertSans-Italic-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Tailwind CSS */
+.font-highcruiser {
+  font-family: 'HighCruiser', cursive;
+}
+
+.font-akshar {
+  font-family: 'Akshar', sans-serif;
+}
+
+.font-albert {
+  font-family: 'AlbertSans', sans-serif;
+}
+
+:root {
+  --font-display: 'HighCruiser', cursive;
+  --font-heading: 'Akshar', sans-serif;
+  --font-body: 'AlbertSans', sans-serif;
+}
+
+/* Font weight */
+.font-thin { font-weight: 100; }
+.font-extralight { font-weight: 200; }
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+.font-black { font-weight: 900; }
