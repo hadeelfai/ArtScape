@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import ImageUploader from './ImageUploader'
+import { toast } from 'sonner'
 
 function Post(){
 
@@ -10,7 +11,7 @@ function Post(){
     
     const handlePost = async () => {
         if(!text && !uploadedImage){
-            alert("Please add image or discription")
+            toast.error("Please add an image or description"); 
             return
         }
         const newPost = {
@@ -30,7 +31,7 @@ function Post(){
 
             setText("")
             setUploadedImage(null)
-            alert("Post uploaded successfully!")
+            toast("Post uploaded successfully!")
         } catch (error) {
             console.error("Error saving post:",error)
         }

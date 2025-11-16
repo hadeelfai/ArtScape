@@ -196,17 +196,9 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
 
                                                 {/*button reply */}
 
-                                                <button className='text-sm text-primary' onClick={ ()=> setShowReplyInput(prev => 
+                                                <button className='text-sm text-gray-500 hover:text-black' onClick={ ()=> setShowReplyInput(prev => 
                                                     ({...prev,[comment._id] : !prev[comment._id] }))}>
                                                     reply
-                                                </button>
-
-                                                {/*button for deleting comment */}
-                                                    <button 
-                                                onClick={() => deleteComment(comment._id)}
-                                                className="text-red-500 text-xs ml-2"
-                                                >
-                                                Delete
                                                 </button>
 
 
@@ -222,11 +214,10 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                          />
 
                                                          <button onClick={()=>handleAddReply(comment._id)}
-                                                         className=' px-3 py-2 text-white rounded'>
+                                                         className=' px-3 py-2 text-white rounded bg-gray-400'>
                                                          <Send size={18}/></button>
 
-                                                         
-
+                                                        
                                                     </div>
                                                 )}
 

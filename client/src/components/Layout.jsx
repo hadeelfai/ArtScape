@@ -1,6 +1,7 @@
 import React from 'react'
 import LeftSideBar from './LeftSideBar'
 import Navbar from './Navbar'
+//import Footer from './Footer'
 
 function Layout({ children }) {
 
@@ -16,9 +17,8 @@ function Layout({ children }) {
         <main className="w-full max-w-2xl border-x border-gray-200 bg-white pt-20">
           {children}
         </main>
-      </div>
+      </div>     
   ) 
-  
 }
 
 export default Layout

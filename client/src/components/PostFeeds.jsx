@@ -60,6 +60,32 @@ function PostFeeds(){
      })
     }
    
+//delete post
+const handleDeletePost = async (postId) => {
+  try {
+    const res = await fetch(`http://localhost:5500/posts/${postId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      }
+    });
+
+    if (!res.ok) throw new Error("Failed to delete");
+
+    setPosts(prev => prev.filter(p => p._id !== postId)); // update UI
+
+    toast.success("Post deleted");
+    
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to delete");
+  }
+};
+
+
+
+
+
 
     const loadPosts = useCallback(async () => {
         try {
@@ -111,7 +137,8 @@ function PostFeeds(){
 
     if(loading) return <div className='flex items-center justify-center h-40'>
 
-        <div className='w-10 h-10 border-t-primary border-4 border-gray-300 rounded-full animate-spin'> </div>
+        <div className='w-10 h-10 border-t-primary border-4 border-gray-300 
+        rounded-full animate-spin'> </div>
     </div>
 
     if(err) return <div className='p-4 text-sm text-red-600'>{err}</div>
@@ -123,7 +150,8 @@ function PostFeeds(){
         <div>{optimisticPosts?.map( (post) => (
             <article className='border-b border-gray-200 p-4 flex gap-3'>
 
-                <img src={post?.user?.avatar || "/avatar.png"} className='h-10 w-10 rounded-full object-cover'/>
+                <img src={post?.user?.avatar || "/avatar.png"} className='h-10 w-10
+                 rounded-full object-cover'/>
 
                 <div className='flex-1'>
                     <div className='flex items-center gap-2'> 
@@ -157,7 +185,7 @@ function PostFeeds(){
 
                         {/* comment button */}
                                 <button onClick={()=>toggleComments(post?._id)} className='flex items-center 
-                                gap-2 hoover:text-primary transition-colors'> 
+                                gap-2 hoover:text-black transition-colors'> 
                         
                                 <MessageCircle className={showComments[post?._id] ?"text-primary" : ""}/>
                         
@@ -166,6 +194,19 @@ function PostFeeds(){
                         
                                 </span>
                                 </button>
+
+
+{/*delete post button */}
+<button
+  onClick={() => handleDeletePost(post._id)}
+  className="text-red-500 text-sm hover:underline"
+>
+  Delete
+</button>
+
+
+
+
                     </div>
                         <CommentsSection postId= {post._id}
                         showComments = {showComments[post?._id] || false}

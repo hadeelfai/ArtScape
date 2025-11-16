@@ -57,9 +57,9 @@ router.delete('/:id'  , async (req,res)=>{
     try {
         const post = await Post.findById(req.params.id)
         
-        if(post.user.toString() !== req.body.id ){
-            return res.status(403).json({error: "not autharized"})
-        }
+       // if(post.user.toString() !== req.body.id ){
+         //   return res.status(403).json({error: "not autharized"})
+        //}
                 
         await post.deleteOne()
 

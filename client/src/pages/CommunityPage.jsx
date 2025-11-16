@@ -6,8 +6,7 @@ import Navbar from "../components/Navbar"
 function CommunityPage() {
 
     const [activeTab, setActiveTab] = useState("foryou")
-    return(
-        
+    return(       
         <div>
             
             <div className='border flex items-center justify-around border-b-gray-200 p'>
@@ -23,7 +22,7 @@ function CommunityPage() {
                 
             </div>
             <Post/>
-            <PostFeeds/>
+            <PostFeeds/>           
         </div>
     )
     
