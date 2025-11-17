@@ -39,14 +39,13 @@ const userSchema = new mongoose.Schema({
     gender: String,
     artisticSpecialization: String,
     bio: String,
-    // In models/User.js
     profileImage: {
         type: String,
-        default: 'https://res.cloudinary.com/dzedtbfld/image/upload/v1/artscape/defaults/default-profile.jpg'
+        default: '/assets/images/profilepicture.jpg'
     },
     bannerImage: {
         type: String,
-        default: 'https://res.cloudinary.com/dzedtbfld/image/upload/v1/artscape/defaults/default-banner.jpg'
+        default: '/assets/images/profileheader.jpg'
     },
     socialLinks: {
         instagram: String,
@@ -68,6 +67,6 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }]
-}, { timestamps: true })
+}, {timestamps: true })
 
-export default mongoose.model('User', userSchema)
+export default mongoose.model('User',userSchema)

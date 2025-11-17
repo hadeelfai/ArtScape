@@ -1,42 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ShoppingCart, Heart, Bookmark, Image, Clock } from 'lucide-react';
 
-export default function ArtScapeProfile() {
-  const { userId } = useParams(); // Get userId from URL
-  const [userData, setUserData] = useState(null);
-  const [artworks, setArtworks] = useState([]);
+export default function ArtScapeProfile({ 
+  userData = {
+    name: 'Sara Alshareef',
+    artisticSpecialization: 'Oil Painter | Landscape Artist', 
+    bio: 'Sara Alshareef is a passionate oil painter specializing in capturing the serene beauty of landscapes.', 
+    followers: 385,
+    following: 512,
+    profileImage: '/assets/images/profilepicture.jpg',
+    bannerImage: '/assets/images/profileheader.jpg'
+  },
+  artworks = [
+    { id: 1, title: 'Nocturne of the Koi Pond', image: '/assets/images/painting1.jpg', price: 250 },
+    { id: 2, title: "Midsummer's Enchanted Hill", image: '/assets/images/painting2.jpg', price: 320 },
+    { id: 3, title: 'Daffodils and Contemplation', image: '/assets/images/painting3.jpg', price: 180 },
+    { id: 4, title: 'Sunlit Path', image: '/assets/images/painting4.jpg', price: 290 }
+  ],
+  isOwnProfile = false
+}) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState('gallery');
-  const [loading, setLoading] = useState(true);
-  
-  const currentUserId = localStorage.getItem('userId'); // Logged-in user
-  const isOwnProfile = currentUserId === userId;
-
-  // ===== FETCH USER PROFILE DATA =====
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const response = await fetch(`http://localhost:5000/users/profile/${userId}`, {
-          credentials: 'include'
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-          setUserData(data.user);
-          setArtworks(data.artworks);
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchProfileData();
-  }, [userId]);
-  
 
   const tabs = [
     { id: 'gallery', label: 'Gallery', icon: Image },
@@ -45,30 +30,8 @@ export default function ArtScapeProfile() {
     { id: 'purchased', label: 'Purchased History', icon: Clock }
   ];
 
-  const handleFollowClick = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/users/follow/${userId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ userId: currentUserId })
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        setIsFollowing(data.isFollowing);
-        // Update follower count
-        setUserData(prev => ({
-          ...prev,
-          followers: data.isFollowing ? prev.followers + 1 : prev.followers - 1
-        }));
-      }
-    } catch (error) {
-      console.error('Error following user:', error);
-    }
+  const handleFollowClick = () => {
+    setIsFollowing(!isFollowing);
   };
 
   const handleAddToCart = (artwork) => {
@@ -76,25 +39,170 @@ export default function ArtScapeProfile() {
     alert(`"${artwork.title}" added to cart!`);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading profile...</p>
-      </div>
-    );
-  }
-
-  if (!userData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">User not found</p>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      
+        
+      {/* Hero Banner */}
+      <div className="relative h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
+        <img 
+          src={userData.bannerImage} 
+          alt="Profile banner" 
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Profile Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
+        <div className="flex items-end justify-between">
+          {/* Profile Image */}
+          <div className="flex items-end space-x-6">
+            <img 
+              src={userData.profileImage} 
+              alt={userData.name} 
+              className="w-48 h-48 rounded-full border-8 border-white shadow-xl bg-white"
+              style={{ marginBottom: '7rem' }}
+              
+            />
+            
+            {/* Profile Info */}
+            <div className="pb-6">
+              <h1 className="text-3xl font-bold text-gray-900">{userData.name}</h1>
+              <p className="text-gray-600 mt-1 mb-3"> 
+                    {/* Assuming you've separated bio and specialization in userData, using the correct field here */}
+                    {userData.artisticSpecialization} 
+                </p>
+              <div className="flex items-center space-x-6 mt-2 text-sm mb-4">
+                <span><strong>{userData.followers}</strong> Followers</span>
+                <span className="text-gray-400">|</span>
+                <span><strong>{userData.following}</strong> Following</span>
+              </div>
+              <p className="text-gray-700 mt-5 mb-6 max-w-4xl leading-relaxed">
+                {userData.bio && (
+                                <p className="text-gray-700 mt-2 mb-6 max-w-4xl leading-relaxed">
+                                    {userData.bio}
+                                </p>
+                            )}
+              </p>
+              
+            </div>
+          </div>
+
+          {/* Action Button */}
+          <div className="pb-6">
+            {isOwnProfile ? (
+              <Link to="/edit-profile">
+                <button className="bg-black text-white px-8 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium">
+                  Edit Profile
+                </button>
+              </Link>
+            ) : (
+              <button 
+                onClick={handleFollowClick}
+                className={`px-8 py-2.5 rounded-full transition-colors font-medium ${
+                  isFollowing 
+                    ? 'bg-gray-200 text-gray-900 hover:bg-gray-300' 
+                    : 'bg-black text-white hover:bg-gray-800'
+                }`}
+              >
+                {isFollowing ? 'Following' : 'Follow'}
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* Divider line */}
+        <div className="border-b border-gray-200 mt-0"></div>
+
+        {/* Tabs Navigation */}
+        <div className="bg-white border-b border-gray-200 mt-8">
+          <div className="flex space-x-12 px-4">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 py-4 border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-black text-black font-medium'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Content Section */}
+        <div className="mt-8 mb-16 bg-white">
+          {/* Gallery Tab */}
+          {activeTab === 'gallery' && (
+            <>
+              {artworks.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-4">
+                  {artworks.map((artwork) => (
+                    <div key={artwork.id} className="group cursor-pointer">
+                      <div className="bg-white border-4 border-gray-800 overflow-hidden hover:shadow-2xl transition-shadow">
+                        <img 
+                          src={artwork.image} 
+                          alt={artwork.title}
+                          className="w-full h-72 object-cover"
+                        />
+                      </div>
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-base font-medium text-gray-900">{artwork.title}</h3>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-gray-900">${artwork.price}</span>
+                            <button 
+                              onClick={() => handleAddToCart(artwork)}
+                              className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                              <ShoppingCart className="w-5 h-5 text-gray-700" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="w-16 h-1 bg-gray-800 mt-2"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <p>No artworks yet</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Likes Tab */}
+          {activeTab === 'likes' && (
+            <div className="text-center py-12 px-4">
+              <Heart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500">No liked artworks yet</p>
+            </div>
+          )}
+
+          {/* Saved Tab */}
+          {activeTab === 'saved' && (
+            <div className="text-center py-12 px-4">
+              <Bookmark className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500">No saved artworks yet</p>
+            </div>
+          )}
+
+          {/* Purchased History Tab */}
+          {activeTab === 'purchased' && (
+            <div className="text-center py-12 px-4">
+              <Clock className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500">No purchase history yet</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

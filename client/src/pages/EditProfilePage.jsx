@@ -1,81 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import ImageUploader from '../components/ImageUploader';
+import React, { useState } from 'react';
 
 export default function EditProfilePage() {
   const [formData, setFormData] = useState({
-    username: '',
+    username: 'Sara Alshareef 224',
     password: '••••••••••',
-    firstName: '',
-    lastName: '',
-    phoneNumber: '',
-    email: '',
-    address: '',
-    state: '',
-    country: '',
-    city: '',
-    zipCode: '',
-    dateOfBirthMonth: 'January',
-    dateOfBirthDay: '1',
-    dateOfBirthYear: '2000',
+    firstName: 'Sara',
+    lastName: 'Alshareef',
+    phoneNumber: '+966 - 0974235864',
+    email: 'SaraAlshareef.24@Gmail.Com',
+    address: 'King Sattam St, Al-Rabwah, Jeddah 23433, Saudi Arabia',
+    state: 'Makkah Provincse',
+    country: 'Saudi Arabia',
+    city: 'Jeddah',
+    zipCode: '23431',
+    dateOfBirthMonth: 'June',
+    dateOfBirthDay: '26',
+    dateOfBirthYear: '1999',
     gender: 'Male',
-    artisticSpecialization: '',
-    instagram: '',
-    twitter: '',
-    bio: ''
+    artisticSpecialization: 'Oil Painter - Landscape Artist',
+    instagram: 'https://www.instagram.com/Username_Name_art',
+    twitter: 'https://twitter.com/Username@art',
+    bio: 'Sara Alshareef is a passionate oil painter specializing in capturing the serene beauty of landscapes.'
   });
   
-  const [profileImage, setProfileImage] = useState('');
-  const [coverImage, setCoverImage] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        // Get user ID from localStorage or context
-        const userId = localStorage.getItem('userId'); // or from your auth context
-        
-        const response = await fetch(`http://localhost:5000/users/${userId}`, {
-          credentials: 'include'
-        });
-        
-        const userData = await response.json();
-        
-        if (response.ok) {
-          setFormData({
-            username: userData.username || '',
-            firstName: userData.firstName || '',
-            lastName: userData.lastName || '',
-            phoneNumber: userData.phoneNumber || '',
-            email: userData.email || '',
-            address: userData.address || '',
-            state: userData.state || '',
-            country: userData.country || '',
-            city: userData.city || '',
-            zipCode: userData.zipCode || '',
-            dateOfBirthMonth: userData.dateOfBirth?.month || 'January',
-            dateOfBirthDay: userData.dateOfBirth?.day || '1',
-            dateOfBirthYear: userData.dateOfBirth?.year || '2000',
-            gender: userData.gender || 'Male',
-            artisticSpecialization: userData.artisticSpecialization || '',
-            instagram: userData.socialLinks?.instagram || '',
-            twitter: userData.socialLinks?.twitter || '',
-            bio: userData.bio || ''
-          });
-          
-          setProfileImage(userData.profileImage);
-          setCoverImage(userData.bannerImage);
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchUserData();
-  }, []);
- 
+  const [profileImage, setProfileImage] = useState('/assets/images/profilepicture.jpg');
+  const [coverImage, setCoverImage] = useState('/assets/images/profileheader.jpg');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -85,72 +34,11 @@ export default function EditProfilePage() {
     }));
   };
 
-  const handleProfileImageUpload = (imageUrl) => {
-    setProfileImage(imageUrl);
+  const handleSaveChanges = () => {
+    console.log('Saving changes:', formData);
+    alert('Profile updated successfully!');
+    // In real app: send to backend API
   };
-
-  const handleCoverImageUpload = (imageUrl) => {
-    setCoverImage(imageUrl);
-  };
-
-  const handleSaveChanges = async () => {
-    try {
-      const userId = localStorage.getItem('userId');
-      
-      const updatedData = {
-        username: formData.username,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phoneNumber: formData.phoneNumber,
-        email: formData.email,
-        address: formData.address,
-        state: formData.state,
-        country: formData.country,
-        city: formData.city,
-        zipCode: formData.zipCode,
-        dateOfBirth: {
-          month: formData.dateOfBirthMonth,
-          day: formData.dateOfBirthDay,
-          year: formData.dateOfBirthYear
-        },
-        gender: formData.gender,
-        artisticSpecialization: formData.artisticSpecialization,
-        socialLinks: {
-          instagram: formData.instagram,
-          twitter: formData.twitter
-        },
-        bio: formData.bio,
-        profileImage,
-        bannerImage: coverImage
-      };
-
-      const response = await fetch(`http://localhost:5000/users/profile/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(updatedData)
-      });
-
-      if (response.ok) {
-        alert('Profile updated successfully!');
-      } else {
-        alert('Failed to update profile');
-      }
-    } catch (error) {
-      console.error('Error saving changes:', error);
-      alert('Error updating profile');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading profile...</p>
-      </div>
-    );
-  }
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -181,20 +69,12 @@ export default function EditProfilePage() {
 
           {/* Upload Buttons */}
           <div className="flex gap-3 pb-4">
-            <ImageUploader
-              onImageUpload={handleCoverImageUpload}
-              folder="artscape/covers"
-              buttonText="Upload Cover Photo"
-              buttonClassName="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm"
-              showIcon={false}
-            />
-            <ImageUploader
-              onImageUpload={handleProfileImageUpload}
-              folder="artscape/profiles"
-              buttonText="Upload New Profile Picture"
-              buttonClassName="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm"
-              showIcon={false}
-            />
+            <button className="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm">
+              Upload Cover Photo
+            </button>
+            <button className="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm">
+              Upload New Profile Picture
+            </button>
           </div>
         </div>
 
@@ -203,8 +83,242 @@ export default function EditProfilePage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-8">Edit Profile</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* All your existing form fields stay the same */}
-            {/* ... */}
+            {/* Username  */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+              />
+            </div>
+
+            {/* Password  */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+              />
+            </div>
+
+            {/* First Name  */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+              />
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+              />
+            </div>
+
+            {/* Phone Number  */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+              />
+            </div>
+
+            {/* Email Address  */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+              />
+            </div>
+
+            {/* Artistic Specialization */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Artistic Specialization</label>
+              <input
+                type="text"
+                name="artisticSpecialization"
+                value={formData.artisticSpecialization}
+                onChange={handleInputChange}
+                placeholder="Oil Painter - Landscape Artist"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+              />
+            </div>
+
+            {/* Address  */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+              />
+            </div>
+
+            {/* Country  */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+              <select
+                name="country"
+                value={formData.country}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+              >
+                <option value="Saudi Arabia">Saudi Arabia</option>
+                <option value="United States">United States</option>
+                <option value="United Kingdom">United Kingdom</option>
+                <option value="Canada">Canada</option>
+              </select>
+            </div>
+
+            {/* State  */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+              <select
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+              >
+                <option value="Makkah Province">Makkah Province</option>
+                <option value="Riyadh Province">Riyadh Province</option>
+                <option value="Eastern Province">Eastern Province</option>
+              </select>
+            </div>
+
+            {/* City */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+              <input
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+              />
+            </div>
+
+            {/* Zip Code */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Zip Code</label>
+              <input
+                type="text"
+                name="zipCode"
+                value={formData.zipCode}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+              />
+            </div>
+
+            {/* Date of Birth */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date Of Birth</label>
+              <div className="grid grid-cols-3 gap-2">
+                <select
+                  name="dateOfBirthMonth"
+                  value={formData.dateOfBirthMonth}
+                  onChange={handleInputChange}
+                  className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+                >
+                  {months.map(month => (
+                    <option key={month} value={month}>{month}</option>
+                  ))}
+                </select>
+                <select
+                  name="dateOfBirthDay"
+                  value={formData.dateOfBirthDay}
+                  onChange={handleInputChange}
+                  className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+                >
+                  {days.map(day => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
+                <select
+                  name="dateOfBirthYear"
+                  value={formData.dateOfBirthYear}
+                  onChange={handleInputChange}
+                  className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+                >
+                  {years.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+              >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            {/* Instagram */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Instagram</label>
+              <input
+                type="url"
+                name="instagram"
+                value={formData.instagram}
+                onChange={handleInputChange}
+                placeholder="https://www.instagram.com/Username_Name_art"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+              />
+            </div>
+
+            {/* Twitter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Twitter</label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  name="twitter"
+                  value={formData.twitter}
+                  onChange={handleInputChange}
+                  placeholder="https://twitter.com/Username@art"
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+                />
+                <button type="button" className="text-blue-600 hover:text-blue-800 text-sm font-medium whitespace-nowrap flex items-center gap-1">
+                  Add More Link
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Bio */}
