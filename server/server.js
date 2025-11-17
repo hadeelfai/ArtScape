@@ -5,6 +5,7 @@ import cors from 'cors'
 import User from './routes/Users.js'
 import Post from './routes/Posts.js'
 import Comment from './routes/Comments.js'
+import Artwork from './routes/Artworks.js'
 import cookieParser from 'cookie-parser'
 
 
@@ -24,6 +25,7 @@ app.use(cookieParser())
 app.use('/users',User)
 app.use('/posts',Post)
 app.use('/comments',Comment)
+app.use('/artworks', Artwork)
 
 //connect to db
 mongoose.connect(process.env.MONGO_URL)

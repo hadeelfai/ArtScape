@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import CommunityPage from './pages/CommunityPage';
+import ProfilePage from './pages/ProfilePage';
+import EditProfilePage from './pages/EditProfilePage';
 import Layout from './components/Layout'
 import { Toaster } from 'sonner';
 
@@ -17,7 +19,10 @@ const App = () => {
               <CommunityPage />
             </Layout>
           } 
-        />   
+        />
+      <Route path="/" element={<ProfilePage isOwnProfile={true} />} />
+      <Route path="/profile" element={<ProfilePage isOwnProfile={true} />} />
+      <Route path="/edit-profile" element={<EditProfilePage />} />
     </Routes>  
     </>
   )
