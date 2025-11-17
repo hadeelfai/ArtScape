@@ -37,7 +37,7 @@ export default function EditProfilePage() {
   const handleSaveChanges = () => {
     console.log('Saving changes:', formData);
     alert('Profile updated successfully!');
-    // In real app: send to backend API
+    
   };
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
