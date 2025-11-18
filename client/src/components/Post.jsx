@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import ImageUploader from './ImageUploader'
 import { toast } from 'sonner'
 
-function Post(){
+function Post({onPostCreated}){
 
     const [uploadedImage, setUploadedImage] = useState(null)
     const [text, setText] = useState("")
@@ -32,6 +32,8 @@ function Post(){
             setText("")
             setUploadedImage(null)
             toast("Post uploaded successfully!")
+
+            if (onPostCreated) onPostCreated()//automatically refresh page after adding post
         } catch (error) {
             console.error("Error saving post:",error)
         }
@@ -59,15 +61,13 @@ function Post(){
             rounded-full hover:bg-gray-400 transition-colors duration-200'>Post</button>
             </div>
 
-            {uploadedImage && ( <div className='relative mt-4 w-[80%]'> 
-                <img src={uploadedImage} className='w-full h-64 object-cover '></img>
-            </div>) }
-        
+            {uploadedImage && ( 
+                <div className='relative mt-4 w-[80%]'> 
+                <img src={uploadedImage} className='w-full h-64 object-cover '/>
+            </div>
+        ) }       
         
     </div>
-
-
-
     )
 }
 

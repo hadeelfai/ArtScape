@@ -135,11 +135,8 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
   }
 };
 
-
     return (
         <>
-      
-
         {/* comments section */}
 
         {showComments && (

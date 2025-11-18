@@ -6,6 +6,7 @@ import Navbar from "../components/Navbar"
 function CommunityPage() {
 
     const [activeTab, setActiveTab] = useState("foryou")
+    const [refreshKey, setRefreshKey] = useState(0);
     return(       
         <div>
             
@@ -21,8 +22,8 @@ function CommunityPage() {
                     onClick={() => setActiveTab("following")}>Following</button>
                 
             </div>
-            <Post/>
-            <PostFeeds/>           
+            <Post onPostCreated={() => setRefreshKey(prev => prev + 1)}/>
+            <PostFeeds refreshKey={refreshKey}/>           
         </div>
     )
     

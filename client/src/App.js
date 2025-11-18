@@ -1,4 +1,5 @@
 //pages and component
+/** 
 import { Toaster } from 'sonner';
 import Layout from './components/Layout'
 import CommunityPage from './pages/CommunityPage';
@@ -18,3 +19,4 @@ function App() {
 }
 
 export default App;
+*/

@@ -6,7 +6,7 @@ import { MessageCircle } from 'lucide-react'
 import { getCommentCount } from '../api/comments'
 
 
-function PostFeeds(){
+function PostFeeds({refreshKey }){
 
     const [posts , setPosts] = useState([])
     const [ loading, setLoading] = useState(true)
@@ -123,7 +123,7 @@ const handleDeletePost = async (postId) => {
 
     useEffect( () => {
         loadPosts()
-    } , [loadPosts])
+    } , [loadPosts , refreshKey ])
 
 
      //toggle comments visibility
