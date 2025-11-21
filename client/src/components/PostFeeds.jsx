@@ -5,14 +5,13 @@ import CommentsSection from './CommentsSection'
 import { getCommentCount } from '../api/comments'
 
 
-function PostFeeds({refreshKey }){
+function PostFeeds({refreshKey  , onStartEditing}){
     const [posts , setPosts] = useState([])
     const [ loading, setLoading] = useState(true)
     const [err,setErr] = useState("")
     const [isPending , startTransition] = useTransition()
     const [showComments, setShowComments] = useState({})
     const [commentCounts, setCommentCounts] = useState({})  
-    
     const [optimisticPosts , setOptimisticPosts] = useOptimistic(
         
         posts,
@@ -24,6 +23,7 @@ function PostFeeds({refreshKey }){
         }
     )
 
+    
 ///report button function
     const handleReportPost = async (postId) => {
   try {
@@ -39,11 +39,20 @@ function PostFeeds({refreshKey }){
   }
 };
 
-///edit post function
-    const handleEditPost = (post) => {      
-        
-    toast('Edit post feature not implemented yet');
-}
+
+const handleEditClick = (post) => {
+    if (onStartEditing) onStartEditing(post);
+};
+
+const handleUpdatedPost = (updatedPost) => {
+  setPosts(prevPosts =>
+    prevPosts.map(p => p._id === updatedPost._id ? updatedPost : p)
+  );
+
+  setOptimisticPosts(prevPosts =>
+    prevPosts.map(p => p._id === updatedPost._id ? updatedPost : p)
+  );
+};
 
     const handleLike = async (postId, currentLikesCount, isCurrentlyLiked )=> {
         const newLiked = !isCurrentlyLiked
@@ -163,7 +172,12 @@ const handleDeletePost = async (postId) => {
     items-center justify-center'>No posts yet...</div>
     
     return(
-        <div>{optimisticPosts?.map( (post) => (
+
+        
+        
+        <div>
+            
+            {optimisticPosts?.map( (post) => (
             <article className='border-b border-gray-200 p-4 flex gap-3'>
 
                 <img src={post?.user?.avatar || "/avatar.png"} className='h-10 w-10
@@ -214,7 +228,7 @@ const handleDeletePost = async (postId) => {
 
                                  {/* Edit post button */}
                                 <button
-                                     onClick={() => handleEditPost(post._id)}
+                                     onClick={() => handleEditClick(post)}
                                         className="text-gray-500 hover:text-black"
                                     >
                                       <Edit2  className="h-5 w-5" />
