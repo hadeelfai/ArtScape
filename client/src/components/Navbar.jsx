@@ -1,6 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import SearchBar from './SearchBar';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -94,7 +95,11 @@ const Navbar = () => {
               damping: 20,
               delay: 1.1,
             }}
+            className='flex items-center gap-x-4'
           >
+            <div className='hidden lg:flex md:flex'>
+              <SearchBar variant='icon'/>
+            </div>
             <Link
               to="/signin"
               className={`lg:flex md:flex hidden px-4 py-2 rounded-full font-albert text-sm transition-colors duration-300
@@ -107,8 +112,11 @@ const Navbar = () => {
             </Link>
           </motion.div>
 
+
           {/* Mobile Menu Button and Sign In */}
           <div className="lg:hidden md:hidden flex items-center space-x-4">
+            <SearchBar variant='icon'/>
+
             {/* Sign In Button - Mobile */}
             <Link
               to="/signin"

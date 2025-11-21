@@ -5,6 +5,7 @@ import ProfilePage from './pages/ProfilePage';
 import EditProfilePage from './pages/EditProfilePage';
 import Layout from './components/Layout'
 import { Toaster } from 'sonner';
+import GalleryPage from './pages/GalleryPage';
 
 const App = () => {
   return (
@@ -12,6 +13,7 @@ const App = () => {
     <Toaster position="top-center"/>
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/GalleryPage" element={<GalleryPage />} />
       <Route 
           path="/CommunityPage" 
           element={
