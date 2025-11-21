@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useOptimistic, useState, useTransition }
 import {toast} from 'sonner'
 import CommentsSection from './CommentsSection'
 import { getCommentCount } from '../api/comments'
-
+import { format } from "timeago.js";
 
 function PostFeeds({refreshKey  , onStartEditing}){
     const [posts , setPosts] = useState([])
@@ -188,7 +188,7 @@ const handleDeletePost = async (postId) => {
 
                         <span>{post?.user?.name}</span>
                         <span>{post?.user?.email}</span>
-                        <span className='text-gray-400 text-sm'>{new Date(post?.createdAt).toLocaleString()}</span>
+                        <span className='text-gray-400 text-sm'>{format(post?.createdAt)}</span>
                     </div>
                     <p className='mt-2 whitespace-prepwrap'> {post?.text}</p>
 

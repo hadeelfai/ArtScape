@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { addComment, addReply, getCommentByPost } from '../api/comments'
 import { toast } from 'sonner'
 import { MessageCircle, Send, Trash } from 'lucide-react'
+import { format } from "timeago.js";
 
 function CommentsSection({postId , showComments , commentsCount , onCountChange}){
 
@@ -182,7 +183,7 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                     <span className='text-sm'>{comment?.user?.name}</span>
                                                     
                                                     <span className='text-gray-400 text-sm'>
-                                                        {new Date(comment.createdAt).toLocaleString()}</span>
+                                                        {format(comment?.createdAt)}</span>
                                                 </div>
 
                                                 <p className='text-sm mt-1'>{comment?.text}</p>                                               
@@ -234,7 +235,8 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                                 <span className='font-semibold text-xs'>{reply?.user?.name}</span>
 
                                                                 <span className='text-gray-400 text-sm'>
-                                                                    {reply.createdAt ? new Date(reply.createdAt).toLocaleString(): ""}</span>
+                                                                    {reply.createdAt ? timeAgo(reply.createdAt) : ""}
+                                                                </span>
                                                             </div>
                                                             <p className='text-xs mt-1'>{reply?.text}</p>
                                                         </div>
