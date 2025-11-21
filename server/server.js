@@ -28,10 +28,14 @@ app.use('/comments',Comment)
 app.use('/artworks', Artwork)
 
 //connect to db
+
+//console.log("PORT:", process.env.PORT);
+//console.log("MONGO_URL:", process.env.MONGO_URL);
+
 mongoose.connect(process.env.MONGO_URL)
     .then(()=>{
         app.listen(process.env.PORT, () =>{
-    console.log('connected to db & listening to port',process.env.PORT)
+    console.log('\n******connected to db & listening to port*******',process.env.PORT)
 });
     })
     .catch((error)=> {

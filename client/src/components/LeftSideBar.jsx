@@ -5,9 +5,8 @@ import { Link } from 'react-router-dom'
 function LeftSideBar() {
 
     const menu = [
-        { icon: <Search />, label: 'Search', path: '/search' },
-        { icon: <Bell />, label: 'Notifications', path: '/notifications' },
-        { icon: <Bookmark />, label: 'Bookmarks', path: '/bookmarks' }
+        { icon: <Search />, label: 'Search', path: '/search' }
+        
     ]
 
     return (

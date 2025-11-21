@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { addComment, addReply, getCommentByPost } from '../api/comments'
 import { toast } from 'sonner'
-import { MessageCircle, Send } from 'lucide-react'
+import { MessageCircle, Send, Trash } from 'lucide-react'
 
 function CommentsSection({postId , showComments , commentsCount , onCountChange}){
 
@@ -81,7 +81,6 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
 }
 
    
-
     //reply to comment
     const handleAddReply = async (commentId) => {
         const text = replyText [commentId].trim()
@@ -105,7 +104,6 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
             console.error(error)
             
         }
-
 
     }
 
@@ -135,11 +133,8 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
   }
 };
 
-
     return (
         <>
-      
-
         {/* comments section */}
 
         {showComments && (
@@ -160,8 +155,6 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                         <Send size={18}/></button>
 
                        </div> 
-                    
-
 
                         {/*comment list */}
                         {loadingComments ? (
@@ -192,7 +185,7 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                         {new Date(comment.createdAt).toLocaleString()}</span>
                                                 </div>
 
-                                                <p className='text-sm mt-1'>{comment?.text}</p>
+                                                <p className='text-sm mt-1'>{comment?.text}</p>                                               
 
                                                 {/*button reply */}
 
@@ -201,7 +194,13 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                     reply
                                                 </button>
 
+                                                {/*button delete comment */}
 
+                                                <button className='ml-2 text-xs text-red-500 hover:text-red-700 gap-1' 
+                                                onClick={() => deleteComment(comment._id)}>
+                                                     Delete
+                                                </button>
+                                     
                                               {/* reply input */}
                                                 {showReplyInput[comment._id] && (
                                                     <div className='flex items-center gap-2 mt-2'>
@@ -242,7 +241,7 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                         {/*button to delete reply */}
                                                             <button
                                                             onClick={() => deleteReply(reply._id, comment._id)}
-                                                            className="text-red-500 text-xs "
+                                                            className="text-red-500 hover:text-red-700 text-xs "
                                                         >
                                                             Delete
                                                         </button>
@@ -250,12 +249,12 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
 
                                                         
                                                     ))}
-                                                    </div>
-                                                )}
-                                                
-                                            </div>
+                                                    </div>                                                   
+                                                )}                                           
+                                            </div>                                           
                                         </div>
-                                    </div>
+                                        
+                                    </div>                                    
                                 ))
                             )}
                             </div>

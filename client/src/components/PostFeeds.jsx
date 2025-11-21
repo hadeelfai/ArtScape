@@ -1,13 +1,11 @@
-import { Heart } from 'lucide-react'
+import { Heart, Edit2 , Trash, MessageCircle ,Flag } from 'lucide-react'
 import React, { useCallback, useEffect, useOptimistic, useState, useTransition } from 'react'
 import {toast} from 'sonner'
 import CommentsSection from './CommentsSection'
-import { MessageCircle } from 'lucide-react'
 import { getCommentCount } from '../api/comments'
 
 
-function PostFeeds(){
-
+function PostFeeds({refreshKey  , onStartEditing}){
     const [posts , setPosts] = useState([])
     const [ loading, setLoading] = useState(true)
     const [err,setErr] = useState("")
@@ -24,6 +22,37 @@ function PostFeeds(){
             )
         }
     )
+
+    
+///report button function
+    const handleReportPost = async (postId) => {
+  try {
+    //const res = await fetch(`http://localhost:5500/posts/report/${postId}`, {
+      //method: "POST",
+      //headers: { "Content-Type": "application/json" },
+    //});
+    //if (!res.ok) throw new Error("Failed to report post");
+    toast.success("Post reported");
+  } catch (error) {
+    //console.error(error);
+   // toast.error("Failed to report post");
+  }
+};
+
+
+const handleEditClick = (post) => {
+    if (onStartEditing) onStartEditing(post);
+};
+
+const handleUpdatedPost = (updatedPost) => {
+  setPosts(prevPosts =>
+    prevPosts.map(p => p._id === updatedPost._id ? updatedPost : p)
+  );
+
+  setOptimisticPosts(prevPosts =>
+    prevPosts.map(p => p._id === updatedPost._id ? updatedPost : p)
+  );
+};
 
     const handleLike = async (postId, currentLikesCount, isCurrentlyLiked )=> {
         const newLiked = !isCurrentlyLiked
@@ -83,10 +112,6 @@ const handleDeletePost = async (postId) => {
 };
 
 
-
-
-
-
     const loadPosts = useCallback(async () => {
         try {
             setLoading(true)
@@ -123,7 +148,7 @@ const handleDeletePost = async (postId) => {
 
     useEffect( () => {
         loadPosts()
-    } , [loadPosts])
+    } , [loadPosts , refreshKey ])
 
 
      //toggle comments visibility
@@ -147,7 +172,12 @@ const handleDeletePost = async (postId) => {
     items-center justify-center'>No posts yet...</div>
     
     return(
-        <div>{optimisticPosts?.map( (post) => (
+
+        
+        
+        <div>
+            
+            {optimisticPosts?.map( (post) => (
             <article className='border-b border-gray-200 p-4 flex gap-3'>
 
                 <img src={post?.user?.avatar || "/avatar.png"} className='h-10 w-10
@@ -170,8 +200,8 @@ const handleDeletePost = async (postId) => {
                     )}
 
 
-                    <div className='mt-3 flex items-center gap-2 text-sm text-gray-500'>
-                        <button type='button' className='flex items-center gap-2' disabled={isPending}
+                    <div className='mt-3 flex items-center gap-2 text-sm text-gray-500 '>
+                        <button type='button' className='flex items-center gap-2 hover:text-red' disabled={isPending}
                          onClick={ () => handleLike(post._id,
                              Array.isArray(post.likes)? post.likes.length : 0)}>
                             <Heart className={post?.isLikedByUser ?
@@ -185,29 +215,47 @@ const handleDeletePost = async (postId) => {
 
                         {/* comment button */}
                                 <button onClick={()=>toggleComments(post?._id)} className='flex items-center 
-                                gap-2 hoover:text-black transition-colors'> 
+                                gap-2 hover:text-black transition-colors'> 
                         
-                                <MessageCircle className={showComments[post?._id] ?"text-primary" : ""}/>
+                                <MessageCircle className={showComments[post?._id] ?"text-black" : ""}/>
                         
-                                <span className={showComments[post?._id]? "text-primar" : ""}>
+                                <span className={showComments[post?._id]? "text-black" : ""}>
                                     {commentCounts[post?._id] || 0}
                         
                                 </span>
                                 </button>
 
 
-{/*delete post button */}
-<button
-  onClick={() => handleDeletePost(post._id)}
-  className="text-red-500 text-sm hover:underline"
->
-  Delete
-</button>
+                                 {/* Edit post button */}
+                                <button
+                                     onClick={() => handleEditClick(post)}
+                                        className="text-gray-500 hover:text-black"
+                                    >
+                                      <Edit2  className="h-5 w-5" />
+                                </button>
+                                
 
+                                {/*Right side icons */}
+                                <div className="ml-auto flex items-center gap-2">
+                                {/* Report button */}
+                                        <button
+                                         onClick={() => handleReportPost(post._id)}
+                                         className="ml-auto text-gray-500 hover:text-yellow-600 "
+                                        >
+                                         <Flag className='h-5 w-5'></Flag>
+                                        </button>
 
+                                {/*delete post button */}
+                                <button
+                                 onClick={() => handleDeletePost(post._id)}
+                                 className="ml-auto text-gray-500 hover:text-red-700"
+                                 >
+                                  <Trash className="h-5 w-5" />
+                                </button>
+                            </div>
+                          
+                     </div>
 
-
-                    </div>
                         <CommentsSection postId= {post._id}
                         showComments = {showComments[post?._id] || false}
                         commentsCount = {commentCounts[post._id] || 0}
