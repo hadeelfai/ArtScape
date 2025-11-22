@@ -5,16 +5,25 @@ import News from './pages/News';
 import ArticleDetailPage from "./pages/ArticleDetailPage";
 import ProfilePage from './pages/ProfilePage';
 import EditProfilePage from './pages/EditProfilePage';
-import Layout from './components/Layout'
+import FollowerPage from './pages/FollowerPage';
+import SignInPage from './pages/SignInPage';
+import SignUpPage from './pages/SignUpPage';
+import Layout from './components/Layout';
 import { Toaster } from 'sonner';
 
 const App = () => {
   return (
     <>
-    <Toaster position="top-center"/>
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route 
+      <Toaster position="top-center"/>
+      <Routes>
+        {/* Auth Routes */}
+        <Route path="/signin" element={<SignInPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/login" element={<SignInPage />} /> {/* Alias for signin */}
+        
+        {/* Public Routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route 
           path="/CommunityPage" 
           element={
             <Layout>
@@ -22,16 +31,21 @@ const App = () => {
             </Layout>
           } 
         />
-        <Route path= "/News" element= {<News/>} />
+        <Route path="/News" element={<News/>} />
         <Route path="/news/:id" element={<ArticleDetailPage />} />
-<Route path="/articles/:id" element={<ArticleDetailPage />} />
+        <Route path="/articles/:id" element={<ArticleDetailPage />} />
 
-      <Route path="/" element={<ProfilePage isOwnProfile={true} />} />
-      <Route path="/profile" element={<ProfilePage isOwnProfile={true} />} />
-      <Route path="/edit-profile" element={<EditProfilePage />} />
-    </Routes>  
+        {/* Profile Routes */}
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/:userId" element={<ProfilePage />} />
+        <Route path="/profile/followers" element={<FollowerPage />} />
+        <Route path="/profile/following" element={<FollowerPage />} />
+        <Route path="/profile/:userId/followers" element={<FollowerPage />} />
+        <Route path="/profile/:userId/following" element={<FollowerPage />} />
+        <Route path="/edit-profile" element={<EditProfilePage />} />
+      </Routes>  
     </>
   )
 }
 
-export default App
+export default App

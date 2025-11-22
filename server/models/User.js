@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
     avatar: {
         type: String
     },
-    // ===== ADDED FIELDS FOR PROFILE =====
+    //  FOR PROFILE 
     username: {
         type: String,
         unique: true,
@@ -48,8 +48,14 @@ const userSchema = new mongoose.Schema({
         default: '/assets/images/profileheader.jpg'
     },
     socialLinks: {
-        instagram: String,
-        twitter: String
+        instagram: {
+            type: String,
+            default: ''
+        },
+        twitter: {
+            type: String,
+            default: ''
+        }
     },
     followers: {
         type: Number,
