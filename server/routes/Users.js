@@ -221,6 +221,27 @@ router.put('/profile/:id', async (req, res) => {
     }
 })
 
+// Delete user account
+router.delete('/profile/:id', async (req, res) => {
+    try {
+        const userId = req.params.id
+
+        const user = await User.findById(userId)
+        if (!user)
+            return res.status(404).json({ error: 'User not found' })
+
+        // Delete all artworks by this user
+        await Artwork.deleteMany({ artist: userId })
+
+        // Delete the user
+        await User.findByIdAndDelete(userId)
+
+        res.json({ message: 'Account deleted successfully' })
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
 // Follow/Unfollow user
 router.post('/follow/:id', async (req, res) => {
     try {

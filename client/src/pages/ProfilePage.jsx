@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ShoppingCart, Heart, Bookmark, Image, Clock } from 'lucide-react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Heart, Bookmark, Image, Clock, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
 
@@ -24,6 +24,7 @@ export default function ArtScapeProfile({
   loggedInUserId: loggedInUserIdProp = null
 }) {
   const { userId: routeUserId } = useParams();
+  const navigate = useNavigate();
   const { user: authUser, getUserById } = useAuth();
   const [profileData, setProfileData] = useState(DEFAULT_PROFILE);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,23 +79,47 @@ export default function ArtScapeProfile({
   const resolvedProfileId = resolvedProfileData?.id || DEFAULT_PROFILE.id;
   const isOwnProfile = resolvedProfileId === loggedInUserId;
 
-  const [artworkList, setArtworkList] = useState(() => artworksProp.length > 0 ? artworksProp : []);
+  // Create a stable reference for artworks using useMemo
+  const mappedArtworks = useMemo(() => {
+    const artworksToUse = profileData.artworks && profileData.artworks.length > 0 
+      ? profileData.artworks 
+      : (artworksProp.length > 0 ? artworksProp : []);
+    
+    return artworksToUse.map(artwork => ({
+      id: artwork._id || artwork.id,
+      title: artwork.title,
+      description: artwork.description,
+      tags: artwork.tags,
+      artworkType: artwork.artworkType || 'Explore',
+      price: artwork.price,
+      image: artwork.image
+    }));
+  }, [profileData.artworks, artworksProp]);
+
+  const [artworkList, setArtworkList] = useState(() => mappedArtworks);
+  const prevArtworksRef = useRef(JSON.stringify(mappedArtworks));
 
   // Update artworkList when profile data is fetched
   useEffect(() => {
-    if (profileData.artworks && profileData.artworks.length > 0) {
-      setArtworkList(profileData.artworks);
-    } else if (artworksProp.length > 0) {
-      setArtworkList(artworksProp);
+    const currentArtworksStr = JSON.stringify(mappedArtworks);
+    
+    // Only update if the artworks have actually changed
+    if (currentArtworksStr !== prevArtworksRef.current) {
+      setArtworkList(mappedArtworks);
+      prevArtworksRef.current = currentArtworksStr;
     }
-  }, [profileData.artworks, artworksProp]);
+  }, [mappedArtworks]);
   const [newArtwork, setNewArtwork] = useState({
     title: '',
+    description: '',
+    tags: '',
+    artworkType: 'Explore', // 'Explore' or 'Marketplace'
     price: '',
     imageFile: null,
     imagePreview: ''
   });
   const [isAddingArtwork, setIsAddingArtwork] = useState(false);
+  const [isUploadingArtwork, setIsUploadingArtwork] = useState(false);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState('gallery');
@@ -136,48 +161,298 @@ export default function ArtScapeProfile({
     }));
   };
 
-  const handleArtworkSubmit = (e) => {
+  const uploadImageToCloudinary = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'post_mern');
+    formData.append('folder', 'artworks');
+
+    const response = await fetch('https://api.cloudinary.com/v1_1/dzedtbfld/image/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
+
+    const data = await response.json();
+    return data.secure_url;
+  };
+
+  const handleArtworkSubmit = async (e) => {
     e.preventDefault();
-    if (!newArtwork.title || !newArtwork.price) {
-      alert('Please provide a title and price for the artwork.');
+    if (!newArtwork.title) {
+      alert('Please provide a title for the artwork.');
       return;
     }
-    if (!newArtwork.imagePreview) {
+    if (newArtwork.artworkType === 'Marketplace' && !newArtwork.price) {
+      alert('Please provide a price for marketplace artworks.');
+      return;
+    }
+    if (!newArtwork.imageFile) {
       alert('Please upload an image for the artwork.');
       return;
     }
 
-    const artworkToAdd = {
-      id: Date.now(),
-      title: newArtwork.title,
-      price: Number(newArtwork.price) || 0,
-      image: newArtwork.imagePreview
-    };
+    if (!authUser?.id) {
+      alert('Please log in to add artworks.');
+      return;
+    }
 
-    setArtworkList((prev) => [artworkToAdd, ...prev]);
+    setIsUploadingArtwork(true);
+
+    try {
+      // Upload image to Cloudinary
+      const imageUrl = await uploadImageToCloudinary(newArtwork.imageFile);
+
+      // Save artwork to backend
+      const artworkData = {
+        title: newArtwork.title,
+        description: newArtwork.description || '',
+        tags: newArtwork.tags || '',
+        artworkType: newArtwork.artworkType,
+        price: newArtwork.artworkType === 'Marketplace' ? Number(newArtwork.price) || 0 : null,
+        image: imageUrl,
+        artist: authUser.id
+      };
+
+      const response = await fetch(`${API_BASE_URL}/artworks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(artworkData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save artwork');
+      }
+
+      const result = await response.json();
+      
+      // Add to local state
+      const artworkToAdd = {
+        id: result.artwork._id,
+        title: result.artwork.title,
+        description: result.artwork.description,
+        tags: result.artwork.tags,
+        artworkType: result.artwork.artworkType,
+        price: result.artwork.price,
+        image: result.artwork.image
+      };
+
+      setArtworkList((prev) => [artworkToAdd, ...prev]);
+      
+      // Reset form
+      setNewArtwork({
+        title: '',
+        description: '',
+        tags: '',
+        artworkType: 'Explore',
+        price: '',
+        imageFile: null,
+        imagePreview: ''
+      });
+      setIsAddingArtwork(false);
+      
+      // Cleanup blob URL
+      if (newArtwork.imagePreview) {
+        URL.revokeObjectURL(newArtwork.imagePreview);
+      }
+
+      alert('Artwork published successfully!');
+    } catch (error) {
+      console.error('Error saving artwork:', error);
+      alert('Failed to save artwork. Please try again.');
+    } finally {
+      setIsUploadingArtwork(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsAddingArtwork(false);
+    // Cleanup blob URL if exists
+    if (newArtwork.imagePreview) {
+      URL.revokeObjectURL(newArtwork.imagePreview);
+    }
     setNewArtwork({
       title: '',
+      description: '',
+      tags: '',
+      artworkType: 'Explore',
       price: '',
       imageFile: null,
       imagePreview: ''
     });
-    setIsAddingArtwork(false);
   };
 
-  // Cleanup blob URLs when form is cancelled (not when submitted)
+  // Cleanup blob URLs when component unmounts or artwork is added
   useEffect(() => {
-    if (!isAddingArtwork && newArtwork.imagePreview) {
-      // Form was closed, check if URL is still in use
-      const isUrlInUse = artworkList.some(art => art.image === newArtwork.imagePreview);
-      if (!isUrlInUse) {
-        URL.revokeObjectURL(newArtwork.imagePreview);
+    return () => {
+      if (newArtwork.imagePreview) {
+        const isUrlInUse = artworkList.some(art => art.image === newArtwork.imagePreview);
+        if (!isUrlInUse) {
+          URL.revokeObjectURL(newArtwork.imagePreview);
+        }
       }
-    }
-  }, [isAddingArtwork]);
+    };
+  }, [artworkList]);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      
+      {/* Modal Overlay - Moved to top level to ensure it's above Navbar */}
+      {isAddingArtwork && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4"
+          onClick={handleCloseModal}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative z-[10000]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <h2 className="text-2xl font-bold text-gray-900">Add New Artwork</h2>
+              <button
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleArtworkSubmit} className="p-6 space-y-6">
+              {/* Artwork Type Select */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Type
+                </label>
+                <select
+                  name="artworkType"
+                  value={newArtwork.artworkType}
+                  onChange={handleArtworkFieldChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-900 bg-white"
+                >
+                  <option value="Explore">Explore</option>
+                  <option value="Marketplace">Marketplace</option>
+                </select>
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={newArtwork.title}
+                  onChange={handleArtworkFieldChange}
+                  placeholder="Enter artwork title"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-900"
+                  required
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={newArtwork.description}
+                  onChange={handleArtworkFieldChange}
+                  placeholder="Describe your artwork..."
+                  rows="4"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-900 resize-none"
+                />
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tags
+                </label>
+                <input
+                  type="text"
+                  name="tags"
+                  value={newArtwork.tags}
+                  onChange={handleArtworkFieldChange}
+                  placeholder="e.g., abstract, painting, digital art (comma separated)"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-900"
+                />
+              </div>
+
+              {/* Price - Only show for Marketplace */}
+              {newArtwork.artworkType === 'Marketplace' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price (SAR)
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={newArtwork.price}
+                    onChange={handleArtworkFieldChange}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-900"
+                    required={newArtwork.artworkType === 'Marketplace'}
+                  />
+                </div>
+              )}
+
+              {/* Upload Image */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Image
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleArtworkImageChange}
+                  className="w-full text-sm text-gray-700 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-black file:text-white hover:file:bg-gray-800 file:cursor-pointer cursor-pointer"
+                  required
+                />
+                {newArtwork.imagePreview && (
+                  <div className="mt-4">
+                    <img
+                      src={newArtwork.imagePreview}
+                      alt="Artwork preview"
+                      className="w-full max-w-md h-64 object-cover rounded-lg border border-gray-200 mx-auto"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploadingArtwork}
+                  className="px-6 py-2.5 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUploadingArtwork ? 'Publishing...' : 'Publish'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
         
       {/* Hero Banner */}
       <div className="relative h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
@@ -237,11 +512,22 @@ export default function ArtScapeProfile({
           {/* Action Button */}
           <div className="pb-6">
             {isOwnProfile ? (
-              <Link to="/edit-profile">
-                <button className="bg-black text-white px-8 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium">
-                  Edit Profile
-                </button>
-              </Link>
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  try {
+                    navigate('/edit-profile');
+                  } catch (error) {
+                    console.error('Navigation error:', error);
+                    window.location.href = '/edit-profile';
+                  }
+                }}
+                className="bg-black text-white px-8 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium cursor-pointer"
+              >
+                Edit Profile
+              </button>
             ) : (
               <button 
                 onClick={handleFollowClick}
@@ -288,100 +574,6 @@ export default function ArtScapeProfile({
           {/* Gallery Tab */}
           {activeTab === 'gallery' && (
             <>
-              {isOwnProfile && activeTab === 'gallery' && isAddingArtwork && (
-                <form
-                  onSubmit={handleArtworkSubmit}
-                  className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mx-4 mb-10"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Add New Artwork</h3>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsAddingArtwork(false);
-                        setNewArtwork({
-                          title: '',
-                          price: '',
-                          imageFile: null,
-                          imagePreview: ''
-                        });
-                      }}
-                      className="text-sm text-gray-500 hover:text-gray-800"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                      <input
-                        type="text"
-                        name="title"
-                        value={newArtwork.title}
-                        onChange={handleArtworkFieldChange}
-                        placeholder="Artwork title"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Price (KSA)</label>
-                      <input
-                        type="number"
-                        name="price"
-                        value={newArtwork.price}
-                        onChange={handleArtworkFieldChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="1"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Upload Image</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleArtworkImageChange}
-                        className="w-full text-sm text-gray-700 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-black file:text-white hover:file:bg-gray-800"
-                      />
-                    </div>
-                  </div>
-                  {newArtwork.imagePreview && (
-                    <div className="mt-4 flex items-center gap-4">
-                      <img
-                        src={newArtwork.imagePreview}
-                        alt="Artwork preview"
-                        className="w-32 h-32 object-cover rounded-lg border border-gray-200"
-                      />
-                      <p className="text-sm text-gray-500">Preview of your upload</p>
-                    </div>
-                  )}
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    <button
-                      type="submit"
-                      className="px-6 py-3 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
-                    >
-                      Upload Artwork
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsAddingArtwork(false);
-                        setNewArtwork({
-                          title: '',
-                          price: '',
-                          imageFile: null,
-                          imagePreview: ''
-                        });
-                      }}
-                      className="px-6 py-3 border border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-100 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              )}
-
               {artworkList.length > 0 || showAddArtworkTile ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-4">
                   {showAddArtworkTile && (
@@ -395,7 +587,7 @@ export default function ArtScapeProfile({
                         <span className="text-5xl text-gray-400 leading-none">+</span>
                       </div>
                       <p className="text-lg font-semibold text-gray-900">Add New Artwork</p>
-                      <p className="text-sm text-gray-500 mt-1">Upload title, price, and image</p>
+                      <p className="text-sm text-gray-500 mt-1">Click to add your artwork</p>
                     </button>
                   )}
                   {artworkList.map((artwork) => (
@@ -408,19 +600,34 @@ export default function ArtScapeProfile({
                         />
                       </div>
                       <div className="mt-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-base font-medium text-gray-900">{artwork.title}</h3>
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-gray-900">${artwork.price}</span>
-                            <button 
-                              onClick={() => handleAddToCart(artwork)}
-                              className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                              <ShoppingCart className="w-5 h-5 text-gray-700" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="w-16 h-1 bg-gray-800 mt-2"></div>
+                        <h3 className="text-base font-medium text-gray-900">{artwork.title}</h3>
+                        {artwork.artworkType === 'Explore' ? (
+                          <>
+                            {artwork.description && (
+                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{artwork.description}</p>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {artwork.description && (
+                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{artwork.description}</p>
+                            )}
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="flex items-center gap-2">
+                                {artwork.price && (
+                                  <span className="text-lg font-bold text-gray-900">{artwork.price} ر.س</span>
+                                )}
+                                <button 
+                                  onClick={() => handleAddToCart(artwork)}
+                                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                  <ShoppingCart className="w-5 h-5 text-gray-700" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="w-16 h-1 bg-gray-800 mt-2"></div>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}

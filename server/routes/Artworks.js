@@ -16,8 +16,16 @@ router.get('/user/:userId', async (req, res) => {
 // Create new artwork
 router.post('/', async (req, res) => {
     try {
-        const { title, image, price, artist, description } = req.body
-        const artwork = new Artwork({ title, image, price, artist, description })
+        const { title, image, price, artist, description, tags, artworkType } = req.body
+        const artwork = new Artwork({ 
+            title, 
+            image, 
+            price, 
+            artist, 
+            description,
+            tags,
+            artworkType: artworkType || 'Explore'
+        })
         await artwork.save()
         res.status(201).json({ message: 'Artwork created successfully', artwork })
     } catch (error) {

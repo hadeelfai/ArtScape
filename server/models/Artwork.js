@@ -11,7 +11,13 @@ const artworkSchema = new mongoose.Schema({
     },
     price: {
         type: Number,
-        required: true
+        required: false
+    },
+    tags: String,
+    artworkType: {
+        type: String,
+        enum: ['Explore', 'Marketplace'],
+        default: 'Explore'
     },
     artist: {
         type: mongoose.Schema.Types.ObjectId,

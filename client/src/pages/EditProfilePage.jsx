@@ -7,8 +7,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
 export default function EditProfilePage() {
   const navigate = useNavigate();
-  const { user: authUser } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     //username: '',
@@ -29,6 +30,7 @@ export default function EditProfilePage() {
     artisticSpecialization: '',
     instagram: '',
     twitter: '',
+    link: '',
     bio: ''
   });
   
@@ -37,6 +39,7 @@ export default function EditProfilePage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingProfile, setUploadingProfile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [additionalLinks, setAdditionalLinks] = useState([]);
   const coverImageInputRef = useRef(null);
   const profileImageInputRef = useRef(null);
 
@@ -48,8 +51,14 @@ export default function EditProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       if (!authUser?.id) {
+        // Wait a moment for auth context to initialize, then redirect if still no user
+        const checkAuth = setTimeout(() => {
+          if (!authUser?.id) {
+            navigate('/signin');
+          }
+        }, 500);
         setIsLoading(false);
-        return;
+        return () => clearTimeout(checkAuth);
       }
 
       try {
@@ -93,6 +102,7 @@ export default function EditProfilePage() {
               artisticSpecialization: user.artisticSpecialization || '',
               instagram: user.socialLinks?.instagram || '',
               twitter: user.socialLinks?.twitter || '',
+              link: user.socialLinks?.link || user.link || '',
               bio: user.bio || ''
             });
             
@@ -111,7 +121,7 @@ export default function EditProfilePage() {
     };
 
     fetchProfile();
-  }, [authUser?.id]);
+  }, [authUser?.id, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -264,6 +274,7 @@ export default function EditProfilePage() {
         artisticSpecialization: formData.artisticSpecialization,
         instagram: formData.instagram,
         twitter: formData.twitter,
+        link: formData.link,
         bio: formData.bio,
         profileImage: profileImage, // Include uploaded profile image URL
         bannerImage: coverImage    // Include uploaded cover image URL
@@ -299,11 +310,69 @@ export default function EditProfilePage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!authUser?.id) {
+      alert('Please log in to delete your account.');
+      return;
+    }
+
+    // Confirm deletion
+    const confirmed = window.confirm(
+      'Are you sure you want to delete your account? This action cannot be undone. All your artworks and data will be permanently deleted.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete account');
+      }
+
+      alert('Your account has been deleted successfully.');
+      logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      setError(error.message || 'Failed to delete account. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleFieldFocus = (event) => {
     const { target } = event;
     if (typeof target.select === 'function') {
       requestAnimationFrame(() => target.select());
     }
+  };
+
+  const handleAddMoreLink = () => {
+    if (additionalLinks.length >= 2) {
+      alert('You can only add up to 2 additional links.');
+      return;
+    }
+    setAdditionalLinks([...additionalLinks, { id: Date.now(), url: '' }]);
+  };
+
+  const handleAdditionalLinkChange = (id, value) => {
+    setAdditionalLinks(additionalLinks.map(link => 
+      link.id === id ? { ...link, url: value } : link
+    ));
+  };
+
+  const handleRemoveLink = (id) => {
+    setAdditionalLinks(additionalLinks.filter(link => link.id !== id));
   };
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -485,7 +554,7 @@ export default function EditProfilePage() {
                 onChange={handleInputChange}
                 onFocus={handleFieldFocus}
                 placeholder="King Sattam St, Al-Rabwah, Jeddah 23433, Saudi Arabia"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
               />
             </div>
 
@@ -531,7 +600,7 @@ export default function EditProfilePage() {
                 onChange={handleInputChange}
                 onFocus={handleFieldFocus}
                 placeholder="Jeddah"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
               />
             </div>
 
@@ -545,7 +614,7 @@ export default function EditProfilePage() {
                 onChange={handleInputChange}
                 onFocus={handleFieldFocus}
                 placeholder="23433"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
               />
             </div>
 
@@ -605,7 +674,7 @@ export default function EditProfilePage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Instagram</label>
               <input
                 type="url"
-                name="instagram (Optional)"
+                name="instagram"
                 value={formData.instagram}
                 onChange={handleInputChange}
                 onFocus={handleFieldFocus}
@@ -614,25 +683,61 @@ export default function EditProfilePage() {
               />
             </div>
 
-            {/* Twitter */}
+            {/* Twitter and Additional Links */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Twitter</label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  name="twitter (Optional)"
-                  value={formData.twitter}
-                  onChange={handleInputChange}
-                  onFocus={handleFieldFocus}
-                  placeholder="https://twitter.com/Username@art"
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
-                />
-                <button type="button" className="text-blue-600 hover:text-blue-800 text-sm font-medium whitespace-nowrap flex items-center gap-1">
-                  Add More Link
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
+              <div className="flex flex-nowrap gap-4 items-start">
+                {/* Twitter Field */}
+                <div className="flex-shrink-0" style={{ width: '250px' }}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Twitter</label>
+                  <input
+                    type="url"
+                    name="twitter"
+                    value={formData.twitter}
+                    onChange={handleInputChange}
+                    onFocus={handleFieldFocus}
+                    placeholder="https://twitter.com/Username@art"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+                  />
+                </div>
+                
+                {/* Additional Links - appear next to Twitter in the same row */}
+                {additionalLinks.map((link, index) => (
+                  <div key={link.id} className="flex-shrink-0" style={{ width: '280px' }}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Link {index + 1}</label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="url"
+                        value={link.url}
+                        onChange={(e) => handleAdditionalLinkChange(link.id, e.target.value)}
+                        onFocus={handleFieldFocus}
+                        placeholder="https://example.com/your-link"
+                        className="flex-1 min-w-0 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLink(link.id)}
+                        className="px-3 py-2.5 text-red-600 hover:text-red-800 border border-red-300 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium whitespace-nowrap flex-shrink-0"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Add More Link Button */}
+                <div className="flex-shrink-0" style={{ paddingTop: '28px' }}>
+                  <button 
+                    type="button" 
+                    onClick={handleAddMoreLink}
+                    disabled={additionalLinks.length >= 2}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium whitespace-nowrap flex items-center gap-1 transition-colors px-4 py-2.5 border border-blue-300 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-blue-600"
+                  >
+                    Add More Link
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -658,14 +763,21 @@ export default function EditProfilePage() {
             </div>
           )}
 
-          {/* Save Button */}
-          <div className="mt-8">
+          {/* Save and Delete Buttons */}
+          <div className="mt-8 flex items-center gap-4">
             <button
               onClick={handleSaveChanges}
               disabled={isSaving}
               className="bg-black text-white px-12 py-3 rounded-full hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-red-900 text-white px-12 py-3 rounded-full hover:bg-red-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Account'}
             </button>
           </div>
         </div>
