@@ -8,35 +8,31 @@ import Comment from './routes/Comments.js'
 import Artwork from './routes/Artworks.js'
 import cookieParser from 'cookie-parser'
 
-
 dotenv.config()
 
-//express app
 const app = express()
+
 app.use(cors({
-  origin: ['http://127.0.0.1:5173', 'http://localhost:5173'], 
-  credentials: true  
-    }) 
-)
-app.use(express.json())
+  origin: ['http://127.0.0.1:5173', 'http://localhost:5173'],
+  credentials: true
+}));
 
-//routes
-app.use(cookieParser())
-app.use('/users',User)
-app.use('/posts',Post)
-app.use('/comments',Comment)
-app.use('/artworks', Artwork)
+app.use(express.json());
+app.use(cookieParser());
 
-//connect to db
+// Routes
+app.use('/users', User);
+app.use('/posts', Post);
+app.use('/comments', Comment);
+app.use('/artworks', Artwork);
+
+// Connect to DB
 mongoose.connect(process.env.MONGO_URL)
-    .then(()=>{
-        app.listen(process.env.PORT, () =>{
-    console.log('connected to db & listening to port',process.env.PORT)
-});
-    })
-    .catch((error)=> {
-        console.log(error)
-    })
-//listening for the requist
-
-
+  .then(() => {
+    app.listen(process.env.PORT, () => {
+      console.log('\n****** connected to db & listening to port *******', process.env.PORT);
+    });
+  })
+  .catch((error) => {
+    console.log(error);
+  });

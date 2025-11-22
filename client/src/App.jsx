@@ -10,42 +10,53 @@ import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
 import Layout from './components/Layout';
 import { Toaster } from 'sonner';
+import GalleryPage from './pages/GalleryPage';
 
 const App = () => {
   return (
     <>
-      <Toaster position="top-center"/>
+      <Toaster position="top-center" />
+
       <Routes>
+
         {/* Auth Routes */}
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/login" element={<SignInPage />} /> {/* Alias for signin */}
-        
+        <Route path="/login" element={<SignInPage />} /> {/* Alias */}
+
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
+        <Route path="/GalleryPage" element={<GalleryPage />} />
+
         <Route 
           path="/CommunityPage" 
           element={
             <Layout>
               <CommunityPage />
             </Layout>
-          } 
+          }
         />
-        <Route path="/News" element={<News/>} />
+
+        <Route path="/News" element={<News />} />
         <Route path="/news/:id" element={<ArticleDetailPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
 
         {/* Profile Routes */}
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
+
+        {/* Followers / Following */}
         <Route path="/profile/followers" element={<FollowerPage />} />
         <Route path="/profile/following" element={<FollowerPage />} />
         <Route path="/profile/:userId/followers" element={<FollowerPage />} />
         <Route path="/profile/:userId/following" element={<FollowerPage />} />
-        <Route path="/edit-profile" element={<EditProfilePage />} />
-      </Routes>  
-    </>
-  )
-}
 
-export default App
+        {/* Edit Profile */}
+        <Route path="/edit-profile" element={<EditProfilePage />} />
+
+      </Routes>
+    </>
+  );
+};
+
+export default App;

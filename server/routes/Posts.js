@@ -4,6 +4,7 @@ import Post from '../models/Posts.js'
 import cloudinary from '../utils/cloudinary.js'
 import { authMiddleware } from '../middleware/AuthMiddleware.js'
 
+
 const router = express.Router()
 
 router.post('/' ,async (req,res)=>{
@@ -33,24 +34,7 @@ router.get('/' , async (req,res)=>{
     }
 })
 
-//to edit posts
-router.put('/:id' , async (req,res)=>{
-    try {
-        const post = await Post.findById(req.params.id)
-        if(post.user.toString() !== req.body.id ){
-            return res.status(403).json({error: "not autharized"})
-        }
-        
-        post.text = req.body.text || post.text
-        post.image = req.body.image || post.image
-        await post.save()
 
-        res.json(post)
-        
-    }catch (error){
-        res.status(500).json({error: error.message})
-    }
-})
 
 //to delete posts
 router.delete('/:id'  , async (req,res)=>{
@@ -96,6 +80,27 @@ router.post("/like/:id" , async( req,res) => {
         res.status(500).json({ error: error.message})
     }
 })
+
+
+//to edit posts
+router.put('/:id', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id)
+        if (!post) return res.status(404).json({ error: "Post not found" })
+
+        // Remove the authorization check for now
+        // post.user.toString() !== req.body.id
+
+        post.text = req.body.text || post.text
+        post.image = req.body.image || post.image
+        await post.save()
+
+        res.json(post)
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
 
 
 

@@ -4,9 +4,10 @@ import PostFeeds from "../components/PostFeeds"
 import Navbar from "../components/Navbar"
 
 function CommunityPage() {
+    const [editingPost, setEditingPost] = useState(null)
 
     const [activeTab, setActiveTab] = useState("foryou")
-    const [refreshKey, setRefreshKey] = useState(0);
+    const [refreshKey, setRefreshKey] = useState(0);   
     return(       
         <div>
             
@@ -22,8 +23,21 @@ function CommunityPage() {
                     onClick={() => setActiveTab("following")}>Following</button>
                 
             </div>
-            <Post onPostCreated={() => setRefreshKey(prev => prev + 1)}/>
-            <PostFeeds refreshKey={refreshKey}/>           
+            <Post
+  editingPost={editingPost}
+  onPostCreated={() => setRefreshKey(prev => prev + 1)}
+  onEditCompleted={() => {
+    setRefreshKey(prev => prev + 1); // refresh feed after edit
+    setEditingPost(null);            // reset editing state
+  }}
+/>
+      <PostFeeds
+        refreshKey={refreshKey}
+        onStartEditing={(post) => {
+          setEditingPost(post)
+          window.scrollTo({ top: 0, behavior: "smooth" })
+        }}
+      /> 
         </div>
     )
     
