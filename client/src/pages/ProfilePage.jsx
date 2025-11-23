@@ -16,6 +16,33 @@ const DEFAULT_PROFILE = {
   artworks: []
 };
 
+// Old backend defaults that should be replaced
+const OLD_DEFAULT_PROFILE_IMAGE = '/assets/images/profilepicture.jpg';
+const OLD_DEFAULT_BANNER_IMAGE = '/assets/images/profileheader.jpg';
+
+// Helper function to get the correct image path, using defaults if needed
+const getProfileImage = (image) => {
+  if (!image || typeof image !== 'string' || !image.trim()) {
+    return DEFAULT_PROFILE.profileImage;
+  }
+  const trimmed = image.trim();
+  if (trimmed === OLD_DEFAULT_PROFILE_IMAGE || trimmed === '') {
+    return DEFAULT_PROFILE.profileImage;
+  }
+  return trimmed;
+};
+
+const getBannerImage = (image) => {
+  if (!image || typeof image !== 'string' || !image.trim()) {
+    return DEFAULT_PROFILE.bannerImage;
+  }
+  const trimmed = image.trim();
+  if (trimmed === OLD_DEFAULT_BANNER_IMAGE || trimmed === '') {
+    return DEFAULT_PROFILE.bannerImage;
+  }
+  return trimmed;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
 export default function ArtScapeProfile({ 
@@ -33,7 +60,11 @@ export default function ArtScapeProfile({
   useEffect(() => {
     const fetchProfile = async () => {
       if (userDataProp) {
-        setProfileData(userDataProp);
+        setProfileData({
+          ...userDataProp,
+          profileImage: getProfileImage(userDataProp.profileImage),
+          bannerImage: getBannerImage(userDataProp.bannerImage)
+        });
         setIsLoading(false);
         return;
       }
@@ -56,11 +87,18 @@ export default function ArtScapeProfile({
           if (data.user) {
             setProfileData({
               ...data.user,
+              profileImage: getProfileImage(data.user.profileImage),
+              bannerImage: getBannerImage(data.user.bannerImage),
               artworks: data.artworks || []
             });
+          } else {
+            // If no user data, use default profile
+            setProfileData(DEFAULT_PROFILE);
           }
         } else {
           console.error('Failed to fetch profile');
+          // Use default profile on error
+          setProfileData(DEFAULT_PROFILE);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -457,7 +495,7 @@ export default function ArtScapeProfile({
       {/* Hero Banner */}
       <div className="relative h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
         <img 
-          src={resolvedProfileData.bannerImage} 
+          src={getBannerImage(resolvedProfileData.bannerImage)} 
           alt="Profile banner" 
           className="w-full h-full object-cover"
         />
@@ -469,7 +507,7 @@ export default function ArtScapeProfile({
           {/* Profile Image */}
           <div className="flex items-end space-x-6">
             <img 
-              src={resolvedProfileData.profileImage} 
+              src={getProfileImage(resolvedProfileData.profileImage)} 
               alt={resolvedProfileData.name} 
               className="w-48 h-48 rounded-full border-8 border-white shadow-xl bg-white"
               style={{ marginBottom: '7rem' }}

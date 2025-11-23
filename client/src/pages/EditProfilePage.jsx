@@ -47,6 +47,33 @@ export default function EditProfilePage() {
   const DEFAULT_PROFILE_IMAGE = '/Profileimages/User.jpg';
   const DEFAULT_COVER_IMAGE = '/Profileimages/Cover.jpg';
 
+  // Old backend defaults that should be replaced
+  const OLD_DEFAULT_PROFILE_IMAGE = '/assets/images/profilepicture.jpg';
+  const OLD_DEFAULT_BANNER_IMAGE = '/assets/images/profileheader.jpg';
+
+  // Helper function to get the correct image path, using defaults if needed
+  const getProfileImage = (image) => {
+    if (!image || typeof image !== 'string' || !image.trim()) {
+      return DEFAULT_PROFILE_IMAGE;
+    }
+    const trimmed = image.trim();
+    if (trimmed === OLD_DEFAULT_PROFILE_IMAGE || trimmed === '') {
+      return DEFAULT_PROFILE_IMAGE;
+    }
+    return trimmed;
+  };
+
+  const getBannerImage = (image) => {
+    if (!image || typeof image !== 'string' || !image.trim()) {
+      return DEFAULT_COVER_IMAGE;
+    }
+    const trimmed = image.trim();
+    if (trimmed === OLD_DEFAULT_BANNER_IMAGE || trimmed === '') {
+      return DEFAULT_COVER_IMAGE;
+    }
+    return trimmed;
+  };
+
   // Fetch current profile data when page loads
   useEffect(() => {
     const fetchProfile = async () => {
@@ -107,14 +134,20 @@ export default function EditProfilePage() {
             });
             
             // Update images: use user's saved images if they exist, otherwise use defaults
-            setProfileImage(user.profileImage || DEFAULT_PROFILE_IMAGE);
-            setCoverImage(user.bannerImage || DEFAULT_COVER_IMAGE);
+            setProfileImage(getProfileImage(user.profileImage));
+            setCoverImage(getBannerImage(user.bannerImage));
           }
         } else {
           console.error('Failed to fetch profile');
+          // Set default images on fetch failure
+          setProfileImage(DEFAULT_PROFILE_IMAGE);
+          setCoverImage(DEFAULT_COVER_IMAGE);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
+        // Set default images on error
+        setProfileImage(DEFAULT_PROFILE_IMAGE);
+        setCoverImage(DEFAULT_COVER_IMAGE);
       } finally {
         setIsLoading(false);
       }
@@ -397,7 +430,7 @@ export default function EditProfilePage() {
       {/* Cover Image */}
       <div className="relative h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
         <img 
-          src={coverImage}
+          src={getBannerImage(coverImage)}
           alt="Cover" 
           className="w-full h-full object-cover"
         />
@@ -409,7 +442,7 @@ export default function EditProfilePage() {
           {/* Profile Image */}
           <div className="relative">
             <img 
-              src={profileImage}
+              src={getProfileImage(profileImage)}
               alt="Profile" 
               className="w-48 h-48 rounded-full border-8 border-white shadow-xl bg-white object-cover"
             />
