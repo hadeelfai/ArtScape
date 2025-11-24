@@ -1,24 +1,26 @@
 import express from 'express';
 import Comments from '../models/Comments.js';
+import { authMiddleware } from '../middleware/AuthMiddleware.js';
 const router = express.Router();
 
 // Add a comment (dummy user)
-router.post('/:postId', async (req, res) => {
+router.post('/:postId', authMiddleware,async (req, res) => {
   const { text } = req.body;
 
   try {
     const comment = new Comments({
       text,
       user: {
-        name: "Dummy User",
-        avatar: "/avatar.png",
-        _id: "dummy123"
+        name: req.user.name,
+        avatar: "/avatar.png"   
       },
       post: req.params.postId,
       replies: [] // initialize empty
     });
 
     await comment.save();
+
+    //const populated = await comment.populate("user", "name profileImage");
 
     res.status(201).json(comment);
   } catch (error) {
@@ -41,7 +43,8 @@ router.post('/:postId', async (req, res) => {
 // Get all comments for a post
 router.get('/:postId', async (req, res) => {
   try {
-    const comments = await Comments.find({ post: req.params.postId }).sort({ createdAt: -1 });
+    const comments = await Comments.find({ post: req.params.postId })
+    .sort({ createdAt: -1 });
     res.json(comments);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -59,7 +62,7 @@ router.get('/:postId', async (req, res) => {
  * { res.status(500).json({error: error.message}) } }) */
 
 // Add a reply (dummy user)
-router.post('/reply/:commentId', async (req, res) => {
+router.post('/reply/:commentId',authMiddleware, async (req, res) => {
   const { text } = req.body;
 
   try {
@@ -69,22 +72,19 @@ router.post('/reply/:commentId', async (req, res) => {
 
     comment.replies.push({
       user: {
-        name: "Dummy User",
-        avatar: "/avatar.png",
-        _id: "dummy123"
-      },
+      _id: req.user.id,
+      name: req.user.name,
+      avatar: "/avatar.png"
+    },
       text
     });
-
     await comment.save();
-
     res.json(comment);
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
-
 
 router.get("/count/:postId" , async (req,res) => {
 
@@ -97,16 +97,16 @@ router.get("/count/:postId" , async (req,res) => {
 })
 
 
-
 // DELETE a comment
-router.delete('/:commentId', async (req, res) => {
+router.delete('/:commentId', authMiddleware,async (req, res) => {
   try {
-    const deleted = await Comments.findByIdAndDelete(req.params.commentId)
+    const comment = await Comments.findById(req.params.commentId);
+    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    if (comment.user._id.toString() !== req.user.id)
+     return res.status(403).json({ error: "Not authorized" });
 
-    if (!deleted)
-      return res.status(404).json({ error: "Comment not found" })
-
-    res.json({ message: "Comment deleted successfully" })
+  await Comments.findByIdAndDelete(req.params.commentId);
+  res.json({ message: "Comment deleted successfully" });
 
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -115,21 +115,20 @@ router.delete('/:commentId', async (req, res) => {
 
 
 // DELETE a reply from a comment
-router.delete('/reply/:commentId/:replyId', async (req, res) => {
+router.delete('/reply/:commentId/:replyId', authMiddleware,async (req, res) => {
   try {
-    const comment = await Comments.findById(req.params.commentId)
+    const comment = await Comments.findById(req.params.commentId);
+    if (!comment) return res.status(404).json({ error: "Comment not found" });
 
-    if (!comment)
-      return res.status(404).json({ error: "Comment not found" })
+    const reply = comment.replies.id(req.params.replyId);
+    if (!reply) return res.status(404).json({ error: "Reply not found" });
 
-    comment.replies = comment.replies.filter(
-      r => r._id.toString() !== req.params.replyId
-    )
+    if (reply.user._id.toString() !== req.user.id)
+     return res.status(403).json({ error: "Not authorized" });
 
-    await comment.save()
-
-    res.json({ message: "Reply deleted successfully" })
-
+    reply.remove();
+    await comment.save();
+    res.json({ message: "Reply deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message })
   }

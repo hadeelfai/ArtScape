@@ -68,10 +68,12 @@ const handleUpdatedPost = (updatedPost) => {
     })
 
     try {
+        
             const res = await fetch(`http://localhost:5500/posts/like/${postId}` 
                 ,{
                 method: "POST",
-                headers:{"Content-Type" : "application/json"}
+                headers:{"Content-Type" : "application/json"},
+                 credentials: "include",
             })
 
             if(!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -178,7 +180,7 @@ const handleDeletePost = async (postId) => {
         <div>
             
             {optimisticPosts?.map( (post) => (
-            <article className='border-b border-gray-200 p-4 flex gap-3'>
+            <article key={post._id} className='border-b border-gray-200 p-4 flex gap-3'>
 
                 <img src={post?.user?.avatar || "/avatar.png"} className='h-10 w-10
                  rounded-full object-cover'/>

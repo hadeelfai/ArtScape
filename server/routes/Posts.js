@@ -1,18 +1,18 @@
 import express from 'express'
 import Post from '../models/Posts.js'
-//import {authMiddleware} from '../middleware/AuthMiddleware.js'
+import {authMiddleware} from '../middleware/AuthMiddleware.js'
 import cloudinary from '../utils/cloudinary.js'
-import { authMiddleware } from '../middleware/AuthMiddleware.js'
 
 
 const router = express.Router()
 
-router.post('/' ,async (req,res)=>{
+// create a post
+router.post('/' , authMiddleware,async (req,res)=>{
     try { 
         const {image, text} =req.body
 
         const newPost = new Post({
-            user: req.user ? req.user.id : null,
+            user: req.user.id ,
             text,
             image
         })
@@ -22,31 +22,31 @@ router.post('/' ,async (req,res)=>{
         res.status(500).json({error: error.message})
     }
 })
-
+// get all posts for feed
 router.get('/' , async (req,res)=>{
     try {
-        const posts = await Post.find().populate('user', 'name email avatar')
-        .populate('likes').sort({createdAt: -1})
+        const posts = await Post.find()
+        .populate('user', 'name email avatar')
+        .populate('likes', 'name email avatar')
+        .sort({createdAt: -1})
         
-        res.json(posts)
+        res.status(200).json(posts)
     }catch (error){
         res.status(500).json({error: error.message})
     }
 })
 
 
-
 //to delete posts
-router.delete('/:id'  , async (req,res)=>{
+router.delete('/:id'  ,authMiddleware, async (req,res)=>{
     try {
         const post = await Post.findById(req.params.id)
         
-       // if(post.user.toString() !== req.body.id ){
-         //   return res.status(403).json({error: "not autharized"})
-        //}
+        if(post.user.toString() !== req.body.id ){
+           return res.status(403).json({error: "Not autharized"})
+        }
                 
         await post.deleteOne()
-
         res.json({message: 'post deleted successfully'})
         
     }catch (error){
@@ -54,12 +54,12 @@ router.delete('/:id'  , async (req,res)=>{
     }
 })
 
-
-router.post("/like/:id" , async( req,res) => {
+//like a post
+router.post("/like/:id" ,authMiddleware, async( req,res) => {
 
     try {
     const {id} = req.params
-    const userId = null
+    const userId = req.user.id
 
     const post = await Post.findById(id)
     const hasLiked = post.likes.includes(userId)
@@ -83,13 +83,14 @@ router.post("/like/:id" , async( req,res) => {
 
 
 //to edit posts
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
     try {
         const post = await Post.findById(req.params.id)
         if (!post) return res.status(404).json({ error: "Post not found" })
 
-        // Remove the authorization check for now
-        // post.user.toString() !== req.body.id
+        if (post.user.toString() !== req.user.id) {
+            return res.status(403).json({ error: "Not authorized" })
+        }
 
         post.text = req.body.text || post.text
         post.image = req.body.image || post.image
@@ -100,8 +101,5 @@ router.put('/:id', async (req, res) => {
         res.status(500).json({ error: error.message })
     }
 })
-
-
-
 
 export default router

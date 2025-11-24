@@ -2,20 +2,12 @@ import mongoose from "mongoose";
 
 const commentSchema = new mongoose.Schema({
   text: { type: String, required: true },
-  user: {
-    name: { type: String },
-    avatar: { type: String },
-    _id: { type: String } // using string for dummy
-  },
-  post: { type: String, required: true }, // ObjectId normally, using string for dummy
+  user: {type: mongoose.Schema.Types.ObjectId, ref: "User", required: true},
+  post: {type: mongoose.Schema.Types.ObjectId, ref: "Post", required: true},
   replies: [
     {
-      user: {
-        name: { type: String },
-        avatar: { type: String },
-        _id: { type: String }
-      },
-      text: { type: String }
+      user: {type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+      text: { type: String , required: true}
     }
   ]
 }, { timestamps: true });
