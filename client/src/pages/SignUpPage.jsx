@@ -61,7 +61,7 @@ export default function SignUpPage() {
       <div className="flex-1 flex flex-col lg:flex-row pt-20 lg:pt-20">
         <div className="w-full lg:w-1/2 h-64 sm:h-80 lg:h-screen lg:min-h-screen">
           <img 
-            src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1200&q=80" 
+            src="ducks.jpg" 
             alt="Artistic floral arrangement" 
             className="w-full h-full object-cover"
           />
@@ -150,18 +150,6 @@ export default function SignUpPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  placeholder="Prince Sultan St, Al-Rawdah, Jeddah 23431, Saudi Arabia"
-                  className="w-full px-4 py-2.5 lg:py-3 text-sm lg:text-base bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
-                />
-              </div>
-
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                   {error}
@@ -206,7 +194,7 @@ export default function SignUpPage() {
                 <p className="text-sm text-gray-600">
                   Already have an account?{' '}
                   <Link to="/signin" className="font-semibold text-gray-900 hover:text-gray-700 transition-colors">
-                    Log In
+                    Sign In
                   </Link>
                 </p>
               </div>
