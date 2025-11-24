@@ -7,6 +7,8 @@ import Post from './routes/Posts.js'
 import Comment from './routes/Comments.js'
 import Artwork from './routes/Artworks.js'
 import cookieParser from 'cookie-parser'
+import News from './routes/News.js'
+
 
 dotenv.config()
 
@@ -25,6 +27,7 @@ app.use('/users', User);
 app.use('/posts', Post);
 app.use('/comments', Comment);
 app.use('/artworks', Artwork);
+app.use('/news', News)
 
 // Connect to DB
 mongoose.connect(process.env.MONGO_URL)
@@ -36,3 +39,5 @@ mongoose.connect(process.env.MONGO_URL)
   .catch((error) => {
     console.log(error);
   });
+
+  

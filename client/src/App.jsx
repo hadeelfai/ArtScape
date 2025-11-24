@@ -11,6 +11,8 @@ import SignUpPage from './pages/SignUpPage';
 import Layout from './components/Layout';
 import { Toaster } from 'sonner';
 import GalleryPage from './pages/GalleryPage';
+import AdminProfile from './pages/AdminProfile';
+
 
 const App = () => {
   return (
@@ -53,6 +55,10 @@ const App = () => {
 
         {/* Edit Profile */}
         <Route path="/edit-profile" element={<EditProfilePage />} />
+
+        {/* Admin Profile */}
+
+        <Route path="/admin" element={<AdminProfile />} />
 
       </Routes>
     </>

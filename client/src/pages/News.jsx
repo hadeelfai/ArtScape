@@ -1,199 +1,205 @@
-import React, {useState} from "react";
-import { useNavigate} from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import "./NewsPage.css";
 
-function News (){
+const API_BASE = "http://localhost:5500";
 
-    const [activeTab, setActiveTab] = useState("news");
-    const navigate = useNavigate();
+function News() {
+  const [newsCards, setNewsCards] = useState([]);
+  const [articleCards, setArticleCards] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(
+    location.state?.initialTab === "articles" ? "articles" : "news"
+  );
+  const navigate = useNavigate();
 
-    const newsHero ={
-        id:0,
-        label: "FEATURED",
-        title:"Diriyah Contemporary Art Biennale Returns",
-        image: "/NewsImages/newsHero.JPG",
-    };
+  
 
-    const articlesHero = {
-        id:4,
-        label: "FEATURED",
-        title: "How AI is Transforming Art Education in Saudi Arabia",
-        image: "/NewsImages/articleHero.JPG",
-    
-    };
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        setError("");
 
-    //Cards under latest news
-    const newsCards = [
-        {
-            id: 1,
-            badge: "Spotlight",
-            title:"Young Saudi Artists Rising in Digital Art Scene",
-            text: "Emerging Saudi digital illustrators and 3D artists are making waves with futuristic concepts and innovative storytelling.",
-            date:"OCT 05, 2025",
-            image:"/NewsImages/news1.JPG",
-        },
+        const [newsRes, articleRes] = await Promise.all([
+          fetch(`${API_BASE}/news/type/news`),
+          fetch(`${API_BASE}/news/type/article`),
+        ]);
 
-          {
-            id: 2,
-            badge:"Event",
-            title:"Jeddah Corniche Art Week Draws Huge Crowds",
-            text:"Public art installations and live mural painting turn Jeddah’s waterfront into a vibrant creative space.",
-            date:"OCT 21, 2025",
-            image:"/NewsImages/news2.JPG",
-        },
+        if (!newsRes.ok || !articleRes.ok) {
+          throw new Error("Failed to load news");
+        }
 
-        {
-            id: 3,
-            badge:"Community",
-            title:"University of Jeddah Hosts Student Art Showcase",
-            text:"Student photographers and painters present experimental works celebrating Saudi youth creativity.",
-            date:"OCT 19, 2025",
-            image:"/NewsImages/article3.JPG",
-        },
-    ];
+        const newsData = await newsRes.json();
+        const articleData = await articleRes.json();
 
-    const articleCards = [
-        {
-            id: 4,
-            badge:"Insight",
-            title: "The Rise of Digital Illustration Among Saudi Youth",
-            text: "Creativity meets technology as more young artists shift to digital platforms.",
-            date: "OCT 20, 2025",
-            image: "/NewsImages/article1.JPG",
-        },
+        setNewsCards(newsData);
+        setArticleCards(articleData);
+      } catch (err) {
+        console.error(err);
+        setError("Error loading news and articles");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-      {
-            id: 5,
-            badge:"Event",
-            title: "Jeddah Corniche Art Week Draws Huge Crowds",
-            text: "Public art installations and live mural painting turn Jeddah’s waterfront into a vibrant creative space.",
-            date: "OCT 21, 2025",
-            image: "/NewsImages/article2.JPG",
-        },
-        {
-            id: 6,
-            badge:"Community",
-            title: "University of Jeddah Hosts Student Art Showcase",
-            text: "Student photographers and painters present experimental works celebrating Saudi youth creativity.",
-            date: "OCT 19, 2025",
-            image: "/NewsImages/article3.JPG",
-        },
-    ];
+    loadData();
+  }, []);
 
- 
-    const isNews = activeTab === "news";
-    const hero = isNews ? newsHero : articlesHero;
-    const cards = isNews ? newsCards : articleCards;
+  const isNews = activeTab === "news";
 
-    //when hero arrow is clicked
+  // pick hero from DB
+  const hero = isNews
+    ? newsCards.find((item) => item.isHero)
+    : articleCards.find((item) => item.isHero);
+
+  const cards = isNews ? newsCards : articleCards;
+
 const handleHeroClick = () => {
+  if (!hero?._id) return;
+  const fromTab = isNews ? "news" : "articles";
+
   if (isNews) {
-    navigate(`/news/${hero.id}`);
+    navigate(`/news/${hero._id}`, { state: { fromTab } });
   } else {
-    navigate(`/articles/${hero.id}`);
+    navigate(`/articles/${hero._id}`, { state: { fromTab } });
   }
 };
 
-//when small card arrow is clicked
 const handleCardClick = (id) => {
+  const fromTab = isNews ? "news" : "articles";
+
   if (isNews) {
-    navigate(`/news/${id}`);
+    navigate(`/news/${id}`, { state: { fromTab } });
   } else {
-    navigate(`/articles/${id}`);
+    navigate(`/articles/${id}`, { state: { fromTab } });
   }
 };
 
 
-    return(
-        <>
-       
-            <Navbar />
+return (
+  <>
+    <Navbar />
 
-            <main className="news-main">
+    {/* page background like other pages */}
+    <div className="min-h-screen bg-[#f8f3ff] overflow-x-hidden">
+      <main className="pt-28 pb-10 px-6 md:px-20 max-w-[1120px] mx-auto">
+        {/* Tabs */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex items-center gap-1 rounded-full bg-white/80 border border-gray-200 px-1 py-1 shadow-sm">
+            <button
+              className={`px-6 py-2 rounded-full text-sm font-medium transition ${
+                isNews
+                  ? "bg-[#050816] text-white"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+              onClick={() => setActiveTab("news")}
+            >
+              News
+            </button>
 
-                {/* Tabs */}
+            <button
+              className={`px-6 py-2 rounded-full text-sm font-medium transition ${
+                !isNews
+                  ? "bg-[#050816] text-white"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+              onClick={() => setActiveTab("articles")}
+            >
+              Articles
+            </button>
+          </div>
+        </div>
 
-                <div className="tabs-wrapper">
-                    <div className="tabs-bg">
-                        <button className= {
-                            isNews ? "tab-btn tab-btn-active" : "tab-btn"
-                        }
-                        onClick={() => setActiveTab("news")}>
-                            News
-                        </button>
+        {/* Hero — only shown if exists in DB */}
+        {hero && (
+          <section className="mb-8">
+            {/* 👉 whole hero clickable */}
+            <div
+              className="relative h-80 rounded-[32px] overflow-hidden bg-cover bg-center cursor-pointer transition hover:scale-[1.01]"
+              style={{ backgroundImage: `url(${hero.image})` }}
+              onClick={handleHeroClick}
+            >
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-                        <button className= {
-                            ! isNews ? "tab-btn tab-btn-active" : "tab-btn"
-                        }
-                        onClick={
-                            () => setActiveTab("articles")
-                        }>
-                            Articles
-                        </button>
-                    </div>
+              <div className="absolute left-8 right-24 bottom-8 text-white">
+                <span className="text-xs tracking-[0.12em] uppercase">
+                  {hero.badge}
+                </span>
+                <h1 className="mt-2 text-2xl md:text-3xl font-bold">
+                  {hero.title}
+                </h1>
+              </div>
+              {/* arrow removed */}
+            </div>
+          </section>
+        )}
+
+        {/* Latest section */}
+        <section>
+          <h2 className="text-lg font-semibold mb-4">
+            {isNews ? "Latest News" : "Latest Articles"}
+          </h2>
+
+          {error && <p className="text-red-500 mb-2 text-sm">{error}</p>}
+          {loading && <p>Loading...</p>}
+
+          <div className="flex flex-col gap-6">
+            {cards.map((item) => (
+              // 👉 whole card clickable
+              <article
+                key={item._id}
+                className="relative flex bg-white border border-gray-200 rounded-2xl overflow-hidden cursor-pointer transition hover:shadow-md hover:-translate-y-[2px]"
+                onClick={() => handleCardClick(item._id)}
+              >
+                <div className="w-40 md:w-56 h-40 md:h-44 flex-shrink-0">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
 
+                <div className="flex-1 p-4 pr-6">
+                  {item.badge && (
+                    <span className="block text-xs tracking-[0.12em] uppercase text-gray-500 mb-1">
+                      {item.badge}
+                    </span>
+                  )}
 
-                {/* Hero card*/}
+                  <h3 className="text-lg font-semibold mb-1">
+                    {item.title}
+                  </h3>
 
-                <section className="hero-section" >
-                    <div className="hero-card" style = {{backgroundImage: `url(${hero.image})`}}>
-                        <div className="hero-overlay"/>
-                        <div className="hero-text">
-                            <span className="hero-label">
-                                {hero.label}
-                            </span>
+                  {/* description from admin text box */}
+                  {item.text && (
+                    <p className="text-sm text-gray-600 mb-2">
+                      {item.text.length > 120
+                        ? item.text.slice(0, 120) + "..."
+                        : item.text}
+                    </p>
+                  )}
 
-                            <h1 className="hero-title">
-                                {hero.title}
-                            </h1>
+                  {item.date && (
+                    <p className="text-xs text-gray-500">{item.date}</p>
+                  )}
+                </div>
 
-                        </div>
-                        <button className="hero-arrow" onClick={handleHeroClick}>
-                            {">"}
-                        </button>
-                    </div>
-                </section>
+                {/* arrow button removed */}
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
 
-                {/*hero section ends*/}
+      <Footer />
+    </div>
+  </>
+);
 
-
-                {/* Latest new and Articles */}
-
-                <section className="list-section">
-                    <h2 className="Section-heading">{isNews ? "Latest News" : "Latest Articles"}</h2>
-
-                    <div className="cards-row">
-
-                        {cards.map((item) => (
-                            <article key={item.id} className="news-card">
-                                <div className="card-img-wrap">
-                                    <img
-                                    src={item.image}
-                                    alt={item.title}
-                                    className="card-img" 
-                                    />
-                                </div>
-
-                                <div className="card-body">
-                                    <span className="card-badge"> {item.badge} </span>
-                                    <h3 className="card-title"> {item.title} </h3>
-                                    <p className="card-text"> {item.text} </p>
-                                    <p className="card-date"> {item.date} </p>
-                                </div>
-
-                                <button className="card-arrow" onClick={() => handleCardClick(item.id)}> {">"} </button>
-                            </article>
-                        ))}
-                    </div>
-                </section>
-
-            </main>
-        <Footer />
-        </>
-    )
 }
 
 export default News;

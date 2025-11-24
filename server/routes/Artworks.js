@@ -81,4 +81,28 @@ router.post('/:id/save', async (req, res) => {
     }
 })
 
+//getting all artworks (for admin page)
+router.get('/', async (req, res) => {
+  try {
+    const artworks = await Artwork.find()
+    res.json(artworks)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+//deleting an artwork by id (for the admin page)
+router.delete('/:id', async (req, res) => {
+  try {
+    const artwork = await Artwork.findByIdAndDelete(req.params.id)
+    if (!artwork) {
+      return res.status(404).json({ error: 'Artwork not found' })
+    }
+    res.json({ message: 'Artwork deleted successfully' })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+
 export default router
