@@ -23,10 +23,17 @@ function Post({ onPostCreated, editingPost, onEditCompleted }) {
     try {
       if (editingPost) {
         // Edit existing post
+        const user = JSON.parse(localStorage.getItem("artscape:user"))
+        const token = user?.token
+        
         const res = await fetch(`http://localhost:5500/posts/${editingPost._id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, image: uploadedImage })
+          headers: { "Content-Type": "application/json" ,
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ text, image: uploadedImage 
+            
+          })
         })
         if (!res.ok) throw new Error("Failed to update post")
         
@@ -34,9 +41,14 @@ function Post({ onPostCreated, editingPost, onEditCompleted }) {
         if (onEditCompleted) onEditCompleted()
       } else {
         // Create new post
+
+        const user = JSON.parse(localStorage.getItem("artscape:user"))
+        const token = user?.token
         const res = await fetch('http://localhost:5500/posts', {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json" 
+            ,Authorization: `Bearer ${token}`
+          },
           body: JSON.stringify({ text, image: uploadedImage })
         })
         if (!res.ok) throw new Error

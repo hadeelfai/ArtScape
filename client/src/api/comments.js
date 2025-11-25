@@ -1,60 +1,77 @@
-//import Comments from "../../../backend/models/Comments.js"
+import { useAuth } from '../context/AuthContext';
 
 const comments = "http://localhost:5500/comments"
 
-
-//get all comments
-
+// Get all comments
 export async function getCommentByPost(postId){
+    
+    const token = localStorage.getItem("artscape:user")
+    ? JSON.parse(localStorage.getItem("artscape:user")).token 
+        : null;
+
     const res = await fetch(`${comments}/${postId}`, {
-        
         credentials : "include",
-        headers: {"Content-Type": "application/json"}
-    
-    })
+        headers: {
+            "Content-Type": "application/json",Authorization: token ? `Bearer ${token}` : ""
+        }
+    });   
     if(!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-    
+    return res.json()
 }
 
-//comments countt
+// Comments count
 export async function getCommentCount(postId){
-    const res = await fetch(`${comments}/count/${postId}`, {
+    
+    const token = localStorage.getItem("artscape:user")
+    ? JSON.parse(localStorage.getItem("artscape:user")).token 
+        : null;
 
+    const res = await fetch(`${comments}/count/${postId}`, {
         credentials : "include",
-        headers: {"Content-Type": "application/json"},    
-    })
+        headers: {
+            "Content-Type": "application/json" ,
+            Authorization: token ? `Bearer ${token}` : ""
+        }
+    });
     if(!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data = await res.json()
-        return data.count
+    const data = await res.json()
+    return data.count
 }
 
-//add a comment
-export async function addComment(postId , text){
+// Add a comment
+export async function addComment(postId , text ){
+    const token = localStorage.getItem("artscape:user")
+    ? JSON.parse(localStorage.getItem("artscape:user")).token 
+        : null;
+
     const res = await fetch(`${comments}/${postId}`, {
         method:"POST",
         credentials : "include",
-        headers: {"Content-Type": "application/json"},
+        headers: {
+            "Content-Type": "application/json" ,
+            Authorization: token ? `Bearer ${token}` : ""
+        },
         body: JSON.stringify({text})
-    
-    })
+    });
     if(!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-    
+    return res.json()
 }
 
-
-//reply to a comment
-
+// Reply to a comment
 export async function addReply(commentId , text){
+    const token = localStorage.getItem("artscape:user")
+    ? JSON.parse(localStorage.getItem("artscape:user")).token 
+        : null;
+
     const res = await fetch(`${comments}/reply/${commentId}`, {
         method:"POST",
         credentials : "include",
-        headers: {"Content-Type": "application/json"},
+        headers: {
+            "Content-Type": "application/json" ,Authorization: token ? `Bearer ${token}` : ""
+            
+        },
         body: JSON.stringify({text})
-    
-    })
+    });
     if(!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-    
+    return res.json()
 }

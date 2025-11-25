@@ -6,6 +6,7 @@ import { getCommentCount } from '../api/comments'
 import { format } from "timeago.js";
 
 function PostFeeds({refreshKey  , onStartEditing}){
+
     const [posts , setPosts] = useState([])
     const [ loading, setLoading] = useState(true)
     const [err,setErr] = useState("")
@@ -55,11 +56,13 @@ const handleUpdatedPost = (updatedPost) => {
 };
 
     const handleLike = async (postId, currentLikesCount, isCurrentlyLiked )=> {
-        const newLiked = !isCurrentlyLiked
+       const token = localStorage.getItem("artscape:user")
+    ? JSON.parse(localStorage.getItem("artscape:user")).token
+    : null;
 
+        const newLiked = !isCurrentlyLiked
         const newLikesCount = newLiked ? currentLikesCount + 1 : currentLikesCount -1
     
-
         startTransition(async() => {
             setOptimisticPosts({
         postId,
@@ -67,14 +70,17 @@ const handleUpdatedPost = (updatedPost) => {
         likesCount:newLikesCount
     })
 
-    try {
-        
+    try {        
             const res = await fetch(`http://localhost:5500/posts/like/${postId}` 
                 ,{
                 method: "POST",
-                headers:{"Content-Type" : "application/json"},
+                headers:{
+                    "Content-Type" : "application/json",
+                    Authorization: token ? `Bearer ${token}` : ""
+                  },
+              
                  credentials: "include",
-            })
+            });
 
             if(!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json()
@@ -94,17 +100,20 @@ const handleUpdatedPost = (updatedPost) => {
 //delete post
 const handleDeletePost = async (postId) => {
   try {
+    const token = localStorage.getItem("artscape:user")
+    ? JSON.parse(localStorage.getItem("artscape:user")).token
+    : null;
     const res = await fetch(`http://localhost:5500/posts/${postId}`, {
       method: "DELETE",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
+         Authorization: token ? `Bearer ${token}` : ""
       }
     });
 
     if (!res.ok) throw new Error("Failed to delete");
-
     setPosts(prev => prev.filter(p => p._id !== postId)); // update UI
-
     toast.success("Post deleted");
     
   } catch (error) {
@@ -205,7 +214,7 @@ const handleDeletePost = async (postId) => {
                     <div className='mt-3 flex items-center gap-2 text-sm text-gray-500 '>
                         <button type='button' className='flex items-center gap-2 hover:text-red' disabled={isPending}
                          onClick={ () => handleLike(post._id,
-                             Array.isArray(post.likes)? post.likes.length : 0)}>
+                             Array.isArray(post.likes)? post.likes.length : 0, post.isLikedByUser)}>
                             <Heart className={post?.isLikedByUser ?
                                  'fill-red-500 text-red-500' : 'text-gray-500'} /> 
 

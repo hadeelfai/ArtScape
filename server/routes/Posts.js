@@ -42,7 +42,7 @@ router.delete('/:id'  ,authMiddleware, async (req,res)=>{
     try {
         const post = await Post.findById(req.params.id)
         
-        if(post.user.toString() !== req.body.id ){
+        if(post.user.toString() !== req.user.id ){
            return res.status(403).json({error: "Not autharized"})
         }
                 

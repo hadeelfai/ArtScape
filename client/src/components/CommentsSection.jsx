@@ -16,7 +16,6 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
  
 
     //load comments
-
     const loadComments = async ()=> {
         setLoadingComments(true)
 
@@ -64,8 +63,14 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
 // delete a comment
     const deleteComment = async (commentId) => {
   try {
+    const user = JSON.parse(localStorage.getItem("artscape:user"))
+    const token = user?.token;
+
     const res = await fetch(`http://localhost:5500/comments/${commentId}`, {
-      method: "DELETE"
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     })
 
     if (!res.ok) throw new Error("Failed delete")
@@ -82,7 +87,7 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
 }
 
    
-    //reply to comment
+//reply to comment
     const handleAddReply = async (commentId) => {
         const text = replyText [commentId].trim()
 
@@ -102,17 +107,21 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
     }
         } catch (error) {
             toast.error("Failed to add reply")
-            console.error(error)
-            
+            console.error(error)            
         }
-
     }
 
 // delete a reply
     const deleteReply = async (replyId, commentId) => {
   try {
+    const user = JSON.parse(localStorage.getItem("artscape:user"))
+    const token = user?.token
+
     const res = await fetch(`http://localhost:5500/comments/reply/${commentId}/${replyId}`, {
       method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     });
 
     if (!res.ok) throw new Error("Failed to delete reply");
@@ -125,7 +134,6 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
           : comment
       )
     );
-
     toast.success("Reply deleted");
 
   } catch (err) {
@@ -235,7 +243,7 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                                 <span className='font-semibold text-xs'>{reply?.user?.name}</span>
 
                                                                 <span className='text-gray-400 text-sm'>
-                                                                    {reply.createdAt ? timeAgo(reply.createdAt) : ""}
+                                                                    {reply.createdAt ? format(reply.createdAt) : ""}
                                                                 </span>
                                                             </div>
                                                             <p className='text-xs mt-1'>{reply?.text}</p>

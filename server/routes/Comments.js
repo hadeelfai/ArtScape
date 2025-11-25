@@ -3,7 +3,7 @@ import Comments from '../models/Comments.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
 const router = express.Router();
 
-// Add a comment (dummy user)
+// Add a comment 
 router.post('/:postId', authMiddleware,async (req, res) => {
   const { text } = req.body;
 
@@ -11,11 +11,12 @@ router.post('/:postId', authMiddleware,async (req, res) => {
     const comment = new Comments({
       text,
       user: {
+        _id: req.user.id,
         name: req.user.name,
         avatar: "/avatar.png"   
       },
       post: req.params.postId,
-      replies: [] // initialize empty
+      replies: [] 
     });
 
     await comment.save();
@@ -44,7 +45,11 @@ router.post('/:postId', authMiddleware,async (req, res) => {
 router.get('/:postId', async (req, res) => {
   try {
     const comments = await Comments.find({ post: req.params.postId })
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    //
+    .populate("user", "name avatar")             
+      .populate("replies.user", "name avatar"); 
+      //
     res.json(comments);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -61,7 +66,7 @@ router.get('/:postId', async (req, res) => {
  * catch (error) 
  * { res.status(500).json({error: error.message}) } }) */
 
-// Add a reply (dummy user)
+// Add a reply 
 router.post('/reply/:commentId',authMiddleware, async (req, res) => {
   const { text } = req.body;
 
@@ -69,16 +74,20 @@ router.post('/reply/:commentId',authMiddleware, async (req, res) => {
     const comment = await Comments.findById(req.params.commentId);
 
     if (!comment) return res.status(404).json({ error: "Comment not found" });
-
     comment.replies.push({
       user: {
-      _id: req.user.id,
-      name: req.user.name,
-      avatar: "/avatar.png"
+      _id: req.user.id
     },
       text
     });
+//
     await comment.save();
+    const populatedComment = await comment
+      .populate("user", "name avatar")
+      .populate("replies.user", "name avatar");
+//
+    res.json(populatedComment);
+
     res.json(comment);
 
   } catch (error) {
@@ -126,7 +135,7 @@ router.delete('/reply/:commentId/:replyId', authMiddleware,async (req, res) => {
     if (reply.user._id.toString() !== req.user.id)
      return res.status(403).json({ error: "Not authorized" });
 
-    reply.remove();
+    reply.deleteOne();
     await comment.save();
     res.json({ message: "Reply deleted successfully" });
   } catch (error) {

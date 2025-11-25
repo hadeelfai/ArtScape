@@ -8,6 +8,7 @@ import Comment from './routes/Comments.js'
 import Artwork from './routes/Artworks.js'
 import cookieParser from 'cookie-parser'
 import News from './routes/News.js'
+import { authMiddleware } from './middleware/AuthMiddleware.js'
 
 
 dotenv.config()
@@ -25,7 +26,7 @@ app.use(cookieParser());
 // Routes
 app.use('/users', User);
 app.use('/posts', Post);
-app.use('/comments', Comment);
+app.use('/comments',authMiddleware, Comment);
 app.use('/artworks', Artwork);
 app.use('/news', News)
 
