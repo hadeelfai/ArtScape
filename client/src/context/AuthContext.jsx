@@ -9,7 +9,6 @@ const DEFAULT_USER = {
   following: 512,
   profileImage: '/assets/images/profilepicture.jpg',
   bannerImage: '/assets/images/profileheader.jpg',
-  
 };
 
 const MOCK_USERS = {
@@ -23,7 +22,6 @@ const MOCK_USERS = {
     following: 301,
     profileImage: '/assets/images/profilepicture2.jpg',
     bannerImage: '/assets/images/profileheader2.jpg',
-    
   }
 };
 
@@ -85,18 +83,16 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Important for cookies
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
-      // Check if response is ok before trying to parse JSON
       if (!response.ok) {
         let errorMessage = 'Login failed';
         try {
           const errorData = await response.json();
           errorMessage = errorData.message || errorData.error || errorMessage;
         } catch {
-          // If response is not JSON, use status text
           errorMessage = response.statusText || `Server error (${response.status})`;
         }
         throw new Error(errorMessage);
@@ -104,11 +100,17 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
 
-      // Store user data
+      // Store user data including profile image
       const userData = {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
+        profileImage: data.user.profileImage || data.user.profile_image || null, // Added this
+        artisticSpecialization: data.user.artisticSpecialization || data.user.artistic_specialization || null,
+        bio: data.user.bio || null,
+        followers: data.user.followers || 0,
+        following: data.user.following || 0,
+        bannerImage: data.user.bannerImage || data.user.banner_image || null,
         token: data.token
       };
 
@@ -117,7 +119,6 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Login error:', error);
       
-      // Handle network errors specifically
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         return { 
           success: false, 
@@ -154,11 +155,17 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
 
-      // Store user data
+      // Store user data including profile image
       const userData = {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
+        profileImage: data.user.profileImage || data.user.profile_image || null, // Added this
+        artisticSpecialization: data.user.artisticSpecialization || data.user.artistic_specialization || null,
+        bio: data.user.bio || null,
+        followers: data.user.followers || 0,
+        following: data.user.following || 0,
+        bannerImage: data.user.bannerImage || data.user.banner_image || null,
         token: data.token
       };
 
@@ -186,7 +193,7 @@ export const AuthProvider = ({ children }) => {
   const value = useMemo(
     () => ({
       user,
-      isAuthenticated: Boolean(user && user.token), // Authenticated if user has a token
+      isAuthenticated: Boolean(user && user.token),
       setUser,
       getUserById,
       login,
@@ -200,4 +207,3 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-

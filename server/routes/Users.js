@@ -114,7 +114,8 @@ function buildProfileUpdatePayload(body) {
 
     return payload
 }
-//post a new
+
+// POST - Register new user
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body
@@ -129,9 +130,18 @@ router.post('/register', async (req, res) => {
         setAuthCookie(res, token)
 
         res.status(201).json({
-            message: 'user registered successfully', token, user: {
-                id: user._id, name: user.name,
-                email: user.email
+            message: 'user registered successfully',
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                profileImage: user.profileImage || null, // ✅ Added
+                bannerImage: user.bannerImage || null, // ✅ Added
+                bio: user.bio || null, // ✅ Added
+                artisticSpecialization: user.artisticSpecialization || null, // ✅ Added
+                followers: user.followers || 0, // ✅ Added
+                following: user.following || 0 // ✅ Added
             }
         })
 
@@ -140,6 +150,7 @@ router.post('/register', async (req, res) => {
     }
 })
 
+// POST - Login user
 router.post('/login', async (req, res) => {
     try {
         const { password, email } = req.body
@@ -154,9 +165,20 @@ router.post('/login', async (req, res) => {
 
         setAuthCookie(res, token)
 
-        res.status(201).json({
+        res.status(200).json({
             message: 'user logged in successfully',
-            token, user: { id: user._id, name: user.name, email: user.email }
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                profileImage: user.profileImage || null, // ✅ Added
+                bannerImage: user.bannerImage || null, // ✅ Added
+                bio: user.bio || null, // ✅ Added
+                artisticSpecialization: user.artisticSpecialization || null, // ✅ Added
+                followers: user.followers || 0, // ✅ Added
+                following: user.following || 0 // ✅ Added
+            }
         })
     } catch (error) {
         res.status(500).json({ error: error.message })
