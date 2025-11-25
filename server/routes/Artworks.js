@@ -16,7 +16,7 @@ router.get('/user/:userId', async (req, res) => {
 // Create new artwork
 router.post('/', async (req, res) => {
     try {
-        const { title, image, price, artist, description, tags, artworkType } = req.body
+        const { title, image, price, artist, description, tags, artworkType, dimensions, year } = req.body
         const artwork = new Artwork({ 
             title, 
             image, 
@@ -24,10 +24,39 @@ router.post('/', async (req, res) => {
             artist, 
             description,
             tags,
+            dimensions,
+            year,
             artworkType: artworkType || 'Explore'
         })
         await artwork.save()
         res.status(201).json({ message: 'Artwork created successfully', artwork })
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Update artwork
+router.put('/:id', async (req, res) => {
+    try {
+        const { title, image, price, description, tags, artworkType, dimensions, year } = req.body
+        const artwork = await Artwork.findById(req.params.id)
+        
+        if (!artwork) {
+            return res.status(404).json({ error: 'Artwork not found' })
+        }
+
+        // Update fields
+        if (title !== undefined) artwork.title = title
+        if (image !== undefined) artwork.image = image
+        if (price !== undefined) artwork.price = price
+        if (description !== undefined) artwork.description = description
+        if (tags !== undefined) artwork.tags = tags
+        if (artworkType !== undefined) artwork.artworkType = artworkType
+        if (dimensions !== undefined) artwork.dimensions = dimensions
+        if (year !== undefined) artwork.year = year
+
+        await artwork.save()
+        res.json({ message: 'Artwork updated successfully', artwork })
     } catch (error) {
         res.status(500).json({ error: error.message })
     }

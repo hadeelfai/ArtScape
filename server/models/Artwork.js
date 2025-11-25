@@ -25,6 +25,8 @@ const artworkSchema = new mongoose.Schema({
         required: true
     },
     description: String,
+    dimensions: String,
+    year: String,
     likes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

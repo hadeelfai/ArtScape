@@ -243,14 +243,65 @@ router.put('/profile/:id', async (req, res) => {
     }
 })
 
+// Change user password
+router.put('/profile/:id/password', async (req, res) => {
+    try {
+        const userId = req.params.id
+        const { currentPassword, password: newPassword } = req.body
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ error: 'Current password and new password are required' })
+        }
+
+        // Find user with password field
+        const user = await User.findById(userId)
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' })
+        }
+
+        // Validate current password
+        const isMatch = await bcrypt.compare(currentPassword, user.password)
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Current password is incorrect' })
+        }
+
+        // Check if new password is different from current
+        const isSamePassword = await bcrypt.compare(newPassword, user.password)
+        if (isSamePassword) {
+            return res.status(400).json({ error: 'New password must be different from current password' })
+        }
+
+        // Hash and update password
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+        user.password = hashedPassword
+        await user.save()
+
+        res.json({ message: 'Password changed successfully' })
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
 // Delete user account
 router.delete('/profile/:id', async (req, res) => {
     try {
         const userId = req.params.id
+        const { password } = req.body
 
+        if (!password) {
+            return res.status(400).json({ error: 'Password is required to delete account' })
+        }
+
+        // Find user with password field
         const user = await User.findById(userId)
         if (!user)
             return res.status(404).json({ error: 'User not found' })
+
+        // Validate password
+        const isMatch = await bcrypt.compare(password, user.password)
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Incorrect password' })
+        }
 
         // Delete all artworks by this user
         await Artwork.deleteMany({ artist: userId })

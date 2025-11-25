@@ -2,18 +2,41 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
+import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
 export default function EditProfilePage() {
   const navigate = useNavigate();
-  const { user: authUser, logout } = useAuth();
+  const { user: authUser, logout, setUser } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState(null);
+  const [passwordFormData, setPasswordFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    feedback: '',
+    requirements: {
+      length: false,
+      lowercase: false,
+      uppercase: false,
+      number: false,
+      special: false
+    }
+  });
   const [formData, setFormData] = useState({
-    //username: '',
-    password: '',
+    username: '',
     firstName: '',
     lastName: '',
     phoneNumber: '+966',
@@ -39,7 +62,6 @@ export default function EditProfilePage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingProfile, setUploadingProfile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [additionalLinks, setAdditionalLinks] = useState([]);
   const coverImageInputRef = useRef(null);
   const profileImageInputRef = useRef(null);
 
@@ -112,7 +134,7 @@ export default function EditProfilePage() {
             
             // Populate form with fetched data
             setFormData({
-              password: '', // Don't populate password
+              username: user.username || '',
               firstName: firstName,
               lastName: lastName,
               phoneNumber: user.phoneNumber || '+966',
@@ -162,6 +184,142 @@ export default function EditProfilePage() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handlePasswordFormChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Check password strength when new password changes
+    if (name === 'newPassword') {
+      checkPasswordStrength(value);
+    }
+  };
+
+  const checkPasswordStrength = (password) => {
+    if (!password) {
+      setPasswordStrength({ 
+        score: 0, 
+        feedback: '',
+        requirements: {
+          length: false,
+          lowercase: false,
+          uppercase: false,
+          number: false,
+          special: false
+        }
+      });
+      return;
+    }
+
+    let score = 0;
+    const requirements = {
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[^a-zA-Z0-9]/.test(password)
+    };
+
+    // Calculate score
+    if (requirements.length) score += 1;
+    if (requirements.lowercase) score += 1;
+    if (requirements.uppercase) score += 1;
+    if (requirements.number) score += 1;
+    if (requirements.special) score += 1;
+
+    setPasswordStrength({
+      score,
+      feedback: score === 5 ? 'Strong password' : '',
+      requirements
+    });
+  };
+
+  const handleChangePassword = async () => {
+    if (!authUser?.id) {
+      setPasswordError('Please log in to change your password.');
+      return;
+    }
+
+    // Reset errors
+    setPasswordError(null);
+
+    // Validate all fields are filled
+    if (!passwordFormData.currentPassword || !passwordFormData.newPassword || !passwordFormData.confirmPassword) {
+      setPasswordError('All fields are required.');
+      return;
+    }
+
+    // Validate passwords match
+    if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+
+    // Validate password strength
+    if (passwordStrength.score < 3) {
+      setPasswordError('Password is too weak. Please use a stronger password.');
+      return;
+    }
+
+    // Validate new password is different from current
+    if (passwordFormData.currentPassword === passwordFormData.newPassword) {
+      setPasswordError('New password must be different from current password.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    setPasswordError(null);
+
+    try {
+      // Use the dedicated password change endpoint
+      const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          currentPassword: passwordFormData.currentPassword,
+          password: passwordFormData.newPassword
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to change password. Please check your current password.');
+      }
+
+      // Success
+      alert('Password changed successfully!');
+      
+      // Reset form
+      setPasswordFormData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setPasswordStrength({ 
+        score: 0, 
+        feedback: '',
+        requirements: {
+          length: false,
+          lowercase: false,
+          uppercase: false,
+          number: false,
+          special: false
+        }
+      });
+      setShowPasswordForm(false);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setPasswordError(error.message || 'Failed to change password. Please try again.');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const uploadImageToCloudinary = async (file, folder) => {
@@ -235,6 +393,14 @@ export default function EditProfilePage() {
       // Save to backend immediately
       await saveImageToBackend('cover', imageUrl);
       
+      // Update AuthContext user state to reflect the new banner image
+      if (authUser && setUser) {
+        setUser({
+          ...authUser,
+          bannerImage: imageUrl
+        });
+      }
+      
       alert('Cover photo uploaded and saved successfully!');
     } catch (error) {
       console.error('Error uploading cover image:', error);
@@ -265,6 +431,14 @@ export default function EditProfilePage() {
       // Save to backend immediately
       await saveImageToBackend('profile', imageUrl);
       
+      // Update AuthContext user state to reflect the new profile image
+      if (authUser && setUser) {
+        setUser({
+          ...authUser,
+          profileImage: imageUrl
+        });
+      }
+      
       alert('Profile picture uploaded and saved successfully!');
     } catch (error) {
       console.error('Error uploading profile image:', error);
@@ -291,6 +465,7 @@ export default function EditProfilePage() {
       // Prepare the update payload
       const updatePayload = {
         name: `${formData.firstName} ${formData.lastName}`.trim() || authUser.name, // Combine first and last name
+        username: formData.username,
         firstName: formData.firstName,
         lastName: formData.lastName,
         phoneNumber: formData.phoneNumber,
@@ -313,10 +488,7 @@ export default function EditProfilePage() {
         bannerImage: coverImage    // Include uploaded cover image URL
       };
 
-      // Only include password if it's been changed
-      if (formData.password && formData.password.trim() !== '') {
-        updatePayload.password = formData.password;
-      }
+      // Note: Password changes are handled separately via the Change Password form
 
       const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}`, {
         method: 'PUT',
@@ -333,6 +505,20 @@ export default function EditProfilePage() {
       }
 
       const data = await response.json();
+      
+      // Update AuthContext user state to reflect the updated profile
+      if (authUser && setUser) {
+        setUser({
+          ...authUser,
+          name: updatePayload.name || authUser.name,
+          username: formData.username || authUser.username,
+          profileImage: profileImage,
+          bannerImage: coverImage,
+          artisticSpecialization: formData.artisticSpecialization || authUser.artisticSpecialization,
+          bio: formData.bio || authUser.bio
+        });
+      }
+      
       alert('Profile updated successfully!');
       navigate('/profile');
     } catch (error) {
@@ -343,41 +529,57 @@ export default function EditProfilePage() {
     }
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccountClick = () => {
     if (!authUser?.id) {
       alert('Please log in to delete your account.');
       return;
     }
+    setShowDeleteWarning(true);
+    setDeleteError(null);
+  };
 
-    // Confirm deletion
-    const confirmed = window.confirm(
-      'Are you sure you want to delete your account? This action cannot be undone. All your artworks and data will be permanently deleted.'
-    );
+  const handleContinueDelete = () => {
+    setShowDeleteWarning(false);
+    setShowDeleteConfirmation(true);
+    setDeletePassword('');
+    setDeleteError(null);
+  };
 
-    if (!confirmed) {
+  const handleDeleteAccount = async () => {
+    // Validate password
+    if (!deletePassword) {
+      setDeleteError('Please enter your current password.');
       return;
     }
 
     setIsDeleting(true);
-    setError(null);
+    setDeleteError(null);
 
     try {
+      // Send DELETE request with password in body
       const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}`, {
         method: 'DELETE',
-        credentials: 'include'
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          password: deletePassword
+        })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete account');
+        throw new Error(errorData.error || 'Failed to delete account. Please check your password.');
       }
 
       alert('Your account has been deleted successfully.');
+      setShowDeleteConfirmation(false);
       logout();
       navigate('/');
     } catch (error) {
       console.error('Error deleting account:', error);
-      setError(error.message || 'Failed to delete account. Please try again.');
+      setDeleteError(error.message || 'Failed to delete account. Please try again.');
     } finally {
       setIsDeleting(false);
     }
@@ -390,23 +592,6 @@ export default function EditProfilePage() {
     }
   };
 
-  const handleAddMoreLink = () => {
-    if (additionalLinks.length >= 2) {
-      alert('You can only add up to 2 additional links.');
-      return;
-    }
-    setAdditionalLinks([...additionalLinks, { id: Date.now(), url: '' }]);
-  };
-
-  const handleAdditionalLinkChange = (id, value) => {
-    setAdditionalLinks(additionalLinks.map(link => 
-      link.id === id ? { ...link, url: value } : link
-    ));
-  };
-
-  const handleRemoveLink = (id) => {
-    setAdditionalLinks(additionalLinks.filter(link => link.id !== id));
-  };
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -493,6 +678,20 @@ export default function EditProfilePage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+            {/* Username */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleInputChange}
+                onFocus={handleFieldFocus}
+                placeholder="username"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+              />
+            </div>
+
             {/* First Name  */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
@@ -520,19 +719,137 @@ export default function EditProfilePage() {
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
               />
             </div>
-            {/* Password  */}
+            {/* Password - Click to Change */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                onFocus={handleFieldFocus}
-                placeholder="••••••••••"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-              />
+              <div 
+                onClick={() => setShowPasswordForm(!showPasswordForm)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors text-black bg-white flex items-center justify-between"
+              >
+                <span className="text-gray-600">
+                  {showPasswordForm ? 'Hide password form' : 'Change password'}
+                </span>
+                {showPasswordForm ? (
+                  <ChevronUp className="w-5 h-5 text-gray-600" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-600" />
+                )}
+              </div>
             </div>
+
+            {/* Password Change Form */}
+            {showPasswordForm && (
+              <div className="col-span-1 md:col-span-2 bg-white rounded-lg p-6 space-y-4 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
+                
+                {/* Current Password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                  <input
+                    type="password"
+                    name="currentPassword"
+                    value={passwordFormData.currentPassword}
+                    onChange={handlePasswordFormChange}
+                    placeholder="Enter your current password"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  />
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      name="newPassword"
+                      value={passwordFormData.newPassword}
+                      onChange={handlePasswordFormChange}
+                      placeholder="Enter your new password"
+                      className="w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                    />
+                    {/* Password Strength Checkmark */}
+                    {passwordFormData.newPassword && passwordStrength.score === 5 && (
+                      <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-500" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Confirm New Password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={passwordFormData.confirmPassword}
+                      onChange={handlePasswordFormChange}
+                      placeholder="Confirm your new password"
+                      className={`w-full px-4 py-2.5 pr-10 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black ${
+                        passwordFormData.confirmPassword &&
+                        passwordFormData.newPassword !== passwordFormData.confirmPassword
+                          ? 'border-red-300'
+                          : 'border-gray-300'
+                      }`}
+                    />
+                    {/* Match Checkmark */}
+                    {passwordFormData.confirmPassword &&
+                      passwordFormData.newPassword === passwordFormData.confirmPassword &&
+                      passwordFormData.newPassword && (
+                        <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-500" />
+                      )}
+                  </div>
+                  {passwordFormData.confirmPassword &&
+                    passwordFormData.newPassword !== passwordFormData.confirmPassword && (
+                      <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
+                    )}
+                </div>
+
+                {/* Password Error Message */}
+                {passwordError && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-sm">{passwordError}</p>
+                  </div>
+                )}
+
+                {/* Update Password Button */}
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      setPasswordFormData({
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: ''
+                      });
+                      setPasswordStrength({ 
+                        score: 0, 
+                        feedback: '',
+                        requirements: {
+                          length: false,
+                          lowercase: false,
+                          uppercase: false,
+                          number: false,
+                          special: false
+                        }
+                      });
+                      setPasswordError(null);
+                    }}
+                    className="px-6 py-2.5 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors font-medium text-sm text-black"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleChangePassword}
+                    disabled={isChangingPassword}
+                    className="bg-black text-white px-8 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isChangingPassword ? 'Updating...' : 'Update Password'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Phone Number  */}
             <div>
@@ -702,9 +1019,9 @@ export default function EditProfilePage() {
               </select>
             </div>
 
-            {/* Instagram */}
+            {/* Social Media */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Instagram</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Social Media</label>
               <input
                 type="url"
                 name="instagram"
@@ -716,62 +1033,18 @@ export default function EditProfilePage() {
               />
             </div>
 
-            {/* Twitter and Additional Links */}
+            {/* Social Media */}
             <div>
-              <div className="flex flex-nowrap gap-4 items-start">
-                {/* Twitter Field */}
-                <div className="flex-shrink-0" style={{ width: '250px' }}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Twitter</label>
-                  <input
-                    type="url"
-                    name="twitter"
-                    value={formData.twitter}
-                    onChange={handleInputChange}
-                    onFocus={handleFieldFocus}
-                    placeholder="https://twitter.com/Username@art"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
-                  />
-                </div>
-                
-                {/* Additional Links - appear next to Twitter in the same row */}
-                {additionalLinks.map((link, index) => (
-                  <div key={link.id} className="flex-shrink-0" style={{ width: '280px' }}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Link {index + 1}</label>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="url"
-                        value={link.url}
-                        onChange={(e) => handleAdditionalLinkChange(link.id, e.target.value)}
-                        onFocus={handleFieldFocus}
-                        placeholder="https://example.com/your-link"
-                        className="flex-1 min-w-0 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveLink(link.id)}
-                        className="px-3 py-2.5 text-red-600 hover:text-red-800 border border-red-300 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium whitespace-nowrap flex-shrink-0"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Add More Link Button */}
-                <div className="flex-shrink-0" style={{ paddingTop: '28px' }}>
-                  <button 
-                    type="button" 
-                    onClick={handleAddMoreLink}
-                    disabled={additionalLinks.length >= 2}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium whitespace-nowrap flex items-center gap-1 transition-colors px-4 py-2.5 border border-blue-300 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-blue-600"
-                  >
-                    Add More Link
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Social Media</label>
+              <input
+                type="url"
+                name="twitter"
+                value={formData.twitter}
+                onChange={handleInputChange}
+                onFocus={handleFieldFocus}
+                placeholder="https://twitter.com/Username@art"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+              />
             </div>
           </div>
 
@@ -806,7 +1079,7 @@ export default function EditProfilePage() {
               {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
             <button
-              onClick={handleDeleteAccount}
+              onClick={handleDeleteAccountClick}
               disabled={isDeleting}
               className="bg-red-900 text-white px-12 py-3 rounded-full hover:bg-red-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -816,6 +1089,87 @@ export default function EditProfilePage() {
         </div>
       </div>
     </div>
+
+    {/* Delete Account Warning Dialog */}
+    {showDeleteWarning && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Delete Account</h2>
+          <p className="text-gray-700 mb-6">
+            Are you sure you want to delete your account? This action cannot be undone. All your artworks and data will be permanently deleted.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={() => setShowDeleteWarning(false)}
+              className="px-6 py-2.5 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors font-medium text-sm text-black"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleContinueDelete}
+              className="px-6 py-2.5 bg-red-900 text-white rounded-full hover:bg-red-800 transition-colors font-medium text-sm"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Delete Account Password Confirmation Dialog */}
+    {showDeleteConfirmation && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Confirm Account Deletion</h2>
+          <p className="text-gray-700 mb-6">
+            To confirm account deletion, please enter your current password.
+          </p>
+
+          {/* Current Password */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => {
+                setDeletePassword(e.target.value);
+                setDeleteError(null);
+              }}
+              placeholder="Enter your current password"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-black"
+            />
+          </div>
+
+          {/* Error Message */}
+          {deleteError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{deleteError}</p>
+            </div>
+          )}
+
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={() => {
+                setShowDeleteConfirmation(false);
+                setDeletePassword('');
+                setDeleteError(null);
+              }}
+              disabled={isDeleting}
+              className="px-6 py-2.5 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors font-medium text-sm text-black disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteAccount}
+              disabled={isDeleting || !deletePassword}
+              className="px-6 py-2.5 bg-red-900 text-white rounded-full hover:bg-red-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Account'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 }

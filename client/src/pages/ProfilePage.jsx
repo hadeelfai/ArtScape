@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Heart, Bookmark, Image, Clock, X } from 'lucide-react';
+import { ShoppingCart, Heart, Bookmark, Image, Clock, X, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
 
@@ -128,6 +128,8 @@ export default function ArtScapeProfile({
       title: artwork.title,
       description: artwork.description,
       tags: artwork.tags,
+      dimensions: artwork.dimensions,
+      year: artwork.year,
       artworkType: artwork.artworkType || 'Explore',
       price: artwork.price,
       image: artwork.image
@@ -151,6 +153,8 @@ export default function ArtScapeProfile({
     title: '',
     description: '',
     tags: '',
+    dimensions: '',
+    year: '',
     artworkType: 'Explore', // 'Explore' or 'Marketplace'
     price: '',
     imageFile: null,
@@ -158,6 +162,8 @@ export default function ArtScapeProfile({
   });
   const [isAddingArtwork, setIsAddingArtwork] = useState(false);
   const [isUploadingArtwork, setIsUploadingArtwork] = useState(false);
+  const [editingArtwork, setEditingArtwork] = useState(null);
+  const [isDeletingArtwork, setIsDeletingArtwork] = useState(null);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState('gallery');
@@ -228,7 +234,7 @@ export default function ArtScapeProfile({
       alert('Please provide a price for marketplace artworks.');
       return;
     }
-    if (!newArtwork.imageFile) {
+    if (!editingArtwork && !newArtwork.imageFile) {
       alert('Please upload an image for the artwork.');
       return;
     }
@@ -241,69 +247,113 @@ export default function ArtScapeProfile({
     setIsUploadingArtwork(true);
 
     try {
-      // Upload image to Cloudinary
-      const imageUrl = await uploadImageToCloudinary(newArtwork.imageFile);
+      let imageUrl = editingArtwork?.image || '';
 
-      // Save artwork to backend
+      // Upload new image if provided
+      if (newArtwork.imageFile) {
+        imageUrl = await uploadImageToCloudinary(newArtwork.imageFile);
+      }
+
+      // Prepare artwork data
       const artworkData = {
         title: newArtwork.title,
         description: newArtwork.description || '',
         tags: newArtwork.tags || '',
+        dimensions: newArtwork.dimensions || '',
+        year: newArtwork.year || '',
         artworkType: newArtwork.artworkType,
         price: newArtwork.artworkType === 'Marketplace' ? Number(newArtwork.price) || 0 : null,
-        image: imageUrl,
-        artist: authUser.id
+        image: imageUrl
       };
 
-      const response = await fetch(`${API_BASE_URL}/artworks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(artworkData)
-      });
+      let response;
+      if (editingArtwork) {
+        // Update existing artwork
+        response = await fetch(`${API_BASE_URL}/artworks/${editingArtwork.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(artworkData)
+        });
+      } else {
+        // Create new artwork
+        artworkData.artist = authUser.id;
+        response = await fetch(`${API_BASE_URL}/artworks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(artworkData)
+        });
+      }
 
       if (!response.ok) {
-        throw new Error('Failed to save artwork');
+        throw new Error(editingArtwork ? 'Failed to update artwork' : 'Failed to save artwork');
       }
 
       const result = await response.json();
       
-      // Add to local state
-      const artworkToAdd = {
-        id: result.artwork._id,
-        title: result.artwork.title,
-        description: result.artwork.description,
-        tags: result.artwork.tags,
-        artworkType: result.artwork.artworkType,
-        price: result.artwork.price,
-        image: result.artwork.image
-      };
+      if (editingArtwork) {
+        // Update in local state
+        setArtworkList((prev) => prev.map(art => 
+          art.id === editingArtwork.id 
+            ? {
+                ...art,
+                title: result.artwork.title,
+                description: result.artwork.description,
+                tags: result.artwork.tags,
+                dimensions: result.artwork.dimensions,
+                year: result.artwork.year,
+                artworkType: result.artwork.artworkType,
+                price: result.artwork.price,
+                image: result.artwork.image
+              }
+            : art
+        ));
+        alert('Artwork updated successfully!');
+      } else {
+        // Add to local state
+        const artworkToAdd = {
+          id: result.artwork._id,
+          title: result.artwork.title,
+          description: result.artwork.description,
+          tags: result.artwork.tags,
+          dimensions: result.artwork.dimensions,
+          year: result.artwork.year,
+          artworkType: result.artwork.artworkType,
+          price: result.artwork.price,
+          image: result.artwork.image
+        };
 
-      setArtworkList((prev) => [artworkToAdd, ...prev]);
+        setArtworkList((prev) => [artworkToAdd, ...prev]);
+        alert('Artwork published successfully!');
+      }
       
       // Reset form
       setNewArtwork({
         title: '',
         description: '',
         tags: '',
+        dimensions: '',
+        year: '',
         artworkType: 'Explore',
         price: '',
         imageFile: null,
         imagePreview: ''
       });
       setIsAddingArtwork(false);
+      setEditingArtwork(null);
       
       // Cleanup blob URL
-      if (newArtwork.imagePreview) {
+      if (newArtwork.imagePreview && newArtwork.imageFile) {
         URL.revokeObjectURL(newArtwork.imagePreview);
       }
-
-      alert('Artwork published successfully!');
     } catch (error) {
       console.error('Error saving artwork:', error);
-      alert('Failed to save artwork. Please try again.');
+      alert(editingArtwork ? 'Failed to update artwork. Please try again.' : 'Failed to save artwork. Please try again.');
     } finally {
       setIsUploadingArtwork(false);
     }
@@ -311,6 +361,7 @@ export default function ArtScapeProfile({
 
   const handleCloseModal = () => {
     setIsAddingArtwork(false);
+    setEditingArtwork(null);
     // Cleanup blob URL if exists
     if (newArtwork.imagePreview) {
       URL.revokeObjectURL(newArtwork.imagePreview);
@@ -319,11 +370,58 @@ export default function ArtScapeProfile({
       title: '',
       description: '',
       tags: '',
+      category: '',
+      dimensions: '',
+      year: '',
       artworkType: 'Explore',
       price: '',
       imageFile: null,
       imagePreview: ''
     });
+  };
+
+  const handleEditArtwork = (artwork) => {
+    setEditingArtwork(artwork);
+    setNewArtwork({
+      title: artwork.title || '',
+      description: artwork.description || '',
+      tags: artwork.tags || '',
+      dimensions: artwork.dimensions || '',
+      year: artwork.year || '',
+      artworkType: artwork.artworkType || 'Explore',
+      price: artwork.price || '',
+      imageFile: null,
+      imagePreview: artwork.image || ''
+    });
+    setIsAddingArtwork(true);
+  };
+
+  const handleDeleteArtwork = async (artworkId) => {
+    if (!window.confirm('Are you sure you want to delete this artwork? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsDeletingArtwork(artworkId);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/artworks/${artworkId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete artwork');
+      }
+
+      // Remove from local state
+      setArtworkList((prev) => prev.filter(art => art.id !== artworkId));
+      alert('Artwork deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting artwork:', error);
+      alert('Failed to delete artwork. Please try again.');
+    } finally {
+      setIsDeletingArtwork(null);
+    }
   };
 
   // Cleanup blob URLs when component unmounts or artwork is added
@@ -354,7 +452,7 @@ export default function ArtScapeProfile({
           >
             {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-2xl font-bold text-gray-900">Add New Artwork</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{editingArtwork ? 'Edit Artwork' : 'Add New Artwork'}</h2>
               <button
                 onClick={handleCloseModal}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -427,6 +525,36 @@ export default function ArtScapeProfile({
                 />
               </div>
 
+              {/* Dimensions */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dimensions
+                </label>
+                <input
+                  type="text"
+                  name="dimensions"
+                  value={newArtwork.dimensions}
+                  onChange={handleArtworkFieldChange}
+                  placeholder="e.g., 24 x 36 inches, 50 x 70 cm"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-900"
+                />
+              </div>
+
+              {/* Year */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Year
+                </label>
+                <input
+                  type="text"
+                  name="year"
+                  value={newArtwork.year}
+                  onChange={handleArtworkFieldChange}
+                  placeholder="e.g., 2024"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-900"
+                />
+              </div>
+
               {/* Price - Only show for Marketplace */}
               {newArtwork.artworkType === 'Marketplace' && (
                 <div>
@@ -457,7 +585,7 @@ export default function ArtScapeProfile({
                   accept="image/*"
                   onChange={handleArtworkImageChange}
                   className="w-full text-sm text-gray-700 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-black file:text-white hover:file:bg-gray-800 file:cursor-pointer cursor-pointer"
-                  required
+                  required={!editingArtwork}
                 />
                 {newArtwork.imagePreview && (
                   <div className="mt-4">
@@ -484,13 +612,14 @@ export default function ArtScapeProfile({
                   disabled={isUploadingArtwork}
                   className="px-6 py-2.5 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isUploadingArtwork ? 'Publishing...' : 'Publish'}
+                  {isUploadingArtwork ? (editingArtwork ? 'Updating...' : 'Publishing...') : (editingArtwork ? 'Update' : 'Publish')}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
         
       {/* Hero Banner */}
       <div className="relative h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
@@ -629,13 +758,41 @@ export default function ArtScapeProfile({
                     </button>
                   )}
                   {artworkList.map((artwork) => (
-                    <div key={artwork.id} className="group cursor-pointer">
-                      <div className="bg-white border-4 border-gray-800 overflow-hidden hover:shadow-2xl transition-shadow">
+                    <div key={artwork.id} className="group">
+                      <div 
+                        className={`relative bg-white overflow-hidden hover:shadow-2xl transition-shadow ${artwork.artworkType === 'Marketplace' ? 'cursor-pointer' : ''}`}
+                      >
                         <img 
                           src={artwork.image} 
                           alt={artwork.title}
                           className="w-full h-72 object-cover"
                         />
+                        {/* Edit and Delete Buttons - Only show for own profile */}
+                        {isOwnProfile && (
+                          <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditArtwork(artwork);
+                              }}
+                              className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+                              title="Edit artwork"
+                            >
+                              <Edit2 className="w-4 h-4 text-gray-700" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteArtwork(artwork.id);
+                              }}
+                              disabled={isDeletingArtwork === artwork.id}
+                              className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                              title="Delete artwork"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="mt-3">
                         <h3 className="text-base font-medium text-gray-900">{artwork.title}</h3>
@@ -650,20 +807,9 @@ export default function ArtScapeProfile({
                             {artwork.description && (
                               <p className="text-sm text-gray-600 mt-2 line-clamp-2">{artwork.description}</p>
                             )}
-                            <div className="flex items-center justify-between mt-2">
-                              <div className="flex items-center gap-2">
-                                {artwork.price && (
-                                  <span className="text-lg font-bold text-gray-900">{artwork.price} ر.س</span>
-                                )}
-                                <button 
-                                  onClick={() => handleAddToCart(artwork)}
-                                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-                                >
-                                  <ShoppingCart className="w-5 h-5 text-gray-700" />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="w-16 h-1 bg-gray-800 mt-2"></div>
+                            {artwork.price && (
+                              <span className="text-lg font-bold text-gray-900 mt-2 block">{artwork.price} ر.س</span>
+                            )}
                           </>
                         )}
                       </div>

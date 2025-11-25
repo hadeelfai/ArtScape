@@ -188,18 +188,14 @@ const Navbar = () => {
                   className="hover:opacity-60 transition-opacity"
                 >
                   <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-                    {(user?.profileImage || user?.avatar) ? (
-                      <img
-                        src={user.profileImage || user.avatar}
-                        alt={user?.name || "User"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    )}
+                    <img
+                      src={user?.profileImage || user?.avatar || '/Profileimages/User.jpg'}
+                      alt={user?.name || "User"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = '/Profileimages/User.jpg';
+                      }}
+                    />
                   </div>
                 </Link>
 
@@ -265,17 +261,14 @@ const Navbar = () => {
                   className={`${isOpen ? "text-white" : "text-black"}`}
                 >
                   <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-                    {user?.profileImage ? (
-                      <img
-                        src={user.profileImage}
-                        alt={user.name || "User"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                      </svg>
-                    )}
+                    <img
+                      src={user?.profileImage || user?.avatar || '/Profileimages/User.jpg'}
+                      alt={user?.name || "User"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = '/Profileimages/User.jpg';
+                      }}
+                    />
                   </div>
                 </Link>
               </>
