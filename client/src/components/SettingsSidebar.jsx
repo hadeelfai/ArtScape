@@ -1,6 +1,21 @@
 import { X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // adjust path if needed
 
 export default function SettingsSidebar({ open, setOpen }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      setOpen(false);
+      navigate("/signin");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
   return (
     <>
       {/* Overlay */}
@@ -57,8 +72,12 @@ export default function SettingsSidebar({ open, setOpen }) {
             </button>
           </div>
           
+          {/* Sign Out */}
           <div className="pt-4 border-t border-gray-200">
-            <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600">
+            <button
+              onClick={handleSignOut}
+              className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600"
+            >
               <p className="font-medium">Log Out</p>
             </button>
           </div>

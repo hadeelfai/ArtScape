@@ -5,17 +5,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
 import SettingsSidebar from "../components/SettingsSidebar";
 
-const DEFAULT_PROFILE = {
-  id: 'user-1',
-  name: 'ArtScape Artist',
-  artisticSpecialization: 'Mixed Media Artist',
-  bio: 'Welcome to ArtScape! Update your profile to share your story.',
-  followers: 0,
-  following: 0,
-  profileImage: '/Profileimages/User.jpg',
-  bannerImage: '/Profileimages/Cover.jpg',
-  artworks: []
-};
+const DEFAULT_PROFILE_IMAGE = '/Profileimages/User.jpg';
+const DEFAULT_BANNER_IMAGE = '/Profileimages/Cover.jpg';
 
 // Old backend defaults that should be replaced
 const OLD_DEFAULT_PROFILE_IMAGE = '/assets/images/profilepicture.jpg';
@@ -24,22 +15,22 @@ const OLD_DEFAULT_BANNER_IMAGE = '/assets/images/profileheader.jpg';
 // Helper function to get the correct image path, using defaults if needed
 const getProfileImage = (image) => {
   if (!image || typeof image !== 'string' || !image.trim()) {
-    return DEFAULT_PROFILE.profileImage;
+    return DEFAULT_PROFILE_IMAGE;
   }
   const trimmed = image.trim();
   if (trimmed === OLD_DEFAULT_PROFILE_IMAGE || trimmed === '') {
-    return DEFAULT_PROFILE.profileImage;
+    return DEFAULT_PROFILE_IMAGE;
   }
   return trimmed;
 };
 
 const getBannerImage = (image) => {
   if (!image || typeof image !== 'string' || !image.trim()) {
-    return DEFAULT_PROFILE.bannerImage;
+    return DEFAULT_BANNER_IMAGE;
   }
   const trimmed = image.trim();
   if (trimmed === OLD_DEFAULT_BANNER_IMAGE || trimmed === '') {
-    return DEFAULT_PROFILE.bannerImage;
+    return DEFAULT_BANNER_IMAGE;
   }
   return trimmed;
 };
@@ -53,13 +44,16 @@ export default function ArtScapeProfile({
 }) {
   const { userId: routeUserId } = useParams();
   const navigate = useNavigate();
-  const { user: authUser, getUserById } = useAuth();
-  const [profileData, setProfileData] = useState(DEFAULT_PROFILE);
+  const { user: authUser } = useAuth();
+  const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
   // Fetch profile data from API
   useEffect(() => {
     const fetchProfile = async () => {
+      setLoadError(null);
+
       if (userDataProp) {
         setProfileData({
           ...userDataProp,
@@ -72,7 +66,7 @@ export default function ArtScapeProfile({
 
       const targetUserId = routeUserId || authUser?.id;
       if (!targetUserId) {
-        setProfileData(DEFAULT_PROFILE);
+        setProfileData(null);
         setIsLoading(false);
         return;
       }
@@ -94,15 +88,19 @@ export default function ArtScapeProfile({
             });
           } else {
             // If no user data, use default profile
-            setProfileData(DEFAULT_PROFILE);
+            setProfileData(null);
+            setLoadError('User profile not found.');
           }
         } else {
           console.error('Failed to fetch profile');
           // Use default profile on error
-          setProfileData(DEFAULT_PROFILE);
+          setProfileData(null);
+          setLoadError('Failed to fetch profile.');
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
+        setProfileData(null);
+        setLoadError('Error fetching profile.');
       } finally {
         setIsLoading(false);
       }
@@ -112,15 +110,13 @@ export default function ArtScapeProfile({
   }, [routeUserId, authUser?.id, userDataProp]);
 
   const resolvedProfileData = profileData;
-  const resolvedArtworks = artworksProp.length > 0 ? artworksProp : (profileData.artworks || []);
-
-  const loggedInUserId = loggedInUserIdProp || authUser?.id || DEFAULT_PROFILE.id;
-  const resolvedProfileId = resolvedProfileData?.id || DEFAULT_PROFILE.id;
-  const isOwnProfile = resolvedProfileId === loggedInUserId;
+  const loggedInUserId = loggedInUserIdProp || authUser?.id || null;
+  const resolvedProfileId = resolvedProfileData?.id || routeUserId || null;
+  const isOwnProfile = Boolean(loggedInUserId && resolvedProfileId && resolvedProfileId === loggedInUserId);
 
   // Create a stable reference for artworks using useMemo
   const mappedArtworks = useMemo(() => {
-    const artworksToUse = profileData.artworks && profileData.artworks.length > 0
+    const artworksToUse = profileData?.artworks && profileData.artworks.length > 0
       ? profileData.artworks
       : (artworksProp.length > 0 ? artworksProp : []);
 
@@ -135,7 +131,7 @@ export default function ArtScapeProfile({
       price: artwork.price,
       image: artwork.image
     }));
-  }, [profileData.artworks, artworksProp]);
+  }, [profileData, artworksProp]);
 
   const [artworkList, setArtworkList] = useState(() => mappedArtworks);
   const prevArtworksRef = useRef(JSON.stringify(mappedArtworks));
@@ -440,7 +436,28 @@ export default function ArtScapeProfile({
 
   const [open, setOpen] = useState(false);
 
+  // If the user is signed out, auto-redirect to home (not SignIn)
+  useEffect(() => {
+    if (!isLoading && !resolvedProfileData) {
+      navigate('/', { replace: true });
+    }
+  }, [isLoading, resolvedProfileData, navigate]);
 
+  if (isLoading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-gray-50 pt-24 flex items-center justify-center">
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </>
+    );
+  }
+
+  if (!resolvedProfileData) {
+    // You may want a brief fallback UI, but this should be nearly instant redirect
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

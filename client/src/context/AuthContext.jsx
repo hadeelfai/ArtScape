@@ -1,30 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-const DEFAULT_USER = {
-  id: 'user-1',
-  name: 'Sara Alshareef',
-  artisticSpecialization: 'Oil Painter | Landscape Artist',
-  bio: 'Sara Alshareef is a passionate oil painter specializing in capturing the serene beauty of landscapes.',
-  followers: 385,
-  following: 512,
-  profileImage: '/assets/images/profilepicture.jpg',
-  bannerImage: '/assets/images/profileheader.jpg',
-};
-
-const MOCK_USERS = {
-  [DEFAULT_USER.id]: DEFAULT_USER,
-  'user-2': {
-    id: 'user-2',
-    name: 'Layla Ibrahim',
-    artisticSpecialization: 'Digital Illustrator | Concept Artist',
-    bio: 'Layla blends vibrant color palettes with futuristic forms to tell visual stories.',
-    followers: 742,
-    following: 301,
-    profileImage: '/assets/images/profilepicture2.jpg',
-    bannerImage: '/assets/images/profileheader2.jpg',
-  }
-};
-
 const AuthContext = createContext({
   user: null,
   isAuthenticated: false,
@@ -61,7 +36,7 @@ const persistUser = (user) => {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => getStoredUser() || DEFAULT_USER);
+  const [user, setUser] = useState(() => getStoredUser());
 
   useEffect(() => {
     persistUser(user);
@@ -71,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     return (id) => {
       if (!id) return null;
       if (user && user.id === id) return user;
-      return MOCK_USERS[id] || null;
+      return null;
     };
   }, [user]);
 
@@ -185,9 +160,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    persistUser(null);
+  const logout = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || 'Failed to log out');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      persistUser(null);
+    }
   };
 
   const value = useMemo(

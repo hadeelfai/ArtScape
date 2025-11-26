@@ -575,7 +575,7 @@ export default function EditProfilePage() {
 
       alert('Your account has been deleted successfully.');
       setShowDeleteConfirmation(false);
-      logout();
+      await logout();
       navigate('/');
     } catch (error) {
       console.error('Error deleting account:', error);

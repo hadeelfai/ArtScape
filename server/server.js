@@ -32,7 +32,6 @@ app.use('/artworks', Artwork);
 app.use('/news', News)
 //app.use("/posts", postRoutes);
 
-
 // Connect to DB
 mongoose.connect(process.env.MONGO_URL)
   .then(() => {
