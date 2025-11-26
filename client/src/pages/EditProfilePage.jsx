@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
@@ -294,7 +295,7 @@ export default function EditProfilePage() {
       }
 
       // Success
-      alert('Password changed successfully!');
+      toast.success('Password changed successfully!');
       
       // Reset form
       setPasswordFormData({
@@ -401,10 +402,10 @@ export default function EditProfilePage() {
         });
       }
       
-      alert('Cover photo uploaded and saved successfully!');
+      toast.success('Cover photo uploaded and saved successfully!');
     } catch (error) {
       console.error('Error uploading cover image:', error);
-      alert('Failed to upload cover photo. Please try again.');
+      toast.error('Failed to upload cover photo. Please try again.');
       // Revert to previous image on error
       setCoverImage(DEFAULT_COVER_IMAGE);
     } finally {
@@ -439,10 +440,10 @@ export default function EditProfilePage() {
         });
       }
       
-      alert('Profile picture uploaded and saved successfully!');
+      toast.success('Profile picture uploaded and saved successfully!');
     } catch (error) {
       console.error('Error uploading profile image:', error);
-      alert('Failed to upload profile picture. Please try again.');
+      toast.error('Failed to upload profile picture. Please try again.');
       // Revert to previous image on error
       setProfileImage(DEFAULT_PROFILE_IMAGE);
     } finally {
@@ -454,7 +455,7 @@ export default function EditProfilePage() {
 
   const handleSaveChanges = async () => {
     if (!authUser?.id) {
-      alert('Please log in to save your profile.');
+      toast.error('Please log in to save your profile.');
       return;
     }
 
@@ -519,7 +520,7 @@ export default function EditProfilePage() {
         });
       }
       
-      alert('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
       navigate('/profile');
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -531,7 +532,7 @@ export default function EditProfilePage() {
 
   const handleDeleteAccountClick = () => {
     if (!authUser?.id) {
-      alert('Please log in to delete your account.');
+      toast.error('Please log in to delete your account.');
       return;
     }
     setShowDeleteWarning(true);
@@ -573,7 +574,7 @@ export default function EditProfilePage() {
         throw new Error(errorData.error || 'Failed to delete account. Please check your password.');
       }
 
-      alert('Your account has been deleted successfully.');
+      toast.success('Your account has been deleted successfully.');
       setShowDeleteConfirmation(false);
       await logout();
       navigate('/');
@@ -687,7 +688,7 @@ export default function EditProfilePage() {
                 value={formData.username}
                 onChange={handleInputChange}
                 onFocus={handleFieldFocus}
-                placeholder="username"
+                placeholder="Sara Alshareef.224"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
               />
             </div>

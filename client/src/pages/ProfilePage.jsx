@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Settings, Heart, Bookmark, Image, Clock, X, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
 import SettingsSidebar from "../components/SettingsSidebar";
+import { toast } from 'sonner';
 
 const DEFAULT_PROFILE_IMAGE = '/Profileimages/User.jpg';
 const DEFAULT_BANNER_IMAGE = '/Profileimages/Cover.jpg';
@@ -44,6 +45,7 @@ export default function ArtScapeProfile({
 }) {
   const { userId: routeUserId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: authUser } = useAuth();
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,12 +109,38 @@ export default function ArtScapeProfile({
     };
 
     fetchProfile();
-  }, [routeUserId, authUser?.id, userDataProp]);
+  }, [routeUserId, authUser?.id, userDataProp, location.key]);
 
   const resolvedProfileData = profileData;
   const loggedInUserId = loggedInUserIdProp || authUser?.id || null;
   const resolvedProfileId = resolvedProfileData?.id || routeUserId || null;
   const isOwnProfile = Boolean(loggedInUserId && resolvedProfileId && resolvedProfileId === loggedInUserId);
+
+  // Check if current user is following this profile
+  useEffect(() => {
+    const checkFollowingStatus = async () => {
+      if (!authUser?.id || !resolvedProfileId || isOwnProfile) {
+        setIsFollowing(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}/following`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const followingIds = (data.following || []).map(u => u.id);
+          setIsFollowing(followingIds.includes(resolvedProfileId));
+        }
+      } catch (error) {
+        console.error('Error checking following status:', error);
+      }
+    };
+
+    checkFollowingStatus();
+  }, [authUser?.id, resolvedProfileId, isOwnProfile]);
 
   // Create a stable reference for artworks using useMemo
   const mappedArtworks = useMemo(() => {
@@ -166,20 +194,89 @@ export default function ArtScapeProfile({
   const [activeTab, setActiveTab] = useState('gallery');
   const showAddArtworkTile = isOwnProfile && activeTab === 'gallery' && !isAddingArtwork;
 
-  const tabs = [
+  const allTabs = [
     { id: 'gallery', label: 'Gallery', icon: Image },
     { id: 'likes', label: 'Likes', icon: Heart },
     { id: 'saved', label: 'Saved', icon: Bookmark },
     { id: 'purchased', label: 'Purchased History', icon: Clock }
   ];
 
-  const handleFollowClick = () => {
-    setIsFollowing(!isFollowing);
+  // Filter tabs based on whether viewing own profile
+  const tabs = useMemo(() => {
+    if (isOwnProfile) {
+      return allTabs;
+    }
+    // Only show Gallery tab for other users' profiles
+    return allTabs.filter(tab => tab.id === 'gallery');
+  }, [isOwnProfile]);
+
+  // Reset to gallery tab if viewing someone else's profile and on a restricted tab
+  useEffect(() => {
+    if (!isOwnProfile && activeTab !== 'gallery') {
+      setActiveTab('gallery');
+    }
+  }, [isOwnProfile, activeTab]);
+
+  // Function to refetch profile data
+  const refetchProfile = async () => {
+    const targetUserId = routeUserId || authUser?.id;
+    if (!targetUserId || userDataProp) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/profile/${targetUserId}`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          setProfileData({
+            ...data.user,
+            profileImage: getProfileImage(data.user.profileImage),
+            bannerImage: getBannerImage(data.user.bannerImage),
+            artworks: data.artworks || []
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error refetching profile:', error);
+    }
+  };
+
+  const handleFollowClick = async () => {
+    if (!authUser?.id || !resolvedProfileId) {
+      toast.error('Please log in to follow users');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/follow/${resolvedProfileId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId: authUser.id })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsFollowing(data.isFollowing);
+        // Refresh profile data to update counts
+        await refetchProfile();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to follow/unfollow user');
+      }
+    } catch (error) {
+      console.error('Error following/unfollowing user:', error);
+      toast.error('Failed to follow/unfollow user. Please try again.');
+    }
   };
 
   const handleAddToCart = (artwork) => {
     console.log('Added to cart:', artwork);
-    alert(`"${artwork.title}" added to cart!`);
+    toast.success(`"${artwork.title}" added to cart!`);
   };
 
   const handleArtworkFieldChange = (e) => {
@@ -224,20 +321,20 @@ export default function ArtScapeProfile({
   const handleArtworkSubmit = async (e) => {
     e.preventDefault();
     if (!newArtwork.title) {
-      alert('Please provide a title for the artwork.');
+      toast.error('Please provide a title for the artwork.');
       return;
     }
     if (newArtwork.artworkType === 'Marketplace' && !newArtwork.price) {
-      alert('Please provide a price for marketplace artworks.');
+      toast.error('Please provide a price for marketplace artworks.');
       return;
     }
     if (!editingArtwork && !newArtwork.imageFile) {
-      alert('Please upload an image for the artwork.');
+      toast.error('Please upload an image for the artwork.');
       return;
     }
 
     if (!authUser?.id) {
-      alert('Please log in to add artworks.');
+      toast.error('Please log in to add artworks.');
       return;
     }
 
@@ -310,7 +407,7 @@ export default function ArtScapeProfile({
             }
             : art
         ));
-        alert('Artwork updated successfully!');
+        toast.success('Artwork updated successfully!');
       } else {
         // Add to local state
         const artworkToAdd = {
@@ -326,7 +423,7 @@ export default function ArtScapeProfile({
         };
 
         setArtworkList((prev) => [artworkToAdd, ...prev]);
-        alert('Artwork published successfully!');
+        toast.success('Artwork published successfully!');
       }
 
       // Reset form
@@ -350,7 +447,7 @@ export default function ArtScapeProfile({
       }
     } catch (error) {
       console.error('Error saving artwork:', error);
-      alert(editingArtwork ? 'Failed to update artwork. Please try again.' : 'Failed to save artwork. Please try again.');
+      toast.error(editingArtwork ? 'Failed to update artwork. Please try again.' : 'Failed to save artwork. Please try again.');
     } finally {
       setIsUploadingArtwork(false);
     }
@@ -367,7 +464,6 @@ export default function ArtScapeProfile({
       title: '',
       description: '',
       tags: '',
-      category: '',
       dimensions: '',
       year: '',
       artworkType: 'Explore',
@@ -412,10 +508,10 @@ export default function ArtScapeProfile({
 
       // Remove from local state
       setArtworkList((prev) => prev.filter(art => art.id !== artworkId));
-      alert('Artwork deleted successfully!');
+      toast.success('Artwork deleted successfully!');
     } catch (error) {
       console.error('Error deleting artwork:', error);
-      alert('Failed to delete artwork. Please try again.');
+      toast.error('Failed to delete artwork. Please try again.');
     } finally {
       setIsDeletingArtwork(null);
     }
@@ -447,8 +543,8 @@ export default function ArtScapeProfile({
     return (
       <>
         <Navbar />
-        <div className="min-h-screen bg-gray-50 pt-24 flex items-center justify-center">
-          <p className="text-gray-600">Loading profile...</p>
+        <div className="min-h-screen bg-gray-50 pt-20 sm:pt-24 flex items-center justify-center px-4">
+          <p className="text-sm sm:text-base text-gray-600">Loading profile...</p>
         </div>
       </>
     );
@@ -460,7 +556,7 @@ export default function ArtScapeProfile({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-visible">
       <Navbar />
 
       {/* Modal Overlay - Moved to top level to ensure it's above Navbar */}
@@ -470,22 +566,22 @@ export default function ArtScapeProfile({
           onClick={handleCloseModal}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative z-[10000]"
+            className="bg-white rounded-lg sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto relative z-[10000] mx-2 sm:mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-2xl font-bold text-gray-900">{editingArtwork ? 'Edit Artwork' : 'Add New Artwork'}</h2>
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between rounded-t-lg sm:rounded-t-2xl z-10">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{editingArtwork ? 'Edit Artwork' : 'Add New Artwork'}</h2>
               <button
                 onClick={handleCloseModal}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <X className="w-6 h-6 text-gray-500" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleArtworkSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleArtworkSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* Artwork Type Select */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -611,29 +707,29 @@ export default function ArtScapeProfile({
                   required={!editingArtwork}
                 />
                 {newArtwork.imagePreview && (
-                  <div className="mt-4">
+                  <div className="mt-3 sm:mt-4">
                     <img
                       src={newArtwork.imagePreview}
                       alt="Artwork preview"
-                      className="w-full max-w-md h-64 object-cover rounded-lg border border-gray-200 mx-auto"
+                      className="w-full max-w-md h-48 sm:h-56 md:h-64 object-cover rounded-lg border border-gray-200 mx-auto"
                     />
                   </div>
                 )}
               </div>
 
               {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                  className="px-4 sm:px-6 py-2 sm:py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors text-sm sm:text-base"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isUploadingArtwork}
-                  className="px-6 py-2.5 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 sm:px-6 py-2 sm:py-2.5 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
                   {isUploadingArtwork ? (editingArtwork ? 'Updating...' : 'Publishing...') : (editingArtwork ? 'Update' : 'Publish')}
                 </button>
@@ -644,36 +740,45 @@ export default function ArtScapeProfile({
       )}
 
 
-      {/* Hero Banner */}
-      <div className="relative h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
+      {/* Hero Banner with Profile Image Overlaid */}
+      <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
         <img
           src={getBannerImage(resolvedProfileData.bannerImage)}
           alt="Profile banner"
           className="w-full h-full object-cover"
         />
+        {/* Profile Image - Overlaid on top of banner */}
+        <div className="absolute bottom-0 left-1/2 sm:left-6 lg:left-8 transform -translate-x-1/2 sm:translate-x-0 translate-y-1/2 flex-shrink-0 z-20">
+          <img
+            src={getProfileImage(resolvedProfileData.profileImage)}
+            alt={resolvedProfileData.name}
+            className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full border-1 border-white shadow-xl bg-white"
+          />
+        </div>
       </div>
 
       {/* Profile Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
-        <div className="flex items-end justify-between">
-          {/* Profile Image */}
-          <div className="flex items-end space-x-6">
-            <img
-              src={getProfileImage(resolvedProfileData.profileImage)}
-              alt={resolvedProfileData.name}
-              className="w-48 h-48 rounded-full border-1 border-white shadow-xl bg-white"
-              style={{ marginBottom: '7rem' }}
-
-            />
-
-            {/* Profile Info */}
-            <div className="pb-6">
-              <h1 className="text-3xl font-bold text-gray-900">{resolvedProfileData.name}</h1>
-              <p className="text-gray-600 mt-1 mb-3">
-                {/* Assuming you've separated bio and specialization in userData, using the correct field here */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 sm:gap-0">
+          {/* Profile Image and Info Container */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 w-full sm:w-auto">
+            {/* Profile Info - Always in white area below banner */}
+            <div className="pb-0 sm:pb-6 text-center sm:text-left w-full sm:w-auto pt-12 sm:pt-0 sm:ml-32 md:ml-40 lg:ml-48">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{resolvedProfileData.name}</h1>
+              {resolvedProfileData.username && (
+                <p className="text-sm sm:text-base text-gray-500 mt-1">
+                  @{resolvedProfileData.username}
+                </p>
+              )}
+              <p className="text-sm sm:text-base text-gray-600 mt-1 mb-2 sm:mb-3">
                 {resolvedProfileData.artisticSpecialization}
               </p>
-              <div className="flex items-center space-x-6 mt-2 text-sm mb-4">
+              {resolvedProfileData.bio && (
+                <p className="text-sm sm:text-base text-gray-700 mt-3 sm:mt-4 mb-3 sm:mb-4 max-w-4xl leading-relaxed">
+                  {resolvedProfileData.bio}
+                </p>
+              )}
+              <div className="flex items-center justify-center sm:justify-start space-x-4 sm:space-x-6 mt-2 text-xs sm:text-sm mb-3 sm:mb-4">
                 <Link
                   to={`/profile/${resolvedProfileId}/followers`}
                   className="hover:underline cursor-pointer"
@@ -688,30 +793,20 @@ export default function ArtScapeProfile({
                   <span><strong>{resolvedProfileData.following}</strong> Following</span>
                 </Link>
               </div>
-              <p className="text-gray-700 mt-5 mb-6 max-w-4xl leading-relaxed">
-                {resolvedProfileData.bio && (
-                  <p className="text-gray-700 mt-2 mb-6 max-w-4xl leading-relaxed">
-                    {resolvedProfileData.bio}
-                  </p>
-                )}
-              </p>
-
             </div>
           </div>
 
           {/* Action Button */}
-          <div className="pb-6">
+          <div className="pb-0 sm:pb-6 w-full sm:w-auto flex justify-center sm:justify-end mt-0 sm:mt-0">
             {isOwnProfile ? (
-
-              <div className="flex items-center gap-3">
-
+              <div className="flex items-center gap-2 sm:gap-3">
                 {/* Settings Icon Button */}
                 <button
                   type="button"
                   onClick={() => setOpen(true)}
-                  className="p-2.5 bg-white border border-gray-300 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="p-2 sm:p-2.5 bg-white border border-gray-300 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
                 >
-                  <Settings className="w-5 h-5 text-gray-700" />
+                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
                 </button>
 
                 <SettingsSidebar open={open} setOpen={setOpen} />
@@ -729,17 +824,15 @@ export default function ArtScapeProfile({
                       window.location.href = '/edit-profile';
                     }
                   }}
-                  className="bg-black text-white px-8 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium cursor-pointer"
+                  className="bg-black text-white px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium cursor-pointer text-sm sm:text-base"
                 >
                   Edit Profile
                 </button>
-
               </div>
-
             ) : (
               <button
                 onClick={handleFollowClick}
-                className={`px-8 py-2.5 rounded-full transition-colors font-medium ${isFollowing
+                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-full transition-colors font-medium text-sm sm:text-base ${isFollowing
                   ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
                   : 'bg-black text-white hover:bg-gray-800'
                   }`}
@@ -748,28 +841,27 @@ export default function ArtScapeProfile({
               </button>
             )}
           </div>
-
         </div>
 
         {/* Divider line */}
         <div className="border-b border-gray-200 mt-0"></div>
 
         {/* Tabs Navigation */}
-        <div className="bg-white border-b border-gray-200 mt-8">
-          <div className="flex space-x-12 px-4">
+        <div className="bg-white border-b border-gray-200 mt-4 sm:mt-8">
+          <div className="flex space-x-4 sm:space-x-8 md:space-x-12 px-2 sm:px-4 overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 border-b-2 transition-colors ${activeTab === tab.id
+                  className={`flex items-center gap-1 sm:gap-2 py-3 sm:py-4 border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === tab.id
                     ? 'border-black text-black font-medium'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                     }`}
                 >
-                  <Icon className="w-5 h-5" />
-                  {tab.label}
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base">{tab.label}</span>
                 </button>
               );
             })}
@@ -782,30 +874,29 @@ export default function ArtScapeProfile({
           {activeTab === 'gallery' && (
             <>
               {artworkList.length > 0 || showAddArtworkTile ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8 px-2 sm:px-4">
                   {showAddArtworkTile && (
                     <button
                       type="button"
                       onClick={() => setIsAddingArtwork(true)}
-                      className="border-2 border-dashed border-gray-300 rounded-3xl flex flex-col items-center justify-center text-center p-6 mx-auto bg-white hover:border-gray-400 hover:bg-gray-50 transition-colors"
-                      style={{ width: '245px', height: '305px' }}
+                      className="border-2 border-dashed border-gray-300 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center p-4 sm:p-6 bg-white hover:border-gray-400 hover:bg-gray-50 transition-colors w-full aspect-[4/5] min-h-[280px] sm:min-h-[305px]"
                     >
-                      <div className="w-20 h-20 rounded-full border border-gray-300 flex items-center justify-center mb-4">
-                        <span className="text-5xl text-gray-400 leading-none">+</span>
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-gray-300 flex items-center justify-center mb-3 sm:mb-4">
+                        <span className="text-4xl sm:text-5xl text-gray-400 leading-none">+</span>
                       </div>
-                      <p className="text-lg font-semibold text-gray-900">Add New Artwork</p>
-                      <p className="text-sm text-gray-500 mt-1">Click to add your artwork</p>
+                      <p className="text-base sm:text-lg font-semibold text-gray-900">Add New Artwork</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1">Click to add your artwork</p>
                     </button>
                   )}
                   {artworkList.map((artwork) => (
                     <div key={artwork.id} className="group">
                       <div
-                        className={`relative bg-white overflow-hidden hover:shadow-2xl transition-shadow ${artwork.artworkType === 'Marketplace' ? 'cursor-pointer' : ''}`}
+                        className={`relative bg-white overflow-hidden rounded-lg hover:shadow-2xl transition-shadow ${artwork.artworkType === 'Marketplace' ? 'cursor-pointer' : ''}`}
                       >
                         <img
                           src={artwork.image}
                           alt={artwork.title}
-                          className="w-full h-72 object-cover"
+                          className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover"
                         />
                         {/* Edit and Delete Buttons - Only show for own profile */}
                         {isOwnProfile && (
@@ -815,10 +906,10 @@ export default function ArtScapeProfile({
                                 e.stopPropagation();
                                 handleEditArtwork(artwork);
                               }}
-                              className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+                              className="p-1.5 sm:p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
                               title="Edit artwork"
                             >
-                              <Edit2 className="w-4 h-4 text-gray-700" />
+                              <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-700" />
                             </button>
                             <button
                               onClick={(e) => {
@@ -826,29 +917,29 @@ export default function ArtScapeProfile({
                                 handleDeleteArtwork(artwork.id);
                               }}
                               disabled={isDeletingArtwork === artwork.id}
-                              className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                              className="p-1.5 sm:p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors disabled:opacity-50"
                               title="Delete artwork"
                             >
-                              <Trash2 className="w-4 h-4 text-red-600" />
+                              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" />
                             </button>
                           </div>
                         )}
                       </div>
-                      <div className="mt-3">
-                        <h3 className="text-base font-medium text-gray-900">{artwork.title}</h3>
+                      <div className="mt-2 sm:mt-3">
+                        <h3 className="text-sm sm:text-base font-medium text-gray-900 line-clamp-1">{artwork.title}</h3>
                         {artwork.artworkType === 'Explore' ? (
                           <>
                             {artwork.description && (
-                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{artwork.description}</p>
+                              <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 line-clamp-2">{artwork.description}</p>
                             )}
                           </>
                         ) : (
                           <>
                             {artwork.description && (
-                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{artwork.description}</p>
+                              <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 line-clamp-2">{artwork.description}</p>
                             )}
                             {artwork.price && (
-                              <span className="text-lg font-bold text-gray-900 mt-2 block">{artwork.price} ر.س</span>
+                              <span className="text-base sm:text-lg font-bold text-gray-900 mt-1 sm:mt-2 block">{artwork.price} ر.س</span>
                             )}
                           </>
                         )}
@@ -857,8 +948,8 @@ export default function ArtScapeProfile({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No artworks yet</p>
+                <div className="text-center py-8 sm:py-12 text-gray-500 px-4">
+                  <p className="text-sm sm:text-base">No artworks yet</p>
                 </div>
               )}
             </>
@@ -866,25 +957,25 @@ export default function ArtScapeProfile({
 
           {/* Likes Tab */}
           {activeTab === 'likes' && (
-            <div className="text-center py-12 px-4">
-              <Heart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">No liked artworks yet</p>
+            <div className="text-center py-8 sm:py-12 px-4">
+              <Heart className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-300 mb-3 sm:mb-4" />
+              <p className="text-sm sm:text-base text-gray-500">No liked artworks yet</p>
             </div>
           )}
 
           {/* Saved Tab */}
           {activeTab === 'saved' && (
-            <div className="text-center py-12 px-4">
-              <Bookmark className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">No saved artworks yet</p>
+            <div className="text-center py-8 sm:py-12 px-4">
+              <Bookmark className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-300 mb-3 sm:mb-4" />
+              <p className="text-sm sm:text-base text-gray-500">No saved artworks yet</p>
             </div>
           )}
 
           {/* Purchased History Tab */}
           {activeTab === 'purchased' && (
-            <div className="text-center py-12 px-4">
-              <Clock className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">No purchase history yet</p>
+            <div className="text-center py-8 sm:py-12 px-4">
+              <Clock className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-300 mb-3 sm:mb-4" />
+              <p className="text-sm sm:text-base text-gray-500">No purchase history yet</p>
             </div>
           )}
         </div>
