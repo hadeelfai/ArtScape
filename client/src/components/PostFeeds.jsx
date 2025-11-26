@@ -4,6 +4,7 @@ import {toast} from 'sonner'
 import CommentsSection from './CommentsSection'
 import { getCommentCount } from '../api/comments'
 import { format } from "timeago.js";
+import { Link } from 'react-router-dom';
 
 function PostFeeds({refreshKey  , onStartEditing}){
 
@@ -197,8 +198,14 @@ const handleDeletePost = async (postId) => {
                 <div className='flex-1'>
                     <div className='flex items-center gap-2'> 
 
-                        <span>{post?.user?.name}</span>
-                        <span>{post?.user?.email}</span>
+                        <Link 
+                            to={`/profile/${post?.user?._id}`} 
+                            className="font-medium hover:underline"
+                        >
+                             {post?.user?.name}
+                        </Link>
+
+                        {/** <span>{post?.user?.email}</span> remove the email from posts*/}
                         <span className='text-gray-400 text-sm'>{format(post?.createdAt)}</span>
                     </div>
                     <p className='mt-2 whitespace-prepwrap'> {post?.text}</p>
@@ -235,7 +242,6 @@ const handleDeletePost = async (postId) => {
                         
                                 </span>
                                 </button>
-
 
                                  {/* Edit post button */}
                                 <button
