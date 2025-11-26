@@ -1,15 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { sendContactMessage } from "../api/contact";
 import { toast } from "sonner";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 function ContactUs() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     email: "",
     message: "",
   });
+
+  useEffect(() => {
+    // Get user info from localStorage
+    const userData = localStorage.getItem("artscape:user");
+    if (!userData) {
+      
+      navigate("/signin"); // Redirect user if not logged in
+      return;
+    }
+
+    const user = JSON.parse(userData);
+    setForm((prev) => ({
+      ...prev,
+      name: user.name || "",
+      email: user.email || "",
+    }));
+  }, [navigate]);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -20,7 +39,7 @@ function ContactUs() {
     try {
       await sendContactMessage(form);
       toast.success("Message sent successfully!");
-      setForm({ name: "", email: "", message: "" });
+      setForm((prev) => ({ ...prev, message: "" })); // clear only message if sent
     } catch {
       toast.error("Failed to send message");
     }
@@ -29,19 +48,19 @@ function ContactUs() {
   return (
     <>
       <Navbar />
-
-      {/* TO FIX NAVBAR OVERLAP + CENTER CONTENT */}
       <div
         style={{
-          paddingTop: "100px",   // keeps content below Navbar
+          paddingTop: "100px",
           paddingBottom: "50px",
-          minHeight: "80vh",     // pushes Footer to bottom
+          minHeight: "80vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
         }}
       >
-        <h1 style={{ marginBottom: "20px" , fontWeight: "bold" , fontSize: '25px'}}>Contact Us</h1>
+        <h1 style={{ marginBottom: "20px", fontWeight: "bold", fontSize: "25px" }}>
+          Contact Us
+        </h1>
 
         <form
           onSubmit={handleSubmit}
@@ -54,21 +73,17 @@ function ContactUs() {
           }}
         >
           <input
-            name="name"
-            placeholder="Your Name"
             value={form.name}
-            onChange={handleChange}
             required
+            readOnly // prevent editing
             style={{ padding: "12px", borderRadius: "6px", border: "1px solid #ccc" }}
           />
 
           <input
-            name="email"
-            placeholder="Your Email"
             type="email"
             value={form.email}
-            onChange={handleChange}
             required
+            readOnly
             style={{ padding: "12px", borderRadius: "6px", border: "1px solid #ccc" }}
           />
 
@@ -97,7 +112,7 @@ function ContactUs() {
               cursor: "pointer",
               transition: "background 0.3s ease",
             }}
-            onMouseEnter={(e) => (e.target.style.background = "gray")}//for page button hover
+            onMouseEnter={(e) => (e.target.style.background = "gray")}
             onMouseLeave={(e) => (e.target.style.background = "black")}
           >
             Send Message

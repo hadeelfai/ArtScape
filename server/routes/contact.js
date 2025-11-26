@@ -21,7 +21,8 @@ router.post("/", async (req, res) => {
     });
     //message format
     const mailOptions = {
-      from: `"${name}" <${process.env.ADMIN_EMAIL}>`,
+      from: `"${name}" <${process.env.ADMIN_EMAIL}>`, //sent from artscape email to prevent block
+      replyTo: email,//reply to user's email
       to: process.env.ADMIN_EMAIL,
       subject: "New Contact Form Message",
       html: `
