@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Heart, Bookmark, Image, Clock, X, Edit2, Trash2 } from 'lucide-react';
+import { Settings, Heart, Bookmark, Image, Clock, X, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
+import SettingsSidebar from "../components/SettingsSidebar";
 
 const DEFAULT_PROFILE = {
   id: 'user-1',
@@ -45,7 +46,7 @@ const getBannerImage = (image) => {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
-export default function ArtScapeProfile({ 
+export default function ArtScapeProfile({
   userData: userDataProp = null,
   artworks: artworksProp = [],
   loggedInUserId: loggedInUserIdProp = null
@@ -81,7 +82,7 @@ export default function ArtScapeProfile({
         const response = await fetch(`${API_BASE_URL}/users/profile/${targetUserId}`, {
           credentials: 'include'
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.user) {
@@ -119,10 +120,10 @@ export default function ArtScapeProfile({
 
   // Create a stable reference for artworks using useMemo
   const mappedArtworks = useMemo(() => {
-    const artworksToUse = profileData.artworks && profileData.artworks.length > 0 
-      ? profileData.artworks 
+    const artworksToUse = profileData.artworks && profileData.artworks.length > 0
+      ? profileData.artworks
       : (artworksProp.length > 0 ? artworksProp : []);
-    
+
     return artworksToUse.map(artwork => ({
       id: artwork._id || artwork.id,
       title: artwork.title,
@@ -142,7 +143,7 @@ export default function ArtScapeProfile({
   // Update artworkList when profile data is fetched
   useEffect(() => {
     const currentArtworksStr = JSON.stringify(mappedArtworks);
-    
+
     // Only update if the artworks have actually changed
     if (currentArtworksStr !== prevArtworksRef.current) {
       setArtworkList(mappedArtworks);
@@ -295,22 +296,22 @@ export default function ArtScapeProfile({
       }
 
       const result = await response.json();
-      
+
       if (editingArtwork) {
         // Update in local state
-        setArtworkList((prev) => prev.map(art => 
-          art.id === editingArtwork.id 
+        setArtworkList((prev) => prev.map(art =>
+          art.id === editingArtwork.id
             ? {
-                ...art,
-                title: result.artwork.title,
-                description: result.artwork.description,
-                tags: result.artwork.tags,
-                dimensions: result.artwork.dimensions,
-                year: result.artwork.year,
-                artworkType: result.artwork.artworkType,
-                price: result.artwork.price,
-                image: result.artwork.image
-              }
+              ...art,
+              title: result.artwork.title,
+              description: result.artwork.description,
+              tags: result.artwork.tags,
+              dimensions: result.artwork.dimensions,
+              year: result.artwork.year,
+              artworkType: result.artwork.artworkType,
+              price: result.artwork.price,
+              image: result.artwork.image
+            }
             : art
         ));
         alert('Artwork updated successfully!');
@@ -331,7 +332,7 @@ export default function ArtScapeProfile({
         setArtworkList((prev) => [artworkToAdd, ...prev]);
         alert('Artwork published successfully!');
       }
-      
+
       // Reset form
       setNewArtwork({
         title: '',
@@ -346,7 +347,7 @@ export default function ArtScapeProfile({
       });
       setIsAddingArtwork(false);
       setEditingArtwork(null);
-      
+
       // Cleanup blob URL
       if (newArtwork.imagePreview && newArtwork.imageFile) {
         URL.revokeObjectURL(newArtwork.imagePreview);
@@ -436,17 +437,22 @@ export default function ArtScapeProfile({
     };
   }, [artworkList]);
 
+
+  const [open, setOpen] = useState(false);
+
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       {/* Modal Overlay - Moved to top level to ensure it's above Navbar */}
       {isAddingArtwork && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4"
           onClick={handleCloseModal}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative z-[10000]"
             onClick={(e) => e.stopPropagation()}
           >
@@ -620,12 +626,12 @@ export default function ArtScapeProfile({
         </div>
       )}
 
-        
+
       {/* Hero Banner */}
       <div className="relative h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
-        <img 
-          src={getBannerImage(resolvedProfileData.bannerImage)} 
-          alt="Profile banner" 
+        <img
+          src={getBannerImage(resolvedProfileData.bannerImage)}
+          alt="Profile banner"
           className="w-full h-full object-cover"
         />
       </div>
@@ -635,30 +641,30 @@ export default function ArtScapeProfile({
         <div className="flex items-end justify-between">
           {/* Profile Image */}
           <div className="flex items-end space-x-6">
-            <img 
-              src={getProfileImage(resolvedProfileData.profileImage)} 
-              alt={resolvedProfileData.name} 
-              className="w-48 h-48 rounded-full border-8 border-white shadow-xl bg-white"
+            <img
+              src={getProfileImage(resolvedProfileData.profileImage)}
+              alt={resolvedProfileData.name}
+              className="w-48 h-48 rounded-full border-1 border-white shadow-xl bg-white"
               style={{ marginBottom: '7rem' }}
-              
+
             />
-            
+
             {/* Profile Info */}
             <div className="pb-6">
               <h1 className="text-3xl font-bold text-gray-900">{resolvedProfileData.name}</h1>
-              <p className="text-gray-600 mt-1 mb-3"> 
-                    {/* Assuming you've separated bio and specialization in userData, using the correct field here */}
-                    {resolvedProfileData.artisticSpecialization} 
-                </p>
+              <p className="text-gray-600 mt-1 mb-3">
+                {/* Assuming you've separated bio and specialization in userData, using the correct field here */}
+                {resolvedProfileData.artisticSpecialization}
+              </p>
               <div className="flex items-center space-x-6 mt-2 text-sm mb-4">
-                <Link 
+                <Link
                   to={`/profile/${resolvedProfileId}/followers`}
                   className="hover:underline cursor-pointer"
                 >
                   <span><strong>{resolvedProfileData.followers}</strong> Followers</span>
                 </Link>
                 <span className="text-gray-400">|</span>
-                <Link 
+                <Link
                   to={`/profile/${resolvedProfileId}/following`}
                   className="hover:underline cursor-pointer"
                 >
@@ -667,49 +673,67 @@ export default function ArtScapeProfile({
               </div>
               <p className="text-gray-700 mt-5 mb-6 max-w-4xl leading-relaxed">
                 {resolvedProfileData.bio && (
-                                <p className="text-gray-700 mt-2 mb-6 max-w-4xl leading-relaxed">
-                                    {resolvedProfileData.bio}
-                                </p>
-                            )}
+                  <p className="text-gray-700 mt-2 mb-6 max-w-4xl leading-relaxed">
+                    {resolvedProfileData.bio}
+                  </p>
+                )}
               </p>
-              
+
             </div>
           </div>
 
           {/* Action Button */}
           <div className="pb-6">
             {isOwnProfile ? (
-              <button 
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  try {
-                    navigate('/edit-profile');
-                  } catch (error) {
-                    console.error('Navigation error:', error);
-                    window.location.href = '/edit-profile';
-                  }
-                }}
-                className="bg-black text-white px-8 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium cursor-pointer"
-              >
-                Edit Profile
-              </button>
+
+              <div className="flex items-center gap-3">
+
+                {/* Settings Icon Button */}
+                <button
+                  type="button"
+                  onClick={() => setOpen(true)}
+                  className="p-2.5 bg-white border border-gray-300 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <Settings className="w-5 h-5 text-gray-700" />
+                </button>
+
+                <SettingsSidebar open={open} setOpen={setOpen} />
+
+                {/* Edit Profile Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try {
+                      navigate('/edit-profile');
+                    } catch (error) {
+                      console.error('Navigation error:', error);
+                      window.location.href = '/edit-profile';
+                    }
+                  }}
+                  className="bg-black text-white px-8 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium cursor-pointer"
+                >
+                  Edit Profile
+                </button>
+
+              </div>
+
             ) : (
-              <button 
+              <button
                 onClick={handleFollowClick}
-                className={`px-8 py-2.5 rounded-full transition-colors font-medium ${
-                  isFollowing 
-                    ? 'bg-gray-200 text-gray-900 hover:bg-gray-300' 
-                    : 'bg-black text-white hover:bg-gray-800'
-                }`}
+                className={`px-8 py-2.5 rounded-full transition-colors font-medium ${isFollowing
+                  ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                  : 'bg-black text-white hover:bg-gray-800'
+                  }`}
               >
                 {isFollowing ? 'Following' : 'Follow'}
               </button>
             )}
           </div>
+
         </div>
-        
+
         {/* Divider line */}
         <div className="border-b border-gray-200 mt-0"></div>
 
@@ -722,11 +746,10 @@ export default function ArtScapeProfile({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 border-b-2 transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-black text-black font-medium'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`flex items-center gap-2 py-4 border-b-2 transition-colors ${activeTab === tab.id
+                    ? 'border-black text-black font-medium'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   {tab.label}
@@ -759,11 +782,11 @@ export default function ArtScapeProfile({
                   )}
                   {artworkList.map((artwork) => (
                     <div key={artwork.id} className="group">
-                      <div 
+                      <div
                         className={`relative bg-white overflow-hidden hover:shadow-2xl transition-shadow ${artwork.artworkType === 'Marketplace' ? 'cursor-pointer' : ''}`}
                       >
-                        <img 
-                          src={artwork.image} 
+                        <img
+                          src={artwork.image}
                           alt={artwork.title}
                           className="w-full h-72 object-cover"
                         />
