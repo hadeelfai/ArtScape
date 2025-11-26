@@ -3,18 +3,12 @@ import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Settings, Heart, Bookmark, Image, Clock, X, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
+import SettingsSidebar from "../components/SettingsSidebar";
+import { toast } from 'sonner';
+import AdminProfile from "./AdminProfile";
 
-const DEFAULT_PROFILE = {
-  id: 'user-1',
-  name: 'ArtScape Artist',
-  artisticSpecialization: 'Mixed Media Artist',
-  bio: 'Welcome to ArtScape! Update your profile to share your story.',
-  followers: 0,
-  following: 0,
-  profileImage: '/Profileimages/User.jpg',
-  bannerImage: '/Profileimages/Cover.jpg',
-  artworks: []
-};
+const DEFAULT_PROFILE_IMAGE = '/Profileimages/User.jpg';
+const DEFAULT_BANNER_IMAGE = '/Profileimages/Cover.jpg';
 
 // Old backend defaults that should be replaced
 const OLD_DEFAULT_PROFILE_IMAGE = '/assets/images/profilepicture.jpg';
@@ -52,8 +46,9 @@ export default function ArtScapeProfile({
 }) {
   const { userId: routeUserId } = useParams();
   const navigate = useNavigate();
-  const { user: authUser, getUserById } = useAuth();
-  const [profileData, setProfileData] = useState(DEFAULT_PROFILE);
+  const location = useLocation();
+  const { user: authUser } = useAuth();
+  const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
@@ -535,12 +530,6 @@ export default function ArtScapeProfile({
     };
   }, [artworkList]);
 
-  //If logged-in user is admin, show the AdminProfile instead of this page
-  if (isAdmin) {
-    return <AdminProfile />;
-  }
-
-
 
   const [open, setOpen] = useState(false);
 
@@ -561,6 +550,11 @@ export default function ArtScapeProfile({
       </>
     );
   }
+  // If logged-in user is an admin, use the admin profile page instead
+if (authUser?.role === "admin") {
+  return <AdminProfile />;
+}
+
 
   if (!resolvedProfileData) {
     // You may want a brief fallback UI, but this should be nearly instant redirect
