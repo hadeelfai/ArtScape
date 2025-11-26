@@ -8,6 +8,7 @@ export default function SignInPage() {
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
+    username: '',
     password: ''
   });
   const [error, setError] = useState('');
@@ -24,14 +25,22 @@ export default function SignInPage() {
     setError('');
     setIsLoading(true);
 
+    // ✅ التحقق من أن اليوزرنيم مطلوب
+    if (!formData.username.trim()) {
+      setError('Username is required');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const result = await login(formData.email, formData.password);
+      // نمرّر اليوزرنيم كـ باراميتر ثالث لو حبيتي تستخدميه في الباك إند لاحقاً
+      const result = await login(formData.email, formData.password, formData.username);
       
-     if (result.success) {
-  navigate('/profile');   
-} else {
-  setError(result.error || 'Login failed. Please check your credentials.');
-}
+      if (result.success) {
+        navigate('/profile');
+      } else {
+        setError(result.error || 'Login failed. Please check your credentials.');
+      }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       console.error('Login error:', err);
@@ -54,11 +63,33 @@ export default function SignInPage() {
 
         <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pt-24 lg:pt-24">
           <div className="w-full max-w-md lg:max-w-lg">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-8 lg:mb-12">Welcome Back</h1>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-8 lg:mb-12">
+              Welcome Back
+            </h1>
 
             <form onSubmit={handleLogin} className="space-y-4 lg:space-y-5">
+
+              {/* Username (required) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Username <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  placeholder="@sara_alshareef"
+                  required
+                  className="w-full px-4 py-2.5 lg:py-3 text-sm lg:text-base bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   name="email"
@@ -70,8 +101,11 @@ export default function SignInPage() {
                 />
               </div>
 
+              {/* Password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
                 <input
                   type="password"
                   name="password"
@@ -84,7 +118,9 @@ export default function SignInPage() {
               </div>
 
               <div className="flex justify-end">
-                <a href="#" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Forgot Password?</a>
+                <a href="#" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Forgot Password?
+                </a>
               </div>
 
               {error && (
