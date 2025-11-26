@@ -20,8 +20,7 @@ function CommunityPage() {
                 
                 <button className={`flex-1 text-center py-3 font-semibold${activeTab === "following" ? 
                     "border border-b-4 border-black font-bold" : "text-gray-500"}`} 
-                    onClick={() => setActiveTab("following")}>Following</button>
-                
+                    onClick={() => setActiveTab("following")}>Following</button>         
             </div>
               <Post
                 editingPost={editingPost}
@@ -33,6 +32,7 @@ function CommunityPage() {
               />
             <PostFeeds
               refreshKey={refreshKey}
+              //activeTab={activeTab}
               onStartEditing={(post) => {
                 setEditingPost(post)
                 window.scrollTo({ top: 0, behavior: "smooth" })
