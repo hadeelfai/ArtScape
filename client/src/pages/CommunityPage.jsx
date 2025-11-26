@@ -4,8 +4,12 @@ import PostFeeds from "../components/PostFeeds"
 import Navbar from "../components/Navbar"
 
 function CommunityPage() {
-    const [editingPost, setEditingPost] = useState(null)
 
+  const loggedInUser = localStorage.getItem("artscape:user")
+    ? JSON.parse(localStorage.getItem("artscape:user"))
+    : null;
+
+    const [editingPost, setEditingPost] = useState(null)
     const [activeTab, setActiveTab] = useState("foryou")
     const [refreshKey, setRefreshKey] = useState(0);   
     return(       
@@ -31,13 +35,14 @@ function CommunityPage() {
               }}
               />
             <PostFeeds
-              refreshKey={refreshKey}
-              //activeTab={activeTab}
-              onStartEditing={(post) => {
-                setEditingPost(post)
-                window.scrollTo({ top: 0, behavior: "smooth" })
-              }}
-            /> 
+                refreshKey={refreshKey}
+                activeTab={activeTab}
+                loggedInUser={loggedInUser}
+                onStartEditing={(post) => {
+                    setEditingPost(post)
+                    window.scrollTo({ top: 0, behavior: "smooth" })
+                }}
+            />
          </div>
     )
     

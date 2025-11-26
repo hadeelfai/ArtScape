@@ -15,6 +15,13 @@ function Post({ onPostCreated, editingPost, onEditCompleted }) {
   }, [editingPost])
 
   const handlePost = async () => {
+    const user = JSON.parse(localStorage.getItem("artscape:user"))
+    const token = user?.token
+    if (!token) {
+      toast.error("You must sign in to post")
+      return
+    }
+    
     if (!text && !uploadedImage) {
       toast.error("Please add an image or description")
       return
