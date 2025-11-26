@@ -427,4 +427,15 @@ router.get('/profile/:id/following', async (req, res) => {
     }
 })
 
+// Get all users (for gallery)
+router.get('/', async (req, res) => {
+  try {
+    // only pick safe fields
+    const users = await User.find({}, 'id _id name username profileImage avatar');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router

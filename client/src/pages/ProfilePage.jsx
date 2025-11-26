@@ -667,10 +667,12 @@ export default function ArtScapeProfile({
             />
 
             {/* Profile Info */}
-            <div className="pb-6">
+            <div className="pb-2">
               <h1 className="text-3xl font-bold text-gray-900">{resolvedProfileData.name}</h1>
+              <div className="text-gray-500 mt-1 mb-2 text-xl">
+                @{resolvedProfileData.username || (resolvedProfileData.name && resolvedProfileData.name.replace(/\s+/g, '').toLowerCase())}
+              </div>
               <p className="text-gray-600 mt-1 mb-3">
-                {/* Assuming you've separated bio and specialization in userData, using the correct field here */}
                 {resolvedProfileData.artisticSpecialization}
               </p>
               <div className="flex items-center space-x-6 mt-2 text-sm mb-4">

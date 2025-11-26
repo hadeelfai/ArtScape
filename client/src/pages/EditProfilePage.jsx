@@ -676,21 +676,25 @@ export default function EditProfilePage() {
         <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-8">Edit Profile</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Username field at the top */}
+          <div className="mb-6">
+            <label className="block text-lg font-medium text-gray-700 mb-2">Username <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={e => setFormData({ ...formData, username: e.target.value })}
+              required
+              pattern="^[a-zA-Z0-9_]{3,30}$"
+              placeholder="e.g. artbyname"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-700"
+            />
+            {(!formData.username || !/^[a-zA-Z0-9_]{3,30}$/.test(formData.username)) && (
+              <div className="text-red-500 text-sm mt-1">A valid username is required (letters, numbers, underscores, 3-30 chars)</div>
+            )}
+          </div>
 
-            {/* Username */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                onFocus={handleFieldFocus}
-                placeholder="username"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* First Name  */}
             <div>
@@ -1073,7 +1077,7 @@ export default function EditProfilePage() {
           <div className="mt-8 flex items-center gap-4">
             <button
               onClick={handleSaveChanges}
-              disabled={isSaving}
+              disabled={isSaving || !formData.username || !/^[a-zA-Z0-9_]{3,30}$/.test(formData.username)}
               className="bg-black text-white px-12 py-3 rounded-full hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? 'Saving...' : 'Save Changes'}

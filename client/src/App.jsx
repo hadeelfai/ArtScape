@@ -12,6 +12,8 @@ import Layout from './components/Layout';
 import { Toaster } from 'sonner';
 import GalleryPage from './pages/GalleryPage';
 import AdminProfile from './pages/AdminProfile';
+import ExplorePage from './pages/ExplorePage';
+import MarketplacePage from './pages/MarketplacePage';
 
 
 const App = () => {
@@ -46,6 +48,9 @@ const App = () => {
         {/* Profile Routes */}
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
+
+        <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/marketplace" element={<MarketplacePage />} />
 
         {/* Followers / Following */}
         <Route path="/profile/followers" element={<FollowerPage />} />

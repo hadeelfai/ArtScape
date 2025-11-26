@@ -21,8 +21,8 @@ const Navbar = () => {
       name: "Gallery",
       path: "/GalleryPage",
       submenu: [
-        { name: "Explore", path: "/GalleryPage/explore" },
-        { name: "Marketplace", path: "/GalleryPage/marketplace" }
+        { name: "Explore", path: "/explore" },
+        { name: "Marketplace", path: "/marketplace" }
       ]
     },
     { name: "Community", path: "/CommunityPage" },
