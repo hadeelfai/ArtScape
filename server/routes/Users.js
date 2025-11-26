@@ -5,14 +5,14 @@ import User from '../models/User.js'
 import Artwork from '../models/Artwork.js'
 
 const router = express.Router()
-//import { authMiddleware } from '../middleware/AuthMiddleware.js'
+
 
 function setAuthCookie(res, token) {
     res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000 //1 week
+        maxAge: 7 * 24 * 60 * 60 * 1000 
     })
 }
 
@@ -115,7 +115,7 @@ function buildProfileUpdatePayload(body) {
     return payload
 }
 
-// POST - Register new user
+//POST - Register new user
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body
@@ -136,6 +136,7 @@ router.post('/register', async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                role: user.role,  
                 profileImage: user.profileImage || null, // ✅ Added
                 bannerImage: user.bannerImage || null, // ✅ Added
                 bio: user.bio || null, // ✅ Added
@@ -156,6 +157,13 @@ router.post('/login', async (req, res) => {
         const { password, email } = req.body
         const user = await User.findOne({ email })
         if (!user) return res.status(404).json({ message: "user not found" })
+            //Blocked and suspended users cannot log in
+        if (user.accountStatus === "blocked") {
+            return res.status(403).json({ message: "Your account is blocked. Please contact support." });
+        }
+        if (user.accountStatus === "suspended") {
+            return res.status(403).json({ message: "Your account is suspended." });
+        }
         const isMatch = await bcrypt.compare(password, user.password)
         if (!isMatch) return res.status(400).json({ message: 'invalid password' })
 
@@ -172,6 +180,7 @@ router.post('/login', async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                role: user.role,    
                 profileImage: user.profileImage || null, // ✅ Added
                 bannerImage: user.bannerImage || null, // ✅ Added
                 bio: user.bio || null, // ✅ Added
@@ -354,6 +363,70 @@ router.post('/follow/:id', async (req, res) => {
         res.status(500).json({ error: error.message })
     }
 })
+
+// =========================
+// ADMIN: USER MANAGEMENT
+// =========================
+
+// GET /users  -> list all users (no passwords)
+router.get('/', async (req, res) => {
+    try {
+        const users = await User.find().select('-password');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PATCH /users/:id/status  -> set accountStatus: active | suspended | blocked
+router.patch('/:id/status', async (req, res) => {
+    try {
+        const { status } = req.body;
+
+        const allowed = ['active', 'suspended', 'blocked'];
+        if (!allowed.includes(status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { accountStatus: status },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({
+            message: `User account ${status} successfully`,
+            user
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE /users/:id  -> admin permanently deletes user
+router.delete('/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        // If you want to mimic "cannot delete with active orders",
+        // here you would check for related documents (orders). 
+        // For now we just delete artworks + user.
+        await Artwork.deleteMany({ artist: userId });
+        const deleted = await User.findByIdAndDelete(userId);
+
+        if (!deleted) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({ message: 'User account deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Get user's followers list
 router.get('/profile/:id/followers', async (req, res) => {

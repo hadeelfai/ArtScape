@@ -1,20 +1,33 @@
 import React, { useState, useEffect, useRef } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { useAuth } from "../context/AuthContext";
 
 const API_BASE = "http://localhost:5500";
 
 function AdminProfile() {
+  const { isAdmin } = useAuth();
+
   const [activeSection, setActiveSection] = useState("content");
 
-  // ------- NEWS + ARTICLES (from DB) -------
-  const [newsItems, setNewsItems] = useState([]);      // type: "news"
-  const [articles, setArticles] = useState([]);        // type: "article"
+  //News and  Articles from DB 
+  const [newsItems, setNewsItems] = useState([]);      //type: "news"
+  const [articles, setArticles] = useState([]);        //type: "article"
   const [loadingContent, setLoadingContent] = useState(false);
   const [contentError, setContentError] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
-  const [formType, setFormType] = useState("news");    // "news" or "article"
-  const [editingId, setEditingId] = useState(null);    // _id when editing
+  const [formType, setFormType] = useState("news");    //"news" or "article"
+  const [editingId, setEditingId] = useState(null);    //_id when editing
+
+  //Manageing Users 
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState("");
+
+  //Managing artwork
+  const [artworks, setArtworks] = useState([]);
+  const [artworksLoading, setArtworksLoading] = useState(false);
+  const [artworksError, setArtworksError] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -28,17 +41,15 @@ function AdminProfile() {
 
   const fileInputRef = useRef(null);
 
-  // ------- ARTWORKS (for delete) -------
-  const [artworks, setArtworks] = useState([]);
-  const [artworksLoading, setArtworksLoading] = useState(false);
-  const [artworksError, setArtworksError] = useState("");
-
-  // Load news, articles, and artworks when admin page opens
+  //Admin dashboard
   useEffect(() => {
+    if (!isAdmin) return;
+
     fetchNewsByType("news");
     fetchNewsByType("article");
     fetchAllArtworks();
-  }, []);
+    fetchUsers();
+  }, [isAdmin]);
 
   async function fetchNewsByType(type) {
     try {
@@ -113,8 +124,8 @@ function AdminProfile() {
     const payload = {
       title: formData.title,
       badge: formData.badge,
-      text: formData.text,        // short description
-      content: formData.content,  // full article
+      text: formData.text,        //short description
+      content: formData.content,  //full article
       date: formData.date,
       image: formData.image,
       type: formType,
@@ -124,14 +135,14 @@ function AdminProfile() {
     try {
       let res;
       if (editingId) {
-        // EDIT existing
+        //Update existing item
         res = await fetch(`${API_BASE}/news/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
       } else {
-        // CREATE new
+        //Creating new item
         res = await fetch(`${API_BASE}/news`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -142,7 +153,7 @@ function AdminProfile() {
       if (!res.ok) throw new Error("Failed to save news item");
       const saved = await res.json();
 
-      // Update state list
+      //Update local list
       if (saved.type === "news") {
         if (editingId) {
           setNewsItems((prev) =>
@@ -161,7 +172,7 @@ function AdminProfile() {
         }
       }
 
-      // Reset form
+      //Reset form
       setFormData({
         title: "",
         badge: "",
@@ -183,7 +194,7 @@ function AdminProfile() {
   }
 
   function handleEdit(item) {
-    setFormType(item.type);      // "news" or "article"
+    setFormType(item.type);      //"news" or "article"
     setEditingId(item._id);
     setFormData({
       title: item.title || "",
@@ -253,6 +264,90 @@ function AdminProfile() {
     }
   }
 
+  async function fetchUsers() {
+    try {
+      setUsersLoading(true);
+      setUsersError("");
+
+      const res = await fetch(`${API_BASE}/users`);
+      if (!res.ok) throw new Error("Failed to fetch users");
+
+      const data = await res.json();
+      setUsers(data);
+    } catch (error) {
+      console.error(error);
+      setUsersError("Error loading users.");
+    } finally {
+      setUsersLoading(false);
+    }
+  }
+
+  async function updateUserStatus(id, status) {
+    const confirmMsg =
+      status === "blocked"
+        ? "Block this user? They will not be able to login."
+        : status === "suspended"
+        ? "Suspend this user?"
+        : "Activate this user again?";
+
+    const ok = window.confirm(confirmMsg);
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/users/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update status");
+      const data = await res.json();
+
+      // Update local list
+      setUsers((prev) =>
+        prev.map((u) => (u._id === id ? data.user : u))
+      );
+
+      alert(data.message || "User status updated successfully.");
+    } catch (error) {
+      console.error(error);
+      alert("Error updating user status.");
+    }
+  }
+
+  async function handleDeleteUser(id) {
+    const ok = window.confirm(
+      "Are you sure you want to permanently delete this user?"
+    );
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/users/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete user");
+
+      setUsers((prev) => prev.filter((u) => u._id !== id));
+      alert("User deleted successfully.");
+    } catch (error) {
+      console.error(error);
+      alert("Error deleting user.");
+    }
+  }
+
+  //If a non-admin somehow reaches this component
+  if (!isAdmin) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen flex items-center justify-center">
+          <p>You are not authorized to view this page.</p>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar />
@@ -280,6 +375,17 @@ function AdminProfile() {
             }
           >
             User Artworks
+          </button>
+
+          <button
+            onClick={() => setActiveSection("users")}
+            className={
+              activeSection === "users"
+                ? "px-4 py-2 rounded bg-black text-white"
+                : "px-4 py-2 rounded border"
+            }
+          >
+            Users
           </button>
         </div>
 
@@ -580,6 +686,80 @@ function AdminProfile() {
                       className="mt-2 text-xs border rounded px-2 py-1 text-red-600"
                     >
                       Delete Artwork
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* USERS SECTION */}
+        {activeSection === "users" && (
+          <section className="space-y-4">
+            <h2 className="text-2xl font-semibold">Manage Users</h2>
+
+            {usersError && (
+              <p className="text-sm text-red-600">{usersError}</p>
+            )}
+
+            <button
+              type="button"
+              onClick={fetchUsers}
+              className="px-3 py-1 border rounded text-sm mb-2"
+            >
+              Refresh users
+            </button>
+
+            {usersLoading && <p>Loading users...</p>}
+
+            {!usersLoading && users.length === 0 && (
+              <p className="text-sm text-gray-600">
+                No users found or not loaded yet.
+              </p>
+            )}
+
+            <div className="space-y-3">
+              {users.map((user) => (
+                <div
+                  key={user._id}
+                  className="border rounded p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                >
+                  <div>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                    <p className="text-xs text-gray-500">
+                      Status:{" "}
+                      <span className="font-semibold">
+                        {user.accountStatus || "active"}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <button
+                      onClick={() => updateUserStatus(user._id, "suspended")}
+                      className="px-3 py-1 border rounded"
+                    >
+                      Suspend
+                    </button>
+                    <button
+                      onClick={() => updateUserStatus(user._id, "blocked")}
+                      className="px-3 py-1 border rounded"
+                    >
+                      Block
+                    </button>
+                    <button
+                      onClick={() => updateUserStatus(user._id, "active")}
+                      className="px-3 py-1 border rounded"
+                    >
+                      Activate
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(user._id)}
+                      className="px-3 py-1 border rounded text-red-600"
+                    >
+                      Delete
                     </button>
                   </div>
                 </div>

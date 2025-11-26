@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Heart, Bookmark, Image, Clock, X, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
+import AdminProfile from "./AdminProfile";
 
 const DEFAULT_PROFILE = {
   id: 'user-1',
@@ -52,7 +53,7 @@ export default function ArtScapeProfile({
 }) {
   const { userId: routeUserId } = useParams();
   const navigate = useNavigate();
-  const { user: authUser, getUserById } = useAuth();
+  const { user: authUser, isAdmin } = useAuth();
   const [profileData, setProfileData] = useState(DEFAULT_PROFILE);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -435,6 +436,12 @@ export default function ArtScapeProfile({
       }
     };
   }, [artworkList]);
+
+  //If logged-in user is admin, show the AdminProfile instead of this page
+  if (isAdmin) {
+    return <AdminProfile />;
+  }
+
 
   return (
     <div className="min-h-screen bg-gray-50">

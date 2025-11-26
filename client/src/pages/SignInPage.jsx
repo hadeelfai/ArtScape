@@ -27,12 +27,11 @@ export default function SignInPage() {
     try {
       const result = await login(formData.email, formData.password);
       
-      if (result.success) {
-        // Redirect to home page on success
-        navigate('/');
-      } else {
-        setError(result.error || 'Login failed. Please check your credentials.');
-      }
+     if (result.success) {
+  navigate('/profile');   
+} else {
+  setError(result.error || 'Login failed. Please check your credentials.');
+}
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       console.error('Login error:', err);

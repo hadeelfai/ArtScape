@@ -28,6 +28,7 @@ const MOCK_USERS = {
 const AuthContext = createContext({
   user: null,
   isAuthenticated: false,
+  isAdmin: false,        
   setUser: () => {},
   getUserById: () => null,
   login: async () => {},
@@ -105,6 +106,7 @@ export const AuthProvider = ({ children }) => {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
+        role: data.user.role || 'user',   //NEW
         profileImage: data.user.profileImage || data.user.profile_image || null, // Added this
         artisticSpecialization: data.user.artisticSpecialization || data.user.artistic_specialization || null,
         bio: data.user.bio || null,
@@ -160,6 +162,7 @@ export const AuthProvider = ({ children }) => {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
+        role: data.user.role || 'user',
         profileImage: data.user.profileImage || data.user.profile_image || null, // Added this
         artisticSpecialization: data.user.artisticSpecialization || data.user.artistic_specialization || null,
         bio: data.user.bio || null,
@@ -194,6 +197,7 @@ export const AuthProvider = ({ children }) => {
     () => ({
       user,
       isAuthenticated: Boolean(user && user.token),
+      isAdmin: Boolean(user && user.role === 'admin'),
       setUser,
       getUserById,
       login,
