@@ -1,7 +1,6 @@
 import express from 'express'
 import Post from '../models/Posts.js'
 import {authMiddleware} from '../middleware/AuthMiddleware.js'
-import Report from "../models/Report.js";
 import cloudinary from '../utils/cloudinary.js'
 import nodemailer from "nodemailer";
 
@@ -148,45 +147,6 @@ router.post("/:postId/report", authMiddleware, async (req, res) => {
 });
 
 
-
-/** 
-// Report a post
-router.post("/report/:id", authMiddleware, async (req, res) => {
-  try {
-    const postId = req.params.id;
-
-    // Ensure post exists
-    const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({ error: "Post not found" });
-
-    // Save report
-    const report = await Report.create({
-      post: postId,
-      user: req.user?.id,        // the reporting user
-      reason: req.body.reason,
-    });
-
-    res.json({ message: "Report submitted", report });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to report post" });
-  }
-});
-
-//to get all reports
-
-router.get("/reports", async (req, res) => {
-  try {
-    const reports = await Report.find()
-    .populate("post")
-    .populate("user", "name email"); 
-
-  res.json(reports);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch reports" });
-  }
-    
-});
-*/
 
 
 export default router

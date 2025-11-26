@@ -23,22 +23,22 @@ function CommunityPage() {
                     onClick={() => setActiveTab("following")}>Following</button>
                 
             </div>
-            <Post
-  editingPost={editingPost}
-  onPostCreated={() => setRefreshKey(prev => prev + 1)}
-  onEditCompleted={() => {
-    setRefreshKey(prev => prev + 1); // refresh feed after edit
-    setEditingPost(null);            // reset editing state
-  }}
-/>
-      <PostFeeds
-        refreshKey={refreshKey}
-        onStartEditing={(post) => {
-          setEditingPost(post)
-          window.scrollTo({ top: 0, behavior: "smooth" })
-        }}
-      /> 
-        </div>
+              <Post
+                editingPost={editingPost}
+                onPostCreated={() => setRefreshKey(prev => prev + 1)}
+              onEditCompleted={() => {
+              setRefreshKey(prev => prev + 1); // refresh feed after edit
+              setEditingPost(null);            
+              }}
+              />
+            <PostFeeds
+              refreshKey={refreshKey}
+              onStartEditing={(post) => {
+                setEditingPost(post)
+                window.scrollTo({ top: 0, behavior: "smooth" })
+              }}
+            /> 
+         </div>
     )
     
 }

@@ -42,7 +42,6 @@ function PostFeeds({refreshKey  , onStartEditing}){
     });
 
     if (!res.ok) throw new Error("Failed to report post");
-
     toast.success("Post reported");
   } catch (error) {
     console.error(error);
@@ -96,7 +95,8 @@ const handleUpdatedPost = (updatedPost) => {
             const data = await res.json()
 
             setPosts(prevPosts => 
-                prevPosts.map(post => post._id === postId? {...post ,
+                prevPosts.map(post => post._id === postId? 
+                    {...post ,
                     likes : Array(data.likesCount).fill(null),
                     isLikedByUser : data.liked } : post)
             )
@@ -137,6 +137,13 @@ const handleDeletePost = async (postId) => {
         try {
             setLoading(true)
             setErr("")
+            
+            const token = localStorage.getItem("artscape:user")
+            ? JSON.parse(localStorage.getItem("artscape:user"))
+            : null;
+
+            const userId = token?.id;
+
             const res = await fetch ("http://localhost:5500/posts" ,{
                 method: "GET",
                 headers:{"Content-Type" : "application/json"}
@@ -145,7 +152,6 @@ const handleDeletePost = async (postId) => {
             if(!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json()
             setPosts(data)
-
 
             const counts = {}
             await Promise.all(

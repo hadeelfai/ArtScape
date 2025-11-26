@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { UserPlus, UserMinus, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/Navbar';
+import { toast } from 'sonner';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
@@ -27,51 +29,70 @@ export default function FollowersFollowingPage() {
 
   const currentUserId = authUser?.id;
   const targetUserId = userId || currentUserId;
+  const isOwnProfile = userId === currentUserId || (!userId && currentUserId);
 
   // Update tab when URL changes
   useEffect(() => {
     setActiveTab(getDefaultTab());
   }, [location.pathname]);
 
-  // Fetch user profile info
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      if (!targetUserId) {
-        setIsLoading(false);
-        return;
-      }
+  // Function to fetch user profile info
+  const fetchUserInfo = useCallback(async () => {
+    if (!targetUserId) {
+      return;
+    }
 
-      try {
-        const response = await fetch(`${API_BASE_URL}/users/profile/${targetUserId}`, {
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.user) {
-            setUserName(data.user.name || 'User');
-            setFollowersCount(data.user.followers || 0);
-            setFollowingCount(data.user.following || 0);
-          }
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/profile/${targetUserId}`, {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          setUserName(data.user.name || 'User');
+          setFollowersCount(data.user.followers || 0);
+          setFollowingCount(data.user.following || 0);
         }
-      } catch (error) {
-        console.error('Error fetching user info:', error);
       }
-    };
-
-    fetchUserInfo();
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+    }
   }, [targetUserId]);
+
+  // Fetch user profile info on mount
+  useEffect(() => {
+    fetchUserInfo();
+  }, [fetchUserInfo]);
 
   // Fetch followers/following data
   useEffect(() => {
     const fetchData = async () => {
       if (!targetUserId) {
         setIsLoading(false);
+        setFollowers([]);
+        setFollowing([]);
         return;
       }
 
       try {
         setIsLoading(true);
+        
+        // Fetch current user's following list to check isFollowing status
+        let currentUserFollowing = [];
+        if (currentUserId) {
+          try {
+            const currentUserResponse = await fetch(`${API_BASE_URL}/users/profile/${currentUserId}/following`, {
+              credentials: 'include'
+            });
+            if (currentUserResponse.ok) {
+              const currentUserData = await currentUserResponse.json();
+              currentUserFollowing = (currentUserData.following || []).map(u => u.id);
+            }
+          } catch (error) {
+            console.error('Error fetching current user following:', error);
+          }
+        }
         
         // Fetch followers
         const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${targetUserId}/followers`, {
@@ -80,7 +101,11 @@ export default function FollowersFollowingPage() {
         
         if (followersResponse.ok) {
           const followersData = await followersResponse.json();
-          setFollowers(followersData.followers || []);
+          const followersWithStatus = (followersData.followers || []).map(follower => ({
+            ...follower,
+            isFollowing: currentUserFollowing.includes(follower.id)
+          }));
+          setFollowers(followersWithStatus);
           setFollowersCount(followersData.count || 0);
         }
 
@@ -91,7 +116,12 @@ export default function FollowersFollowingPage() {
         
         if (followingResponse.ok) {
           const followingData = await followingResponse.json();
-          setFollowing(followingData.following || []);
+          const followingWithStatus = (followingData.following || []).map(followed => ({
+            ...followed,
+            // If viewing own profile, all are being followed. Otherwise check current user's following list.
+            isFollowing: isOwnProfile ? true : currentUserFollowing.includes(followed.id)
+          }));
+          setFollowing(followingWithStatus);
           setFollowingCount(followingData.count || 0);
         }
       } catch (error) {
@@ -102,35 +132,142 @@ export default function FollowersFollowingPage() {
     };
 
     fetchData();
-  }, [targetUserId]);
+  }, [targetUserId, currentUserId, isOwnProfile]);
 
-  const handleFollowToggle = (targetUserId, listType) => {
-    if (listType === 'followers') {
-      setFollowers(followers.map(user => 
-        user.id === targetUserId 
-          ? { ...user, isFollowing: !user.isFollowing }
-          : user
-      ));
-    } else {
-      setFollowing(following.map(user => 
-        user.id === targetUserId 
-          ? { ...user, isFollowing: !user.isFollowing }
-          : user
-      ));
+  const handleFollowToggle = async (targetUserId, listType) => {
+    if (!currentUserId) {
+      toast.error('Please log in to follow users');
+      return;
     }
-    // TODO: Call API to follow/unfollow user
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/follow/${targetUserId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId: currentUserId })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newIsFollowing = data.isFollowing;
+
+        // Update local state
+        if (listType === 'followers') {
+          setFollowers(followers.map(user => 
+            user.id === targetUserId 
+              ? { ...user, isFollowing: newIsFollowing }
+              : user
+          ));
+        } else {
+          setFollowing(following.map(user => 
+            user.id === targetUserId 
+              ? { ...user, isFollowing: newIsFollowing }
+              : user
+          ));
+        }
+
+        // Show success message
+        toast.success(newIsFollowing ? 'Followed successfully' : 'Unfollowed successfully');
+
+        // Refresh user info to get updated counts
+        // This updates the profile being viewed (their followers count if we followed them)
+        await fetchUserInfo();
+        
+        // If we followed/unfollowed the profile owner (the user whose profile we're viewing),
+        // refresh the followers/following lists to get updated counts
+        const profileOwnerId = userId || currentUserId;
+        if (targetUserId === profileOwnerId) {
+          // Refresh the lists to get updated counts
+          const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${profileOwnerId}/followers`, {
+            credentials: 'include'
+          });
+          if (followersResponse.ok) {
+            const followersData = await followersResponse.json();
+            setFollowersCount(followersData.count || 0);
+          }
+          
+          const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${profileOwnerId}/following`, {
+            credentials: 'include'
+          });
+          if (followingResponse.ok) {
+            const followingData = await followingResponse.json();
+            setFollowingCount(followingData.count || 0);
+          }
+        }
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to follow/unfollow user');
+      }
+    } catch (error) {
+      console.error('Error following/unfollowing user:', error);
+      toast.error('Failed to follow/unfollow user. Please try again.');
+    }
   };
 
-  const handleRemoveFollower = (targetUserId) => {
-    setFollowers(followers.filter(user => user.id !== targetUserId));
-    // TODO: Call API to remove follower
-    alert('Follower removed');
+  const handleRemoveFollower = async (targetUserId) => {
+    if (!currentUserId) {
+      toast.error('Please log in');
+      return;
+    }
+
+    try {
+      // Remove follower by unfollowing them (they unfollow you)
+      const response = await fetch(`${API_BASE_URL}/users/follow/${currentUserId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId: targetUserId })
+      });
+
+      if (response.ok) {
+        setFollowers(followers.filter(user => user.id !== targetUserId));
+        // Refresh user info to get updated counts
+        await fetchUserInfo();
+        toast.success('Follower removed successfully');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to remove follower');
+      }
+    } catch (error) {
+      console.error('Error removing follower:', error);
+      toast.error('Failed to remove follower. Please try again.');
+    }
   };
 
-  const handleUnfollow = (targetUserId) => {
-    setFollowing(following.filter(user => user.id !== targetUserId));
-    // TODO: Call API to unfollow user
-    alert('Unfollowed user');
+  const handleUnfollow = async (targetUserId) => {
+    if (!currentUserId) {
+      toast.error('Please log in');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/follow/${targetUserId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId: currentUserId })
+      });
+
+      if (response.ok) {
+        setFollowing(following.filter(user => user.id !== targetUserId));
+        // Refresh user info to get updated counts
+        await fetchUserInfo();
+        toast.success('Unfollowed successfully');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to unfollow user');
+      }
+    } catch (error) {
+      console.error('Error unfollowing user:', error);
+      toast.error('Failed to unfollow user. Please try again.');
+    }
   };
 
   const handleTabChange = (tab) => {
@@ -143,8 +280,6 @@ export default function FollowersFollowingPage() {
       navigate(`${profilePath}/following`, { replace: true });
     }
   };
-
-  const isOwnProfile = userId === currentUserId || (!userId && currentUserId);
   
   // Get profile link
   const getProfileLink = () => {
@@ -152,9 +287,32 @@ export default function FollowersFollowingPage() {
     return '/profile';
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 flex items-center justify-center min-h-[60vh]">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!targetUserId) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 flex items-center justify-center min-h-[60vh]">
+          <p className="text-gray-600">Please log in to view followers/following</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Navbar />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
         
         {/* Header */}
         <div className="mb-6">
@@ -205,16 +363,16 @@ export default function FollowersFollowingPage() {
                     <div key={user.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition-colors">
                       <Link to={`/profile/${user.id}`} className="flex items-center space-x-4 flex-1">
                         <img
-                          src={user.profileImage}
+                          src={user.profileImage || '/Profileimages/User.jpg'}
                           alt={user.name}
                           className="w-16 h-16 rounded-full object-cover cursor-pointer hover:opacity-80"
+                          onError={(e) => { e.target.onerror = null; e.target.src = '/Profileimages/User.jpg'; }}
                         />
                         <div>
                           <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-gray-600">
                             {user.name}
                           </h3>
                           <p className="text-sm text-gray-500">{user.username}</p>
-                          <p className="text-sm text-gray-600 mt-1">{user.bio}</p>
                         </div>
                       </Link>
 
@@ -262,16 +420,16 @@ export default function FollowersFollowingPage() {
                     <div key={user.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition-colors">
                       <Link to={`/profile/${user.id}`} className="flex items-center space-x-4 flex-1">
                         <img
-                          src={user.profileImage}
+                          src={user.profileImage || '/Profileimages/User.jpg'}
                           alt={user.name}
                           className="w-16 h-16 rounded-full object-cover cursor-pointer hover:opacity-80"
+                          onError={(e) => { e.target.onerror = null; e.target.src = '/Profileimages/User.jpg'; }}
                         />
                         <div>
                           <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-gray-600">
                             {user.name}
                           </h3>
                           <p className="text-sm text-gray-500">{user.username}</p>
-                          <p className="text-sm text-gray-600 mt-1">{user.bio}</p>
                         </div>
                       </Link>
 

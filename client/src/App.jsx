@@ -12,6 +12,9 @@ import Layout from './components/Layout';
 import { Toaster } from 'sonner';
 import GalleryPage from './pages/GalleryPage';
 import AdminProfile from './pages/AdminProfile';
+import ExplorePage from './pages/ExplorePage';
+import MarketplacePage from './pages/MarketplacePage';
+import ContactUs from './pages/ContactUs';
 
 
 const App = () => {
@@ -31,13 +34,13 @@ const App = () => {
         <Route path="/GalleryPage" element={<GalleryPage />} />
 
         <Route 
-          path="/CommunityPage" 
-          element={
+          path="/CommunityPage" element={
             <Layout>
               <CommunityPage />
             </Layout>
           }
         />
+        <Route path="/contact" element={<ContactUs /> }/>
 
         <Route path="/News" element={<News />} />
         <Route path="/news/:id" element={<ArticleDetailPage />} />
@@ -46,6 +49,9 @@ const App = () => {
         {/* Profile Routes */}
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
+
+        <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/marketplace" element={<MarketplacePage />} />
 
         {/* Followers / Following */}
         <Route path="/profile/followers" element={<FollowerPage />} />

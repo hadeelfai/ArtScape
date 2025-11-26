@@ -194,6 +194,20 @@ router.post('/login', async (req, res) => {
     }
 })
 
+// POST - Logout user
+router.post('/logout', (req, res) => {
+    try {
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        })
+        res.status(200).json({ message: 'user logged out successfully' })
+    } catch (error) {
+        res.status(500).json({ error: error.message || 'Failed to log out' })
+    }
+})
+
 
 router.get('/:id', async (req, res) => {
     try {
@@ -485,5 +499,16 @@ router.get('/profile/:id/following', async (req, res) => {
         res.status(500).json({ error: error.message })
     }
 })
+
+// Get all users (for gallery)
+router.get('/', async (req, res) => {
+  try {
+    // only pick safe fields
+    const users = await User.find({}, 'id _id name username profileImage avatar');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 export default router

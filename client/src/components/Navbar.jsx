@@ -21,8 +21,8 @@ const Navbar = () => {
       name: "Gallery",
       path: "/GalleryPage",
       submenu: [
-        { name: "Explore", path: "/GalleryPage/explore" },
-        { name: "Marketplace", path: "/GalleryPage/marketplace" }
+        { name: "Explore", path: "/explore" },
+        { name: "Marketplace", path: "/marketplace" }
       ]
     },
     { name: "Community", path: "/CommunityPage" },
@@ -179,26 +179,27 @@ const Navbar = () => {
                   <Mail className="w-5 h-5" />
                 </Link>
 
-                <div className={`${isOpen ? "text-white" : "text-black"}`}>
+                <div className={`${isOpen ? "text-white" : "text-black"}`}> 
                   <SearchBar variant='icon' />
                 </div>
 
-                <Link
-                  to="/profile"
-                  className="hover:opacity-60 transition-opacity"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-                    <img
-                      src={user?.profileImage || user?.avatar || '/Profileimages/User.jpg'}
-                      alt={user?.name || "User"}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = '/Profileimages/User.jpg';
-                      }}
-                    />
-                  </div>
-                </Link>
-
+                {user && user.profileImage && (
+                  <Link
+                    to="/profile"
+                    className="hover:opacity-60 transition-opacity"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+                      <img
+                        src={user.profileImage}
+                        alt={user.name || "User"}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = '/Profileimages/User.jpg';
+                        }}
+                      />
+                    </div>
+                  </Link>
+                )}
               </div>
             ) : (
               // Not Logged In State - Show Sign In Button

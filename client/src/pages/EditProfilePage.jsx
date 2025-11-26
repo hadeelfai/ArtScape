@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
@@ -294,7 +295,7 @@ export default function EditProfilePage() {
       }
 
       // Success
-      alert('Password changed successfully!');
+      toast.success('Password changed successfully!');
       
       // Reset form
       setPasswordFormData({
@@ -401,10 +402,10 @@ export default function EditProfilePage() {
         });
       }
       
-      alert('Cover photo uploaded and saved successfully!');
+      toast.success('Cover photo uploaded and saved successfully!');
     } catch (error) {
       console.error('Error uploading cover image:', error);
-      alert('Failed to upload cover photo. Please try again.');
+      toast.error('Failed to upload cover photo. Please try again.');
       // Revert to previous image on error
       setCoverImage(DEFAULT_COVER_IMAGE);
     } finally {
@@ -439,10 +440,10 @@ export default function EditProfilePage() {
         });
       }
       
-      alert('Profile picture uploaded and saved successfully!');
+      toast.success('Profile picture uploaded and saved successfully!');
     } catch (error) {
       console.error('Error uploading profile image:', error);
-      alert('Failed to upload profile picture. Please try again.');
+      toast.error('Failed to upload profile picture. Please try again.');
       // Revert to previous image on error
       setProfileImage(DEFAULT_PROFILE_IMAGE);
     } finally {
@@ -454,7 +455,7 @@ export default function EditProfilePage() {
 
   const handleSaveChanges = async () => {
     if (!authUser?.id) {
-      alert('Please log in to save your profile.');
+      toast.error('Please log in to save your profile.');
       return;
     }
 
@@ -519,7 +520,7 @@ export default function EditProfilePage() {
         });
       }
       
-      alert('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
       navigate('/profile');
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -531,7 +532,7 @@ export default function EditProfilePage() {
 
   const handleDeleteAccountClick = () => {
     if (!authUser?.id) {
-      alert('Please log in to delete your account.');
+      toast.error('Please log in to delete your account.');
       return;
     }
     setShowDeleteWarning(true);
@@ -573,9 +574,9 @@ export default function EditProfilePage() {
         throw new Error(errorData.error || 'Failed to delete account. Please check your password.');
       }
 
-      alert('Your account has been deleted successfully.');
+      toast.success('Your account has been deleted successfully.');
       setShowDeleteConfirmation(false);
-      logout();
+      await logout();
       navigate('/');
     } catch (error) {
       console.error('Error deleting account:', error);
@@ -676,7 +677,23 @@ export default function EditProfilePage() {
         <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-8">Edit Profile</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Username field at the top */}
+          <div className="mb-6">
+            <label className="block text-lg font-medium text-gray-700 mb-2">Username <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={e => setFormData({ ...formData, username: e.target.value })}
+              required
+              pattern="^[a-zA-Z0-9_]{3,30}$"
+              placeholder="e.g. artbyname"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-700"
+            />
+            {(!formData.username || !/^[a-zA-Z0-9_]{3,30}$/.test(formData.username)) && (
+              <div className="text-red-500 text-sm mt-1">A valid username is required (letters, numbers, underscores, 3-30 chars)</div>
+            )}
+          </div>
 
             {/* Username */}
             <div>
@@ -687,7 +704,7 @@ export default function EditProfilePage() {
                 value={formData.username}
                 onChange={handleInputChange}
                 onFocus={handleFieldFocus}
-                placeholder="username"
+                placeholder="Sara Alshareef.224"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
               />
             </div>
@@ -1073,7 +1090,7 @@ export default function EditProfilePage() {
           <div className="mt-8 flex items-center gap-4">
             <button
               onClick={handleSaveChanges}
-              disabled={isSaving}
+              disabled={isSaving || !formData.username || !/^[a-zA-Z0-9_]{3,30}$/.test(formData.username)}
               className="bg-black text-white px-12 py-3 rounded-full hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? 'Saving...' : 'Save Changes'}
@@ -1088,7 +1105,6 @@ export default function EditProfilePage() {
           </div>
         </div>
       </div>
-    </div>
 
     {/* Delete Account Warning Dialog */}
     {showDeleteWarning && (
