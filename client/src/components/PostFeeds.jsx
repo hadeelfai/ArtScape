@@ -29,15 +29,24 @@ function PostFeeds({refreshKey  , onStartEditing}){
 ///report button function
     const handleReportPost = async (postId) => {
   try {
-    //const res = await fetch(`http://localhost:5500/posts/report/${postId}`, {
-      //method: "POST",
-      //headers: { "Content-Type": "application/json" },
-    //});
-    //if (!res.ok) throw new Error("Failed to report post");
+    const token = localStorage.getItem("artscape:user")
+  ? JSON.parse(localStorage.getItem("artscape:user")).token
+  : null;
+    const res = await fetch(`http://localhost:5500/posts/${postId}/report`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: JSON.stringify({ reason: "Inappropriate content" }),
+    });
+
+    if (!res.ok) throw new Error("Failed to report post");
+
     toast.success("Post reported");
   } catch (error) {
-    //console.error(error);
-   // toast.error("Failed to report post");
+    console.error(error);
+    toast.error("Failed to report post");
   }
 };
 
@@ -256,10 +265,10 @@ const handleDeletePost = async (postId) => {
                                 <div className="ml-auto flex items-center gap-2">
                                 {/* Report button */}
                                         <button
-                                         onClick={() => handleReportPost(post._id)}
-                                         className="ml-auto text-gray-500 hover:text-yellow-600 "
+                                        onClick={() => handleReportPost(post._id)}
+                                        className="ml-auto text-gray-500 hover:text-yellow-600"
                                         >
-                                         <Flag className='h-5 w-5'></Flag>
+                                         <Flag className="h-5 w-5" />
                                         </button>
 
                                 {/*delete post button */}

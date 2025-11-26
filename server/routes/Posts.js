@@ -1,7 +1,9 @@
 import express from 'express'
 import Post from '../models/Posts.js'
 import {authMiddleware} from '../middleware/AuthMiddleware.js'
+import Report from "../models/Report.js";
 import cloudinary from '../utils/cloudinary.js'
+import nodemailer from "nodemailer";
 
 
 const router = express.Router()
@@ -101,5 +103,90 @@ router.put('/:id', authMiddleware, async (req, res) => {
         res.status(500).json({ error: error.message })
     }
 })
+
+//send email for post report
+router.post("/:postId/report", authMiddleware, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const postId = req.params.postId;
+
+    const post = await Post.findById(postId).populate("user");
+
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    // EMAIL SETUP
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.ADMIN_EMAIL,
+        pass: process.env.ADMIN_EMAIL_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: `"${req.user.name}" <x.artscape.x@gmail.com>`,
+      to: "x.artscape.x@gmail.com", 
+      subject: "Reported Post",
+      text: `
+        A post has been reported:
+        Reported Post ID: ${postId}
+        Reported By User: ${req.user.name} (${req.user.email})
+        Reason: ${reason}
+        Post Content:
+        ${post.text}
+        Image URL:
+        ${post.image}
+      `,
+    };
+    await transporter.sendMail(mailOptions);
+    return res.json({ message: "Report sent to admin email." });
+  } catch (err) {
+    console.error("Email sending failed:", err);
+    res.status(500).json({ error: "Failed to send report", details: err.message });
+}
+});
+
+
+
+/** 
+// Report a post
+router.post("/report/:id", authMiddleware, async (req, res) => {
+  try {
+    const postId = req.params.id;
+
+    // Ensure post exists
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    // Save report
+    const report = await Report.create({
+      post: postId,
+      user: req.user?.id,        // the reporting user
+      reason: req.body.reason,
+    });
+
+    res.json({ message: "Report submitted", report });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to report post" });
+  }
+});
+
+//to get all reports
+
+router.get("/reports", async (req, res) => {
+  try {
+    const reports = await Report.find()
+    .populate("post")
+    .populate("user", "name email"); 
+
+  res.json(reports);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch reports" });
+  }
+    
+});
+*/
+
 
 export default router

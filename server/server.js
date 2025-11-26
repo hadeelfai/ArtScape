@@ -9,6 +9,7 @@ import Artwork from './routes/Artworks.js'
 import cookieParser from 'cookie-parser'
 import News from './routes/News.js'
 import { authMiddleware } from './middleware/AuthMiddleware.js'
+//import postRoutes from "./routes/posts.js";
 
 
 dotenv.config()
@@ -29,6 +30,8 @@ app.use('/posts', Post);
 app.use('/comments',authMiddleware, Comment);
 app.use('/artworks', Artwork);
 app.use('/news', News)
+//app.use("/posts", postRoutes);
+
 
 // Connect to DB
 mongoose.connect(process.env.MONGO_URL)
