@@ -12,6 +12,7 @@ import Layout from './components/Layout';
 import { Toaster } from 'sonner';
 import GalleryPage from './pages/GalleryPage';
 import AdminProfile from './pages/AdminProfile';
+import ContactUs from './pages/ContactUs';
 
 
 const App = () => {
@@ -31,13 +32,13 @@ const App = () => {
         <Route path="/GalleryPage" element={<GalleryPage />} />
 
         <Route 
-          path="/CommunityPage" 
-          element={
+          path="/CommunityPage" element={
             <Layout>
               <CommunityPage />
             </Layout>
           }
         />
+        <Route path="/contact" element={<ContactUs /> }/>
 
         <Route path="/News" element={<News />} />
         <Route path="/news/:id" element={<ArticleDetailPage />} />
