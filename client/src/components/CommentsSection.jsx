@@ -188,13 +188,16 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                 comments?.map((comment) => (
                                     <div key={comment?._id} className='bg-gray-50 p-3 rounded-lg'>
 
-                                        <div className='flex gap-2'>
+                                        <div className='flex gap-2'>{/**need a check for comment profile pic */}
                                             <img className='h-8 w-8 rounded-full object-cover' 
                                             src={comment?.user?.profileImage || "/avatar.png"}/>
 
                                             <div className='flex-1'> 
                                                 <div className='flex items-center gap-2'>
-                                                    <span className='text-sm'>{comment?.user?.name}</span>
+                                                    <span className='text-sm'>
+                                                        {comment?.user?.name }</span>
+                                                    <span className='text-sm text-gray-600'> {/**username in comments */}
+                                                        @{comment?.user?.username }</span>
                                                     
                                                     <span className='text-gray-400 text-sm'>
                                                         {format(comment?.createdAt)}</span>
@@ -248,16 +251,17 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                     {comment?.replies?.map((reply, idx)=> (
                                                         
                                                         <div key={idx} className='flex gap-2'>
-                                                        <img src={reply?.user?.profileImage || "/avatar.png"} 
+                                                        <img src={reply?.user?.profileImage || '/avatar.png'} 
                                                         className='h-6 w-6 rounded-full object-cover'/>
 
                                                         <div className='flex-1 bg-white p-2 rounded'> 
 
                                                             <div className='flex items-center gap-2'> 
                                                                 <span className='font-semibold text-xs'>{reply?.user?.name}</span>
+                                                                <span className='font-semibold text-xs text-gray-500'>@{reply?.user?.username}</span>
                                                       
                                                                 <span className='text-gray-400 text-sm'>
-                                                                    {reply.createdAt ? format(reply.createdAt) : ""}
+                                                                    {reply?format(reply.createdAt) : ""}
                                                                 </span>
                                                             </div>
                                                             <p className='text-xs mt-1'>{reply?.text}</p>

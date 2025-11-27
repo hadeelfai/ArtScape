@@ -45,8 +45,8 @@ router.get('/:postId', async (req, res) => {
     const comments = await Comments.find({ post: req.params.postId })
     .sort({ createdAt: -1 })
     //
-    .populate("user", "name avatar")             
-      .populate("replies.user", "name avatar"); 
+    .populate("user", "name  profileImage username")             
+      .populate("replies.user", "name  profileImage username"); 
       //
     res.json(comments);
   } catch (error) {
@@ -84,8 +84,8 @@ router.post('/reply/:commentId', authMiddleware, async (req, res) => {
 
     // Populate user fields for comment and replies
     const populatedComment = await Comments.findById(comment._id)
-      .populate("user", "name avatar ")
-      .populate("replies.user", "name avatar ");
+      .populate("user", "name  profileImage username")
+      .populate("replies.user", "name  profileImage username");
 
     res.status(201).json(populatedComment);
   } catch (error) {
