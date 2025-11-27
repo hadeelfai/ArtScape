@@ -66,9 +66,15 @@ function buildProfileResponse(user, artworks = []) {
         },
         artworks: artworks.map(art => ({
             id: art._id?.toString(),
-            title: art.title,
-            description: art.description,
-            imageUrl: art.imageUrl,
+            _id: art._id?.toString(),
+            title: art.title || '',
+            description: art.description || '',
+            image: art.image,  // Keep the image field as-is - don't convert to undefined
+            tags: art.tags || '',
+            dimensions: art.dimensions || '',
+            year: art.year || '',
+            artworkType: art.artworkType || 'Explore',
+            price: art.price || null,
             createdAt: art.createdAt
         }))
     }
@@ -285,11 +291,23 @@ router.get('/:id', async (req, res) => {
 // Get user profile with artworks
 router.get('/profile/:id', async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select('-password')
+        const user = await User.findById(req.params.id)
+            .select('-password')
+            .populate('followersArray', '_id')
+            .populate('followingArray', '_id')
+        
         if (!user)
             return res.status(404).json({ error: 'User not found' })
 
         const artworks = await Artwork.find({ artist: req.params.id })
+
+        // Calculate actual counts after filtering out deleted users
+        const actualFollowersCount = user.followersArray.filter(f => f && f._id).length
+        const actualFollowingCount = user.followingArray.filter(f => f && f._id).length
+
+        // Update the user object with actual counts for buildProfileResponse
+        user.followers = actualFollowersCount
+        user.following = actualFollowingCount
 
         res.json(buildProfileResponse(user, artworks))
     } catch (error) {
@@ -323,6 +341,59 @@ router.put('/profile/:id', async (req, res) => {
         })
     } catch (error) {
         res.status(500).json({ error: error.message })
+    }
+})
+
+// Delete user profile
+router.delete('/profile/:id', async (req, res) => {
+    try {
+        const userId = req.params.id
+        const { password } = req.body
+
+        if (!password) {
+            return res.status(400).json({ error: 'Password is required to delete account' })
+        }
+
+        const user = await User.findById(userId)
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' })
+        }
+
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(password, user.password)
+
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: 'Invalid password. Please check your password and try again.' })
+        }
+
+        // Delete all artworks by this user
+        await Artwork.deleteMany({ artist: userId })
+
+        // Remove this user from all followers' following lists
+        await User.updateMany(
+            { followersArray: userId },
+            { 
+                $pull: { followersArray: userId },
+                $inc: { followers: -1 }
+            }
+        )
+
+        // Remove this user from all following's followers lists
+        await User.updateMany(
+            { followersArray: { $in: user.followingArray } },
+            {
+                $inc: { followers: -1 }
+            }
+        )
+
+        // Delete the user
+        await User.findByIdAndDelete(userId)
+
+        res.json({ message: 'Account deleted successfully' })
+    } catch (error) {
+        console.error('Error deleting user:', error)
+        res.status(500).json({ error: error.message || 'Failed to delete account' })
     }
 })
 
@@ -381,19 +452,26 @@ router.get('/:id/followers', async (req, res) => {
         if (!user)
             return res.status(404).json({ error: 'User not found' })
 
-        const followers = user.followersArray.map(follower => ({
-            id: follower._id.toString(),
-            name: follower.name,
-            username: follower.username || `@${follower.name.toLowerCase().replace(/\s+/g, '_')}`,
-            bio: follower.bio || '',
-            profileImage: follower.profileImage || '/assets/images/profilepicture.jpg',
-            followers: follower.followers || 0,
-            following: follower.following || 0
-        }))
+        // Filter out null/undefined followers (deleted users) and map to response format
+        const followers = user.followersArray
+            .filter(follower => follower && follower._id) // Remove null/undefined entries
+            .map(follower => ({
+                id: follower._id.toString(),
+                name: follower.name,
+                username: follower.username || `@${follower.name.toLowerCase().replace(/\s+/g, '_')}`,
+                bio: follower.bio || '',
+                profileImage: follower.profileImage || '/assets/images/profilepicture.jpg',
+                followers: follower.followers || 0,
+                following: follower.following || 0
+            }))
+
+        // Use the actual filtered array length instead of the stored count
+        // This ensures the count matches what's actually displayed
+        const actualCount = followers.length
 
         res.json({
             followers,
-            count: user.followers || 0
+            count: actualCount
         })
     } catch (error) {
         res.status(500).json({ error: error.message })
@@ -409,19 +487,26 @@ router.get('/:id/following', async (req, res) => {
         if (!user)
             return res.status(404).json({ error: 'User not found' })
 
-        const following = user.followingArray.map(followed => ({
-            id: followed._id.toString(),
-            name: followed.name,
-            username: followed.username || `@${followed.name.toLowerCase().replace(/\s+/g, '_')}`,
-            bio: followed.bio || '',
-            profileImage: followed.profileImage || '/assets/images/profilepicture.jpg',
-            followers: followed.followers || 0,
-            following: followed.following || 0
-        }))
+        // Filter out null/undefined following (deleted users) and map to response format
+        const following = user.followingArray
+            .filter(followed => followed && followed._id) // Remove null/undefined entries
+            .map(followed => ({
+                id: followed._id.toString(),
+                name: followed.name,
+                username: followed.username || `@${followed.name.toLowerCase().replace(/\s+/g, '_')}`,
+                bio: followed.bio || '',
+                profileImage: followed.profileImage || '/assets/images/profilepicture.jpg',
+                followers: followed.followers || 0,
+                following: followed.following || 0
+            }))
+
+        // Use the actual filtered array length instead of the stored count
+        // This ensures the count matches what's actually displayed
+        const actualCount = following.length
 
         res.json({
             following,
-            count: user.following || 0
+            count: actualCount
         })
     } catch (error) {
         res.status(500).json({ error: error.message })

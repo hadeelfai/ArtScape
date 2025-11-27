@@ -133,12 +133,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password, username) => {
+  const register = async (name, email, password, username, firstName = null, lastName = null, phoneNumber = null) => {
     try {
       console.log('=== REGISTER DEBUG INFO ===');
       console.log('API_BASE_URL:', API_BASE_URL);
       console.log('Full URL:', `${API_BASE_URL}/users/register`);
-      console.log('Request payload:', { name, email, username, password: '***' });
+      
+      const payload = { name, email, password, username };
+      // Always include firstName and lastName if provided (they're required fields)
+      if (firstName !== null && firstName !== undefined) payload.firstName = firstName;
+      if (lastName !== null && lastName !== undefined) payload.lastName = lastName;
+      // Only include phoneNumber if it has a value
+      if (phoneNumber && phoneNumber.trim() !== '') payload.phoneNumber = phoneNumber;
+      
+      console.log('Request payload:', { ...payload, password: '***' });
       
       const response = await fetch(`${API_BASE_URL}/users/register`, {
         method: 'POST',
@@ -146,7 +154,7 @@ export const AuthProvider = ({ children }) => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ name, email, password, username }),
+        body: JSON.stringify(payload),
       });
 
       console.log('Response status:', response.status);

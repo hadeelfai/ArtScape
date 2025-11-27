@@ -57,6 +57,7 @@ export default function EditProfilePage() {
     link: '',
     bio: ''
   });
+  const [usernameTouched, setUsernameTouched] = useState(false);
   
   const [profileImage, setProfileImage] = useState('/Profileimages/User.jpg');
   const [coverImage, setCoverImage] = useState('/Profileimages/Cover.jpg');
@@ -135,10 +136,10 @@ export default function EditProfilePage() {
             
             // Populate form with fetched data
             setFormData({
-              username: user.username || '',
+              username: user.username ? user.username.replace(/^@+/, '') : '',
               firstName: firstName,
               lastName: lastName,
-              phoneNumber: user.phoneNumber || '+966',
+              phoneNumber: user.phoneNumber || '',
               email: user.email || '',
               address: user.address || '',
               state: user.state || '',
@@ -570,8 +571,37 @@ export default function EditProfilePage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete account. Please check your password.');
+        let errorMessage = 'Failed to delete account. Please check your password.';
+        
+        try {
+          // Try to parse as JSON first
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } else {
+            // Response is not JSON (likely HTML error page)
+            const errorText = await response.text();
+            console.error('Non-JSON error response:', response.status, errorText.substring(0, 200));
+            if (response.status === 404) {
+              errorMessage = 'Account deletion endpoint not found. Please contact support.';
+            } else if (response.status === 401) {
+              errorMessage = 'Invalid password. Please check your password and try again.';
+            } else {
+              errorMessage = 'Server error occurred. Please try again or contact support.';
+            }
+          }
+        } catch (parseError) {
+          // If parsing fails, provide a user-friendly error message
+          console.error('Error parsing response:', parseError);
+          if (response.status === 404) {
+            errorMessage = 'Account deletion endpoint not found. Please contact support.';
+          } else {
+            errorMessage = 'An unexpected error occurred. Please try again.';
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       toast.success('Your account has been deleted successfully.');
@@ -580,7 +610,13 @@ export default function EditProfilePage() {
       navigate('/');
     } catch (error) {
       console.error('Error deleting account:', error);
-      setDeleteError(error.message || 'Failed to delete account. Please try again.');
+      // Check if error is a SyntaxError or JSON parse error
+      if (error instanceof SyntaxError || error.message.includes('JSON') || error.message.includes('Unexpected token')) {
+        setDeleteError('Server error occurred. The server returned an invalid response. Please try again or contact support.');
+      } else {
+        setDeleteError(error.message || 'Failed to delete account. Please try again.');
+      }
+      toast.error(error.message || 'Failed to delete account. Please try again.');
     } finally {
       setIsDeleting(false);
     }
@@ -677,36 +713,28 @@ export default function EditProfilePage() {
         <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-8">Edit Profile</h2>
           
-          {/* Username field at the top */}
-          <div className="mb-6">
-            <label className="block text-lg font-medium text-gray-700 mb-2">Username <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={e => setFormData({ ...formData, username: e.target.value })}
-              required
-              pattern="^[a-zA-Z0-9_]{3,30}$"
-              placeholder="e.g. artbyname"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-700"
-            />
-            {(!formData.username || !/^[a-zA-Z0-9_]{3,30}$/.test(formData.username)) && (
-              <div className="text-red-500 text-sm mt-1">A valid username is required (letters, numbers, underscores, 3-30 chars)</div>
-            )}
-          </div>
-
+          {/* Form Fields Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Username */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Username <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 name="username"
                 value={formData.username}
-                onChange={handleInputChange}
-                onFocus={handleFieldFocus}
-                placeholder="Sara Alshareef.224"
+                onChange={e => {
+                  setFormData({ ...formData, username: e.target.value });
+                  setUsernameTouched(true);
+                }}
+                onBlur={() => setUsernameTouched(true)}
+                required
+                pattern="^@?[a-zA-Z0-9_]{3,30}$"
+                placeholder="e.g. artbyname"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
               />
+              {usernameTouched && formData.username && !/^@?[a-zA-Z0-9_]{3,30}$/.test(formData.username) && (
+                <div className="text-red-500 text-sm mt-1">A valid username is required (letters, numbers, underscores, 3-30 chars)</div>
+              )}
             </div>
 
             {/* First Name  */}
@@ -874,12 +902,11 @@ export default function EditProfilePage() {
               <input
                 type="tel"
                 name="phoneNumber"
-                value={formData.phoneNumber}
+                value={formData.phoneNumber || ''}
                 onChange={handleInputChange}
                 onFocus={handleFieldFocus}
-               
+                placeholder="+966597423586"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-               
               />
             </div>
 
@@ -1090,7 +1117,7 @@ export default function EditProfilePage() {
           <div className="mt-8 flex items-center gap-4">
             <button
               onClick={handleSaveChanges}
-              disabled={isSaving || !formData.username || !/^[a-zA-Z0-9_]{3,30}$/.test(formData.username)}
+              disabled={isSaving || !formData.username || !/^@?[a-zA-Z0-9_]{3,30}$/.test(formData.username.trim())}
               className="bg-black text-white px-12 py-3 rounded-full hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? 'Saving...' : 'Save Changes'}
@@ -1105,6 +1132,7 @@ export default function EditProfilePage() {
           </div>
         </div>
       </div>
+    </div>
 
     {/* Delete Account Warning Dialog */}
     {showDeleteWarning && (

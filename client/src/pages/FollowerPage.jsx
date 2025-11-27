@@ -75,6 +75,10 @@ export default function FollowersFollowingPage() {
         return;
       }
 
+      // Ensure targetUserId is a string
+      const userIdString = String(targetUserId);
+      console.log('Fetching followers/following for user:', userIdString);
+
       try {
         setIsLoading(true);
         
@@ -82,7 +86,8 @@ export default function FollowersFollowingPage() {
         let currentUserFollowing = [];
         if (currentUserId) {
           try {
-            const currentUserResponse = await fetch(`${API_BASE_URL}/users/profile/${currentUserId}/following`, {
+            const currentUserStringId = String(currentUserId);
+            const currentUserResponse = await fetch(`${API_BASE_URL}/users/${currentUserStringId}/following`, {
               credentials: 'include'
             });
             if (currentUserResponse.ok) {
@@ -95,34 +100,81 @@ export default function FollowersFollowingPage() {
         }
         
         // Fetch followers
-        const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${targetUserId}/followers`, {
+        console.log('Fetching followers from:', `${API_BASE_URL}/users/${userIdString}/followers`);
+        const followersResponse = await fetch(`${API_BASE_URL}/users/${userIdString}/followers`, {
           credentials: 'include'
         });
         
         if (followersResponse.ok) {
           const followersData = await followersResponse.json();
-          const followersWithStatus = (followersData.followers || []).map(follower => ({
+          console.log('Followers API response:', followersData);
+          
+          // Ensure followers is an array
+          const followersArray = Array.isArray(followersData.followers) 
+            ? followersData.followers 
+            : [];
+          
+          const followersWithStatus = followersArray.map(follower => ({
             ...follower,
             isFollowing: currentUserFollowing.includes(follower.id)
           }));
+          
+          console.log('Processed followers:', followersWithStatus);
           setFollowers(followersWithStatus);
-          setFollowersCount(followersData.count || 0);
+          
+          // Use count from API response or fall back to array length
+          const count = followersData.count !== undefined 
+            ? followersData.count 
+            : followersArray.length;
+          setFollowersCount(count);
+        } else {
+          const errorText = await followersResponse.text();
+          console.error('Failed to fetch followers:', followersResponse.status, errorText);
+          try {
+            const errorData = JSON.parse(errorText);
+            console.error('Followers error data:', errorData);
+          } catch (e) {
+            // Error is not JSON, already logged as text
+          }
         }
 
         // Fetch following
-        const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${targetUserId}/following`, {
+        console.log('Fetching following from:', `${API_BASE_URL}/users/${userIdString}/following`);
+        const followingResponse = await fetch(`${API_BASE_URL}/users/${userIdString}/following`, {
           credentials: 'include'
         });
         
         if (followingResponse.ok) {
           const followingData = await followingResponse.json();
-          const followingWithStatus = (followingData.following || []).map(followed => ({
+          console.log('Following API response:', followingData);
+          
+          // Ensure following is an array
+          const followingArray = Array.isArray(followingData.following) 
+            ? followingData.following 
+            : [];
+          
+          const followingWithStatus = followingArray.map(followed => ({
             ...followed,
             // If viewing own profile, all are being followed. Otherwise check current user's following list.
             isFollowing: isOwnProfile ? true : currentUserFollowing.includes(followed.id)
           }));
+          
           setFollowing(followingWithStatus);
-          setFollowingCount(followingData.count || 0);
+          
+          // Use count from API response or fall back to array length
+          const count = followingData.count !== undefined 
+            ? followingData.count 
+            : followingArray.length;
+          setFollowingCount(count);
+        } else {
+          const errorText = await followingResponse.text();
+          console.error('Failed to fetch following:', followingResponse.status, errorText);
+          try {
+            const errorData = JSON.parse(errorText);
+            console.error('Following error data:', errorData);
+          } catch (e) {
+            // Error is not JSON, already logged as text
+          }
         }
       } catch (error) {
         console.error('Error fetching followers/following:', error);
@@ -134,14 +186,20 @@ export default function FollowersFollowingPage() {
     fetchData();
   }, [targetUserId, currentUserId, isOwnProfile]);
 
-  const handleFollowToggle = async (targetUserId, listType) => {
+  const handleFollowToggle = async (targetUserToFollowId, listType) => {
     if (!currentUserId) {
       toast.error('Please log in to follow users');
       return;
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/follow/${targetUserId}`, {
+      // Find the current state to determine new state
+      const userList = listType === 'followers' ? followers : following;
+      const currentUser = userList.find(u => u.id === targetUserToFollowId);
+      const currentlyFollowing = currentUser?.isFollowing || false;
+      const newIsFollowing = !currentlyFollowing;
+
+      const response = await fetch(`${API_BASE_URL}/users/follow/${targetUserToFollowId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,19 +209,16 @@ export default function FollowersFollowingPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        const newIsFollowing = data.isFollowing;
-
         // Update local state
         if (listType === 'followers') {
           setFollowers(followers.map(user => 
-            user.id === targetUserId 
+            user.id === targetUserToFollowId 
               ? { ...user, isFollowing: newIsFollowing }
               : user
           ));
         } else {
           setFollowing(following.map(user => 
-            user.id === targetUserId 
+            user.id === targetUserToFollowId 
               ? { ...user, isFollowing: newIsFollowing }
               : user
           ));
@@ -173,15 +228,14 @@ export default function FollowersFollowingPage() {
         toast.success(newIsFollowing ? 'Followed successfully' : 'Unfollowed successfully');
 
         // Refresh user info to get updated counts
-        // This updates the profile being viewed (their followers count if we followed them)
         await fetchUserInfo();
         
         // If we followed/unfollowed the profile owner (the user whose profile we're viewing),
         // refresh the followers/following lists to get updated counts
         const profileOwnerId = userId || currentUserId;
-        if (targetUserId === profileOwnerId) {
+        if (targetUserToFollowId === profileOwnerId) {
           // Refresh the lists to get updated counts
-          const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${profileOwnerId}/followers`, {
+          const followersResponse = await fetch(`${API_BASE_URL}/users/${profileOwnerId}/followers`, {
             credentials: 'include'
           });
           if (followersResponse.ok) {
@@ -189,7 +243,7 @@ export default function FollowersFollowingPage() {
             setFollowersCount(followersData.count || 0);
           }
           
-          const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${profileOwnerId}/following`, {
+          const followingResponse = await fetch(`${API_BASE_URL}/users/${profileOwnerId}/following`, {
             credentials: 'include'
           });
           if (followingResponse.ok) {
@@ -207,25 +261,28 @@ export default function FollowersFollowingPage() {
     }
   };
 
-  const handleRemoveFollower = async (targetUserId) => {
+  const handleRemoveFollower = async (followerToRemoveId) => {
     if (!currentUserId) {
       toast.error('Please log in');
       return;
     }
 
     try {
-      // Remove follower by unfollowing them (they unfollow you)
+      // To remove a follower, we need to block them from following us
+      // We do this by having them unfollow us (i.e., they call the follow endpoint to unfollow)
+      // But since we're doing it on behalf of them removing us, we call it with them as the user
       const response = await fetch(`${API_BASE_URL}/users/follow/${currentUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ userId: targetUserId })
+        body: JSON.stringify({ userId: followerToRemoveId })
       });
 
       if (response.ok) {
-        setFollowers(followers.filter(user => user.id !== targetUserId));
+        setFollowers(followers.filter(user => user.id !== followerToRemoveId));
+        setFollowersCount(prev => Math.max(0, prev - 1));
         // Refresh user info to get updated counts
         await fetchUserInfo();
         toast.success('Follower removed successfully');
@@ -239,14 +296,14 @@ export default function FollowersFollowingPage() {
     }
   };
 
-  const handleUnfollow = async (targetUserId) => {
+  const handleUnfollow = async (userToUnfollowId) => {
     if (!currentUserId) {
       toast.error('Please log in');
       return;
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/follow/${targetUserId}`, {
+      const response = await fetch(`${API_BASE_URL}/users/follow/${userToUnfollowId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -256,7 +313,8 @@ export default function FollowersFollowingPage() {
       });
 
       if (response.ok) {
-        setFollowing(following.filter(user => user.id !== targetUserId));
+        setFollowing(following.filter(user => user.id !== userToUnfollowId));
+        setFollowingCount(prev => Math.max(0, prev - 1));
         // Refresh user info to get updated counts
         await fetchUserInfo();
         toast.success('Unfollowed successfully');

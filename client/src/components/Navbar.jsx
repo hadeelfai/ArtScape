@@ -183,14 +183,14 @@ const Navbar = () => {
                   <SearchBar variant='icon' />
                 </div>
 
-                {user && user.profileImage && (
+                {user && (
                   <Link
                     to="/profile"
                     className="hover:opacity-60 transition-opacity"
                   >
                     <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
                       <img
-                        src={user.profileImage}
+                        src={user.profileImage || user.avatar || '/Profileimages/User.jpg'}
                         alt={user.name || "User"}
                         className="w-full h-full object-cover"
                         onError={(e) => {
