@@ -130,7 +130,7 @@ const MarketplacePage = () => {
           <p className="font-semibold text-base text-gray-900">
             {art.title || "Untitled"}
           </p>
-          <p className="text-sm text-gray-500">@{username}</p>
+          <p className="text-sm text-gray-500">{username.startsWith('@') ? username : `@${username}`}</p>
 
           {/* PRICE HERE */}
           {art.price !== undefined && (

@@ -822,7 +822,9 @@ if (authUser?.role === "admin") {
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{resolvedProfileData.name}</h1>
               {resolvedProfileData.username && (
                 <p className="text-sm sm:text-base text-gray-500 mt-1">
-                  @{resolvedProfileData.username}
+                  {resolvedProfileData.username.startsWith('@') 
+                    ? resolvedProfileData.username 
+                    : `@${resolvedProfileData.username}`}
                 </p>
               )}
               <p className="text-sm sm:text-base text-gray-600 mt-1 mb-2 sm:mb-3">

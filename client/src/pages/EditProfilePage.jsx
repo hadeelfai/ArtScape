@@ -435,10 +435,12 @@ export default function EditProfilePage() {
       
       // Update AuthContext user state to reflect the new profile image
       if (authUser && setUser) {
-        setUser({
+        const updatedUser = {
           ...authUser,
-          profileImage: imageUrl
-        });
+          profileImage: imageUrl,
+          avatar: imageUrl // Also update avatar field for compatibility
+        };
+        setUser(updatedUser);
       }
       
       toast.success('Profile picture uploaded and saved successfully!');
@@ -510,15 +512,17 @@ export default function EditProfilePage() {
       
       // Update AuthContext user state to reflect the updated profile
       if (authUser && setUser) {
-        setUser({
+        const updatedUser = {
           ...authUser,
           name: updatePayload.name || authUser.name,
           username: formData.username || authUser.username,
           profileImage: profileImage,
+          avatar: profileImage, // Also update avatar field for compatibility with Navbar
           bannerImage: coverImage,
           artisticSpecialization: formData.artisticSpecialization || authUser.artisticSpecialization,
           bio: formData.bio || authUser.bio
-        });
+        };
+        setUser(updatedUser);
       }
       
       toast.success('Profile updated successfully!');
