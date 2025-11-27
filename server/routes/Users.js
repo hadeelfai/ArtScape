@@ -122,8 +122,7 @@ function buildProfileUpdatePayload(body) {
 
 // =================== REGISTER (SIGNUP) ===================
 router.post('/register', async (req, res) => {
-<<<<<<< HEAD
-=======
+
     try {
         const { name, email, password } = req.body
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -467,7 +466,7 @@ router.get('/profile/:id/followers', async (req, res) => {
             profileImage: follower.profileImage || '/assets/images/profilepicture.jpg',
             followers: follower.followers || 0,
             following: follower.following || 0,
-            followingArray: user.followingArray || []
+            followingArray: user.followingArray || []//for the following tab
         }))
 
         res.json({
@@ -510,7 +509,6 @@ router.get('/profile/:id/following', async (req, res) => {
 
 // Get all users (for gallery)
 router.get('/', async (req, res) => {
->>>>>>> 2380943 (community following tab/profile pic / removed edit and delete for other users / post for signed in users)
   try {
     const { name, email, password, username } = req.body;
 
