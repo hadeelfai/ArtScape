@@ -190,7 +190,7 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
 
                                         <div className='flex gap-2'>{/**need a check for comment profile pic */}
                                             <img className='h-8 w-8 rounded-full object-cover' 
-                                            src={comment?.user?.profileImage || "/avatar.png"}/>
+                                            src={comment?.user?.profileImage || '/avatar.png'}/>
 
                                             <div className='flex-1'> 
                                                 <div className='flex items-center gap-2'>
