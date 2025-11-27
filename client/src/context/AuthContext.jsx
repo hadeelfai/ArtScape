@@ -34,7 +34,19 @@ const persistUser = (user) => {
   }
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  if (import.meta.env.DEV) {
+    return 'http://localhost:5500';
+  }
+  
+  return '/api';
+};
+
+const API_BASE_URL = getApiUrl();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => getStoredUser());
@@ -53,7 +65,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      console.log('Attempting login to:', `${API_BASE_URL}/users/login`);
+      console.log('=== LOGIN DEBUG INFO ===');
+      console.log('API_BASE_URL:', API_BASE_URL);
+      console.log('Full URL:', `${API_BASE_URL}/users/login`);
+      console.log('Request payload:', { email, password: '***' });
+      
       const response = await fetch(`${API_BASE_URL}/users/login`, {
         method: 'POST',
         headers: {
@@ -63,26 +79,32 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
         let errorMessage = 'Login failed';
         try {
           const errorData = await response.json();
+          console.log('Error data:', errorData);
           errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch {
+        } catch (e) {
+          console.log('Could not parse error response:', e);
           errorMessage = response.statusText || `Server error (${response.status})`;
         }
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log('Login response data:', data);
 
-      // Store user data including profile image
       const userData = {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
-        role: data.user.role || 'user',   //NEW
-        profileImage: data.user.profileImage || data.user.profile_image || null, // Added this
+        username: data.user.username,
+        role: data.user.role || 'user',
+        profileImage: data.user.profileImage || data.user.profile_image || null,
         artisticSpecialization: data.user.artisticSpecialization || data.user.artistic_specialization || null,
         bio: data.user.bio || null,
         followers: data.user.followers || 0,
@@ -92,14 +114,18 @@ export const AuthProvider = ({ children }) => {
       };
 
       setUser(userData);
+      console.log('Login successful!');
       return { success: true, user: userData };
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('=== LOGIN ERROR ===');
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Full error:', error);
       
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         return { 
           success: false, 
-          error: 'Unable to connect to server. Please make sure the server is running on port 5500.' 
+          error: 'Unable to connect to server. Please check:\n1. Server is running on port 5500\n2. CORS is enabled on the server\n3. API URL is correct' 
         };
       }
       
@@ -107,38 +133,57 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password) => {
+  const register = async (name, email, password, username, firstName = null, lastName = null, phoneNumber = null) => {
     try {
-      console.log('Attempting registration to:', `${API_BASE_URL}/users/register`);
+      console.log('=== REGISTER DEBUG INFO ===');
+      console.log('API_BASE_URL:', API_BASE_URL);
+      console.log('Full URL:', `${API_BASE_URL}/users/register`);
+      
+      const payload = { name, email, password, username };
+      // Always include firstName and lastName if provided (they're required fields)
+      if (firstName !== null && firstName !== undefined) payload.firstName = firstName;
+      if (lastName !== null && lastName !== undefined) payload.lastName = lastName;
+      // Only include phoneNumber if it has a value
+      if (phoneNumber && phoneNumber.trim() !== '') payload.phoneNumber = phoneNumber;
+      
+      console.log('Request payload:', { ...payload, password: '***' });
+      
       const response = await fetch(`${API_BASE_URL}/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(payload),
       });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         let errorMessage = 'Registration failed';
         try {
           const errorData = await response.json();
+          console.log('Error data:', errorData);
           errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch {
+        } catch (e) {
+          console.log('Could not parse error response:', e);
           errorMessage = response.statusText || `Server error (${response.status})`;
         }
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log('Registration response data:', data);
 
-      // Store user data including profile image
       const userData = {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
+        username: data.user.username,
         role: data.user.role || 'user',
-        profileImage: data.user.profileImage || data.user.profile_image || null, // Added this
+        profileImage: data.user.profileImage || data.user.profile_image || null,
         artisticSpecialization: data.user.artisticSpecialization || data.user.artistic_specialization || null,
         bio: data.user.bio || null,
         followers: data.user.followers || 0,
@@ -148,14 +193,18 @@ export const AuthProvider = ({ children }) => {
       };
 
       setUser(userData);
+      console.log('Registration successful!');
       return { success: true, user: userData };
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('=== REGISTER ERROR ===');
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Full error:', error);
       
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         return { 
           success: false, 
-          error: 'Unable to connect to server. Please make sure the server is running on port 5500.' 
+          error: 'Unable to connect to server. Please check:\n1. Server is running on port 5500\n2. CORS is enabled on the server\n3. API URL is correct' 
         };
       }
       

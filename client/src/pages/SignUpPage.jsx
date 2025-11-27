@@ -9,6 +9,7 @@ export default function SignUpPage() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    username: '',
     password: '',
     email: '',
     countryCode: '+966',
@@ -38,8 +39,31 @@ export default function SignUpPage() {
       return;
     }
 
+    // Validate username if provided
+    if (formData.username && !/^@?[a-zA-Z0-9_]{3,30}$/.test(formData.username.trim())) {
+      setError('Username must be 3-30 characters and contain only letters, numbers, and underscores. @ symbol is optional.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const result = await register(name, formData.email, formData.password);
+      // Combine country code and phone number
+      const phoneNumber = formData.phone ? `${formData.countryCode}${formData.phone}` : '';
+      
+      // Use provided username or generate one from name (backend will also generate one if needed)
+      const username = formData.username.trim() 
+        ? (formData.username.trim().startsWith('@') ? formData.username.trim() : `@${formData.username.trim()}`)
+        : `@${name.toLowerCase().replace(/\s+/g, '_')}`;
+
+      const result = await register(
+        name,
+        formData.email,
+        formData.password,
+        username,
+        formData.firstName,
+        formData.lastName,
+        phoneNumber
+      );
       
       if (result.success) {
         // Redirect to home page on success (user is automatically logged in)
@@ -72,6 +96,20 @@ export default function SignUpPage() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-8 lg:mb-12">Create Account</h1>
 
             <form onSubmit={handleCreateAccount} className="space-y-4 lg:space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  placeholder="@sara_alshareef"
+                  pattern="^@?[a-zA-Z0-9_]{3,30}$"
+                  className="w-full px-4 py-2.5 lg:py-3 text-sm lg:text-base bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                />
+                <p className="text-xs text-gray-500 mt-1">Optional: 3-30 characters, letters, numbers, and underscores. @ symbol is optional.</p>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>

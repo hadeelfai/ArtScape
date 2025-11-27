@@ -6,7 +6,6 @@ import { format } from "timeago.js";
 
 function CommentsSection({postId , showComments , commentsCount , onCountChange}){
 
-    //const [showComments, setShowComments] = useState(false)
     const [comments, setComments] = useState([])
     const [commentText, setCommentText] = useState("")
     const [replyText, setReplyText] = useState({})
@@ -15,8 +14,15 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
     const [commentsLoaded, setcommentsLoaded] = useState(false)
  
 
-    //load comments
+    //load comments for signed in users only
     const loadComments = async ()=> {
+    const user = JSON.parse(localStorage.getItem("artscape:user"))
+    const token = user?.token
+
+    if (!token) {
+      toast.error("You must sign in to view comments")
+      return
+    }   
         setLoadingComments(true)
 
         try {
@@ -182,13 +188,16 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                 comments?.map((comment) => (
                                     <div key={comment?._id} className='bg-gray-50 p-3 rounded-lg'>
 
-                                        <div className='flex gap-2'>
+                                        <div className='flex gap-2'>{/**need a check for comment profile pic */}
                                             <img className='h-8 w-8 rounded-full object-cover' 
-                                            src={comment?.user?.avatar || "/avatar.png"}/>
+                                            src={comment?.user?.profileImage || '/avatar.png'}/>
 
                                             <div className='flex-1'> 
                                                 <div className='flex items-center gap-2'>
-                                                    <span className='text-sm'>{comment?.user?.name}</span>
+                                                    <span className='text-sm'>
+                                                        {comment?.user?.name }</span>
+                                                    <span className='text-sm text-gray-600'> {/**username in comments */}
+                                                        @{comment?.user?.username }</span>
                                                     
                                                     <span className='text-gray-400 text-sm'>
                                                         {format(comment?.createdAt)}</span>
@@ -196,19 +205,26 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
 
                                                 <p className='text-sm mt-1'>{comment?.text}</p>                                               
 
-                                                {/*button reply */}
-
-                                                <button className='text-sm text-gray-500 hover:text-black' onClick={ ()=> setShowReplyInput(prev => 
-                                                    ({...prev,[comment._id] : !prev[comment._id] }))}>
-                                                    reply
+                                                {/*button comment */}
+                                                <button
+                                                className='text-sm text-gray-500 hover:text-black'
+                                                onClick={() =>
+                                                    setShowReplyInput(prev => ({ ...prev, [comment._id]: !prev[comment._id] }))
+                                                }
+                                                >
+                                                reply
                                                 </button>
 
-                                                {/*button delete comment */}
-
-                                                <button className='ml-2 text-xs text-red-500 hover:text-red-700 gap-1' 
-                                                onClick={() => deleteComment(comment._id)}>
-                                                     Delete
+                                                {/* Delete button only for comment owner */}
+                                                {JSON.parse(localStorage.getItem("artscape:user"))?.id === comment?.user?._id && (
+                                                <button
+                                                    className='ml-2 text-xs text-red-500 hover:text-red-700 gap-1'
+                                                    onClick={() => deleteComment(comment._id)}
+                                                >
+                                                    Delete
                                                 </button>
+                                                )}
+
                                      
                                               {/* reply input */}
                                                 {showReplyInput[comment._id] && (
@@ -233,17 +249,19 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                 {comment?.replies.length > 0 && (
                                                     <div className='mt-2 ml-4 space-y-2'>
                                                     {comment?.replies?.map((reply, idx)=> (
+                                                        
                                                         <div key={idx} className='flex gap-2'>
-                                                        <img src={reply?.user?.avatar || "/avatar.png"} 
+                                                        <img src={reply?.user?.profileImage || '/avatar.png'} 
                                                         className='h-6 w-6 rounded-full object-cover'/>
 
                                                         <div className='flex-1 bg-white p-2 rounded'> 
 
                                                             <div className='flex items-center gap-2'> 
                                                                 <span className='font-semibold text-xs'>{reply?.user?.name}</span>
-
+                                                                <span className='font-semibold text-xs text-gray-500'>@{reply?.user?.username}</span>
+                                                      
                                                                 <span className='text-gray-400 text-sm'>
-                                                                    {reply.createdAt ? format(reply.createdAt) : ""}
+                                                                    {reply?format(reply.createdAt) : ""}
                                                                 </span>
                                                             </div>
                                                             <p className='text-xs mt-1'>{reply?.text}</p>

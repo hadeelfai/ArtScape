@@ -1,25 +1,9 @@
 import jwt from "jsonwebtoken";
-/** 
-export const authMiddleware = (req, res, next) => {
-  try {
-    const token = req.cookies?.token; // Read from HTTPcookie
-
-    if (!token) {
-      return res.status(401).json({ error: "No token provided" });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    console.error("Auth Error:", error);
-    res.status(401).json({ error: "Invalid token" });
-  }
-};
-*/
+import User from "../models/User.js";
 
 
-export const authMiddleware = (req, res, next) => {
+
+export const authMiddleware = async (req, res, next) => {
   try {
     const headerToken = req.headers.authorization?.replace("Bearer ", "");
     const cookieToken = req.cookies?.token;
@@ -31,7 +15,19 @@ export const authMiddleware = (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded;
+    // Load full user (name, email, avatar) from DB
+    const user = await User.findById(decoded.id).select("name email avatar");
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    // Attach full user to requist
+    req.user = {
+      id: user._id.toString(),//added tostring for user id
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+    };
 
     next();
   } catch (error) {
@@ -39,4 +35,3 @@ export const authMiddleware = (req, res, next) => {
     res.status(401).json({ error: "Invalid token" });
   }
 };
- 

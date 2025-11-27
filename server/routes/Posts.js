@@ -27,8 +27,8 @@ router.post('/' , authMiddleware,async (req,res)=>{
 router.get('/' , async (req,res)=>{
     try {
         const posts = await Post.find()
-        .populate('user', 'name email avatar')
-        .populate('likes', 'name email avatar')
+        .populate('user', 'name username profileImage ')
+        .populate('likes', 'name username profileImage ')
         .sort({createdAt: -1})
         
         res.status(200).json(posts)
@@ -84,7 +84,7 @@ router.post("/like/:id" ,authMiddleware, async( req,res) => {
 
 
 //to edit posts
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {    
     try {
         const post = await Post.findById(req.params.id)
         if (!post) return res.status(404).json({ error: "Post not found" })
@@ -103,7 +103,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 })
 
-//send email for post report
+//send email for reporting post
 router.post("/:postId/report", authMiddleware, async (req, res) => {
   try {
     const { reason, details } = req.body;

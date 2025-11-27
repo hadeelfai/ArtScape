@@ -15,6 +15,8 @@ import AdminProfile from './pages/AdminProfile';
 import ExplorePage from './pages/ExplorePage';
 import MarketplacePage from './pages/MarketplacePage';
 import ContactUs from './pages/ContactUs';
+import ForgotPasswordPage from './pages/ForgotPassword';
+import ResetPasswordPage from './pages/ResetPassword';
 
 
 const App = () => {
@@ -23,11 +25,12 @@ const App = () => {
       <Toaster position="top-center" />
 
       <Routes>
-
         {/* Auth Routes */}
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/login" element={<SignInPage />} /> {/* Alias */}
+<Route path="/forgot-password" element={<ForgotPasswordPage />} />
+<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />

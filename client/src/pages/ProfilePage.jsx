@@ -151,14 +151,14 @@ export default function ArtScapeProfile({
 
     return artworksToUse.map(artwork => ({
       id: artwork._id || artwork.id,
-      title: artwork.title,
-      description: artwork.description,
-      tags: artwork.tags,
-      dimensions: artwork.dimensions,
-      year: artwork.year,
+      title: artwork.title || '',
+      description: artwork.description || '',
+      tags: artwork.tags || '',
+      dimensions: artwork.dimensions || '',
+      year: artwork.year || '',
       artworkType: artwork.artworkType || 'Explore',
-      price: artwork.price,
-      image: artwork.image
+      price: artwork.price || null,
+      image: artwork.image || artwork.imageUrl // Support both field names
     }));
   }, [profileData, artworksProp]);
 
@@ -190,6 +190,8 @@ export default function ArtScapeProfile({
   const [isUploadingArtwork, setIsUploadingArtwork] = useState(false);
   const [editingArtwork, setEditingArtwork] = useState(null);
   const [isDeletingArtwork, setIsDeletingArtwork] = useState(null);
+  const [artworkToDelete, setArtworkToDelete] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState('gallery');
@@ -491,14 +493,20 @@ export default function ArtScapeProfile({
   };
 
   const handleDeleteArtwork = async (artworkId) => {
-    if (!window.confirm('Are you sure you want to delete this artwork? This action cannot be undone.')) {
-      return;
-    }
+    // Show confirmation modal
+    setArtworkToDelete(artworkId);
+    setShowDeleteConfirm(true);
+  };
 
-    setIsDeletingArtwork(artworkId);
+  const confirmDeleteArtwork = async () => {
+    if (!artworkToDelete) return;
+
+    const artworkIdToDelete = artworkToDelete;
+    setIsDeletingArtwork(artworkIdToDelete);
+    setShowDeleteConfirm(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/artworks/${artworkId}`, {
+      const response = await fetch(`${API_BASE_URL}/artworks/${artworkIdToDelete}`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -508,13 +516,15 @@ export default function ArtScapeProfile({
       }
 
       // Remove from local state
-      setArtworkList((prev) => prev.filter(art => art.id !== artworkId));
+      setArtworkList((prev) => prev.filter(art => art.id !== artworkIdToDelete));
       toast.success('Artwork deleted successfully!');
     } catch (error) {
       console.error('Error deleting artwork:', error);
       toast.error('Failed to delete artwork. Please try again.');
     } finally {
       setIsDeletingArtwork(null);
+      setArtworkToDelete(null);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -564,6 +574,45 @@ if (authUser?.role === "admin") {
   return (
     <div className="min-h-screen bg-gray-50 overflow-visible">
       <Navbar />
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && artworkToDelete && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-[10000] flex items-center justify-center p-4"
+          onClick={() => {
+            setShowDeleteConfirm(false);
+            setArtworkToDelete(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Delete Artwork</h2>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this artwork? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setArtworkToDelete(null);
+                }}
+                className="px-6 py-2.5 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors font-medium text-sm text-black"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteArtwork}
+                disabled={isDeletingArtwork === artworkToDelete}
+                className="px-6 py-2.5 bg-red-900 text-white rounded-full hover:bg-red-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeletingArtwork === artworkToDelete ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Overlay - Moved to top level to ensure it's above Navbar */}
       {isAddingArtwork && (
@@ -773,7 +822,9 @@ if (authUser?.role === "admin") {
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{resolvedProfileData.name}</h1>
               {resolvedProfileData.username && (
                 <p className="text-sm sm:text-base text-gray-500 mt-1">
-                  @{resolvedProfileData.username}
+                  {resolvedProfileData.username.startsWith('@') 
+                    ? resolvedProfileData.username 
+                    : `@${resolvedProfileData.username}`}
                 </p>
               )}
               <p className="text-sm sm:text-base text-gray-600 mt-1 mb-2 sm:mb-3">
@@ -900,9 +951,13 @@ if (authUser?.role === "admin") {
                         className={`relative bg-white overflow-hidden rounded-lg hover:shadow-2xl transition-shadow ${artwork.artworkType === 'Marketplace' ? 'cursor-pointer' : ''}`}
                       >
                         <img
-                          src={artwork.image}
-                          alt={artwork.title}
+                          src={artwork.image || artwork.imageUrl}
+                          alt={artwork.title || 'Artwork'}
                           className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/Profileimages/User.jpg';
+                          }}
                         />
                         {/* Edit and Delete Buttons - Only show for own profile */}
                         {isOwnProfile && (
