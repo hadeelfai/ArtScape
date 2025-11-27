@@ -106,7 +106,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
 //send email for post report
 router.post("/:postId/report", authMiddleware, async (req, res) => {
   try {
-    const { reason } = req.body;
+    const { reason, details } = req.body;
+
     const postId = req.params.postId;
 
     const post = await Post.findById(postId).populate("user");
@@ -127,16 +128,18 @@ router.post("/:postId/report", authMiddleware, async (req, res) => {
       from: `"${req.user.name}" <x.artscape.x@gmail.com>`,
       to: "x.artscape.x@gmail.com", 
       subject: "Reported Post",
-      text: `
+            text: `
         A post has been reported:
         Reported Post ID: ${postId}
         Reported By User: ${req.user.name} (${req.user.email})
         Reason: ${reason}
+        ${details ? `Additional details:\n${details}\n` : ""}
         Post Content:
         ${post.text}
         Image URL:
         ${post.image}
       `,
+
     };
     await transporter.sendMail(mailOptions);
     return res.json({ message: "Report sent to admin email." });

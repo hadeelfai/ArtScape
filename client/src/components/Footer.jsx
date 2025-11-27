@@ -15,7 +15,7 @@ export default function Footer() {
           <h3 className="text-lg lg:text-xl mb-3">Quick Links</h3>
           <ul className="space-y-2">
             <li><a href="/about" className="hover:opacity-80 transition-opacityine inline-flex items-center">About Us</a></li>
-            <li><a href="/contact" className="hover:opacity-80 transition-opacityine inline-flex items-center">Contact</a></li>
+            <li><a href="/contact" className="hover:opacity-80 transition-opacityine inline-flex items-center">Contact us</a></li>
           </ul>
         </div>
 
