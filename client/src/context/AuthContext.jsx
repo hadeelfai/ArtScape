@@ -34,19 +34,15 @@ const persistUser = (user) => {
   }
 };
 
-// Check if we're in development and use appropriate URL
 const getApiUrl = () => {
-  // First try environment variable
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
   
-  // Fallback to localhost in development
   if (import.meta.env.DEV) {
     return 'http://localhost:5500';
   }
   
-  // Production fallback
   return '/api';
 };
 
@@ -102,11 +98,11 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
       console.log('Login response data:', data);
 
-      // Store user data including profile image
       const userData = {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
+        username: data.user.username,
         role: data.user.role || 'user',
         profileImage: data.user.profileImage || data.user.profile_image || null,
         artisticSpecialization: data.user.artisticSpecialization || data.user.artistic_specialization || null,
@@ -173,11 +169,11 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
       console.log('Registration response data:', data);
 
-      // Store user data including profile image
       const userData = {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
+        username: data.user.username,
         role: data.user.role || 'user',
         profileImage: data.user.profileImage || data.user.profile_image || null,
         artisticSpecialization: data.user.artisticSpecialization || data.user.artistic_specialization || null,

@@ -35,28 +35,24 @@ export default function SignUpPage() {
 
     const name = `${formData.firstName} ${formData.lastName}`.trim();
 
-    // ✅ التحقق من الاسم
     if (!name) {
       setError('Please enter both first name and last name');
       setIsLoading(false);
       return;
     }
 
-    // ✅ التحقق من اليوزرنيم (إلزامي)
     if (!formData.username.trim()) {
       setError('Username is required');
       setIsLoading(false);
       return;
     }
 
-    // ✅ التحقق من الباسورد
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters long');
       setIsLoading(false);
       return;
     }
 
-    // ✅ التحقق من الإيميل
     if (!formData.email.includes('@')) {
       setError('Please enter a valid email address');
       setIsLoading(false);
