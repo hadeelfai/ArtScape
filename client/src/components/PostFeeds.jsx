@@ -187,7 +187,9 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
 
   return (
     <div>
-      {optimisticPosts.map(post => (
+      {optimisticPosts
+      .filter(post => post.user)  
+      .map(post => (
         <article key={post._id} className="border-b border-gray-200 p-4 flex gap-3">
           <img
             src={post?.user?.profileImage || '/avatar.png'}
@@ -240,7 +242,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
               </button>
 
               {/* Only show Edit/Delete for my own posts */}
-              {post.user._id.toString() === loggedInUserId?.toString() && (
+              {post.user?._id?.toString() === loggedInUserId?.toString() && (
                 <div className="mt-3 flex items-center gap-2 ml-auto">
                   <button onClick={() => handleEditClick(post)} className="text-gray-500 hover:text-black">
                     <Edit2 className="h-5 w-5" />
@@ -257,14 +259,14 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
               )}
 
               {/* Only show Report for other artists posts */}
-                {post.user._id.toString() !== loggedInUserId?.toString() && (
+                {post.user?._id?.toString() !== loggedInUserId?.toString() && (
                 <button
                     onClick={() => handleReportPost(post._id)}
                     className="ml-auto text-gray-500 hover:text-yellow-600"
                 >
                     <Flag className="h-5 w-5" />
                 </button>
-                )}
+              )}
 
             </div>
 
