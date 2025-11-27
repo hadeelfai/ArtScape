@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
@@ -6,25 +7,35 @@ import { useAuth } from "../context/AuthContext";
 const API_BASE = "http://localhost:5500";
 
 function AdminProfile() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, logout } = useAuth(); // ⬅️ get logout here
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/"); // send admin back to home after logging out
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   const [activeSection, setActiveSection] = useState("content");
 
-  //News and  Articles from DB 
-  const [newsItems, setNewsItems] = useState([]);      //type: "news"
-  const [articles, setArticles] = useState([]);        //type: "article"
+  // News and Articles from DB
+  const [newsItems, setNewsItems] = useState([]); // type: "news"
+  const [articles, setArticles] = useState([]); // type: "article"
   const [loadingContent, setLoadingContent] = useState(false);
   const [contentError, setContentError] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
-  const [formType, setFormType] = useState("news");    //"news" or "article"
-  const [editingId, setEditingId] = useState(null);    //_id when editing
+  const [formType, setFormType] = useState("news"); // "news" or "article"
+  const [editingId, setEditingId] = useState(null); // _id when editing
 
-  //Manageing Users 
+  // Managing Users
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState("");
 
-  //Managing artwork
+  // Managing artwork
   const [artworks, setArtworks] = useState([]);
   const [artworksLoading, setArtworksLoading] = useState(false);
   const [artworksError, setArtworksError] = useState("");
@@ -41,7 +52,7 @@ function AdminProfile() {
 
   const fileInputRef = useRef(null);
 
-  //Admin dashboard
+  // Admin dashboard initial load
   useEffect(() => {
     if (!isAdmin) return;
 
@@ -124,8 +135,8 @@ function AdminProfile() {
     const payload = {
       title: formData.title,
       badge: formData.badge,
-      text: formData.text,        //short description
-      content: formData.content,  //full article
+      text: formData.text, // short description
+      content: formData.content, // full article
       date: formData.date,
       image: formData.image,
       type: formType,
@@ -135,14 +146,14 @@ function AdminProfile() {
     try {
       let res;
       if (editingId) {
-        //Update existing item
+        // Update existing item
         res = await fetch(`${API_BASE}/news/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
       } else {
-        //Creating new item
+        // Create new item
         res = await fetch(`${API_BASE}/news`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -153,7 +164,7 @@ function AdminProfile() {
       if (!res.ok) throw new Error("Failed to save news item");
       const saved = await res.json();
 
-      //Update local list
+      // Update local list
       if (saved.type === "news") {
         if (editingId) {
           setNewsItems((prev) =>
@@ -172,7 +183,7 @@ function AdminProfile() {
         }
       }
 
-      //Reset form
+      // Reset form
       setFormData({
         title: "",
         badge: "",
@@ -194,7 +205,7 @@ function AdminProfile() {
   }
 
   function handleEdit(item) {
-    setFormType(item.type);      //"news" or "article"
+    setFormType(item.type); // "news" or "article"
     setEditingId(item._id);
     setFormData({
       title: item.title || "",
@@ -335,7 +346,7 @@ function AdminProfile() {
     }
   }
 
-  //If a non-admin somehow reaches this component
+  // If a non-admin somehow reaches this component
   if (!isAdmin) {
     return (
       <>
@@ -352,40 +363,48 @@ function AdminProfile() {
     <>
       <Navbar />
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Admin Profile</h1>
+        <h1 className="text-3xl font-bold mb-4">Admin Profile</h1>
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-6">
-          <button
-            onClick={() => setActiveSection("content")}
-            className={
-              activeSection === "content"
-                ? "px-4 py-2 rounded bg-black text-white"
-                : "px-4 py-2 rounded border"
-            }
-          >
-            News & Articles
-          </button>
-          <button
-            onClick={() => setActiveSection("artworks")}
-            className={
-              activeSection === "artworks"
-                ? "px-4 py-2 rounded bg-black text-white"
-                : "px-4 py-2 rounded border"
-            }
-          >
-            User Artworks
-          </button>
+        {/* Tabs + Logout */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveSection("content")}
+              className={
+                activeSection === "content"
+                  ? "px-4 py-2 rounded bg-black text-white"
+                  : "px-4 py-2 rounded border"
+              }
+            >
+              News & Articles
+            </button>
+            <button
+              onClick={() => setActiveSection("artworks")}
+              className={
+                activeSection === "artworks"
+                  ? "px-4 py-2 rounded bg-black text-white"
+                  : "px-4 py-2 rounded border"
+              }
+            >
+              User Artworks
+            </button>
+            <button
+              onClick={() => setActiveSection("users")}
+              className={
+                activeSection === "users"
+                  ? "px-4 py-2 rounded bg-black text-white"
+                  : "px-4 py-2 rounded border"
+              }
+            >
+              Users
+            </button>
+          </div>
 
           <button
-            onClick={() => setActiveSection("users")}
-            className={
-              activeSection === "users"
-                ? "px-4 py-2 rounded bg-black text-white"
-                : "px-4 py-2 rounded border"
-            }
+            onClick={handleLogout}
+            className="px-4 py-2 rounded border border-gray-300 text-sm hover:bg-black hover:text-white transition-colors"
           >
-            Users
+            Log Out
           </button>
         </div>
 

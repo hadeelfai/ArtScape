@@ -11,7 +11,16 @@ const Navbar = () => {
   const [notificationCount] = useState(3); // Manage notification count from your notification system
 
   // Get user data from AuthContext
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated , isAdmin} = useAuth();
+
+  // Decide where the profile avatar should go
+  const profilePath = user
+  ? isAdmin
+    ? "/admin"
+    : `/profile/${user.id || user._id}`
+  : "/signin";
+
+
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -185,7 +194,7 @@ const Navbar = () => {
 
                 {user && (
                   <Link
-                    to="/profile"
+                    to={profilePath}
                     className="hover:opacity-60 transition-opacity"
                   >
                     <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
@@ -258,7 +267,7 @@ const Navbar = () => {
                 </div>
 
                 <Link
-                  to="/profile"
+                  to={profilePath}
                   className={`${isOpen ? "text-white" : "text-black"}`}
                 >
                   <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">

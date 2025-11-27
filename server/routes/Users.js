@@ -152,47 +152,78 @@ router.post('/register', async (req, res) => {
 })
 
 // POST - Login user
+// POST - Login user (email OR username)
 router.post('/login', async (req, res) => {
-    try {
-        const { password, email } = req.body
-        const user = await User.findOne({ email })
-        if (!user) return res.status(404).json({ message: "user not found" })
-            //Blocked and suspended users cannot log in
-        if (user.accountStatus === "blocked") {
-            return res.status(403).json({ message: "Your account is blocked. Please contact support." });
-        }
-        if (user.accountStatus === "suspended") {
-            return res.status(403).json({ message: "Your account is suspended." });
-        }
-        const isMatch = await bcrypt.compare(password, user.password)
-        if (!isMatch) return res.status(400).json({ message: 'invalid password' })
+  try {
+    const { password, email, username } = req.body;
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-            expiresIn: '7d'
-        })
-
-        setAuthCookie(res, token)
-
-        res.status(200).json({
-            message: 'user logged in successfully',
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,    
-                profileImage: user.profileImage || null, // ✅ Added
-                bannerImage: user.bannerImage || null, // ✅ Added
-                bio: user.bio || null, // ✅ Added
-                artisticSpecialization: user.artisticSpecialization || null, // ✅ Added
-                followers: user.followers || 0, // ✅ Added
-                following: user.following || 0 // ✅ Added
-            }
-        })
-    } catch (error) {
-        res.status(500).json({ error: error.message })
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" });
     }
-})
+
+    const identifier = (email || username || "").toLowerCase();
+
+    if (!identifier) {
+      return res
+        .status(400)
+        .json({ message: "Email or username is required" });
+    }
+
+    // allow login by email OR username
+    const user = await User.findOne({
+      $or: [{ email: identifier }, { username: identifier }],
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Blocked and suspended users cannot log in
+    if (user.accountStatus === "blocked") {
+      return res
+        .status(403)
+        .json({ message: "Your account is blocked. Please contact support." });
+    }
+
+    if (user.accountStatus === "suspended") {
+      return res
+        .status(403)
+        .json({ message: "Your account is suspended." });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid password" });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    setAuthCookie(res, token);
+
+    res.status(200).json({
+      message: "user logged in successfully",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        profileImage: user.profileImage || null,
+        bannerImage: user.bannerImage || null,
+        bio: user.bio || null,
+        artisticSpecialization: user.artisticSpecialization || null,
+        followers: user.followers || 0,
+        following: user.following || 0,
+      },
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // POST - Logout user
 router.post('/logout', (req, res) => {

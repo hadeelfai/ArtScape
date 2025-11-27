@@ -1,146 +1,146 @@
 import express from 'express';
 import Comments from '../models/Comments.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
+
 const router = express.Router();
 
-// Add a comment 
-router.post('/:postId', authMiddleware,async (req, res) => {
+// Add a comment to a post
+router.post('/:postId', authMiddleware, async (req, res) => {
   const { text } = req.body;
+
+  if (!text || !text.trim()) {
+    return res.status(400).json({ error: 'Comment text is required' });
+  }
 
   try {
     const comment = new Comments({
-      text,
-      user: {
-        _id: req.user.id,
-        name: req.user.name,
-        avatar: "/avatar.png"   
-      },
+      text: text.trim(),
+      user: req.user.id,             // store user as ObjectId reference
       post: req.params.postId,
-      replies: [] 
+      replies: []
     });
 
     await comment.save();
 
-    //const populated = await comment.populate("user", "name profileImage");
-    res.status(201).json(comment);
+    // Return comment with populated user fields (name, profileImage, username)
+    const populatedComment = await Comments.findById(comment._id)
+      .populate('user', 'name profileImage username')
+      .populate('replies.user', 'name profileImage username');
+
+    res.status(201).json(populatedComment);
   } catch (error) {
+    console.error('Add comment error:', error);
     res.status(500).json({ error: error.message });
   }
 });
-
-//comment to a post 
-/*router.post ('/:postId' , async(req,res) => 
-    { const {text} = req.body try { 
-//const post = await Comments.findById(res.params.postId) 
-// const comment = new Comments({ text, user: req.user.id, post: req.params.postId }) 
-// await comment.save() 
-// const populated = await Comments.populate("user" , "name avatar") res.status(201).json(populated) } 
-// catch (error) { 
-// res.status(500).json({error: error.message}) } }) */
-
 
 // Get all comments for a post
 router.get('/:postId', async (req, res) => {
   try {
     const comments = await Comments.find({ post: req.params.postId })
-    .sort({ createdAt: -1 })
-    //
-    .populate("user", "name  profileImage username")             
-      .populate("replies.user", "name  profileImage username"); 
-      //
+      .sort({ createdAt: -1 })
+      .populate('user', 'name profileImage username')
+      .populate('replies.user', 'name profileImage username');
+
     res.json(comments);
   } catch (error) {
+    console.error('Get comments error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-/** //retrieve all comment on posts 
- * router.get('/:postId' , async (req,res) => { 
- * try { const comment = await Comments.find( req.params.postId) 
- * .populate("user", "name avatar") 
- * .populate("replies.user","name avatar") 
- * .sort({createdAt: -1}) res.json(comment) } 
- * catch (error) 
- * { res.status(500).json({error: error.message}) } }) */
-
-
-// Add a reply 
+// Add a reply to a comment
 router.post('/reply/:commentId', authMiddleware, async (req, res) => {
   const { text } = req.body;
-  if (!text) return res.status(400).json({ error: "Reply text is required" });
+
+  if (!text || !text.trim()) {
+    return res.status(400).json({ error: 'Reply text is required' });
+  }
 
   try {
     const comment = await Comments.findById(req.params.commentId);
-    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
 
-    // Push reply with user id only
     comment.replies.push({
-      user: req.user.id, 
-      text,
+      user: req.user.id,           // ObjectId ref to User
+      text: text.trim(),
       createdAt: new Date()
     });
 
     await comment.save();
 
-    // Populate user fields for comment and replies
+    // Return updated comment with populated user info
     const populatedComment = await Comments.findById(comment._id)
-      .populate("user", "name  profileImage username")
-      .populate("replies.user", "name  profileImage username");
+      .populate('user', 'name profileImage username')
+      .populate('replies.user', 'name profileImage username');
 
     res.status(201).json(populatedComment);
   } catch (error) {
-    console.error("Add reply error:", error);
+    console.error('Add reply error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-
-router.get("/count/:postId" , async (req,res) => {
-
+// Get number of comments for a post
+router.get('/count/:postId', async (req, res) => {
   try {
-    const count = await Comments.countDocuments({post:req.params.postId})
-    res.json({count})
+    const count = await Comments.countDocuments({ post: req.params.postId });
+    res.json({ count });
   } catch (error) {
-    res.status(500).json({error: error.message})
+    console.error('Count comments error:', error);
+    res.status(500).json({ error: error.message });
   }
-})
-
+});
 
 // DELETE a comment
-router.delete('/:commentId', authMiddleware,async (req, res) => {
+router.delete('/:commentId', authMiddleware, async (req, res) => {
   try {
     const comment = await Comments.findById(req.params.commentId);
-    if (!comment) return res.status(404).json({ error: "Comment not found" });
-    if (comment.user._id.toString() !== req.user.id)
-     return res.status(403).json({ error: "Not authorized" });
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
 
-  await Comments.findByIdAndDelete(req.params.commentId);
-  res.json({ message: "Comment deleted successfully" });
+    // comment.user is an ObjectId, not an object with _id
+    if (comment.user.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
 
+    await Comments.findByIdAndDelete(req.params.commentId);
+    res.json({ message: 'Comment deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    console.error('Delete comment error:', error);
+    res.status(500).json({ error: error.message });
   }
-})
-
+});
 
 // DELETE a reply from a comment
-router.delete('/reply/:commentId/:replyId', authMiddleware,async (req, res) => {
+router.delete('/reply/:commentId/:replyId', authMiddleware, async (req, res) => {
   try {
     const comment = await Comments.findById(req.params.commentId);
-    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
 
     const reply = comment.replies.id(req.params.replyId);
-    if (!reply) return res.status(404).json({ error: "Reply not found" });
+    if (!reply) {
+      return res.status(404).json({ error: 'Reply not found' });
+    }
 
-    if (reply.user._id.toString() !== req.user.id)
-     return res.status(403).json({ error: "Not authorized" });
+    // reply.user is also an ObjectId
+    if (reply.user.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
 
     reply.deleteOne();
     await comment.save();
-    res.json({ message: "Reply deleted successfully" });
+
+    res.json({ message: 'Reply deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    console.error('Delete reply error:', error);
+    res.status(500).json({ error: error.message });
   }
-})
+});
 
 export default router;
