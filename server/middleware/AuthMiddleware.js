@@ -23,7 +23,7 @@ export const authMiddleware = async (req, res, next) => {
 
     // Attach full user to requist
     req.user = {
-      id: user._id,
+      id: user._id.toString(),//added tostring for user id
       name: user.name,
       email: user.email,
       avatar: user.avatar,

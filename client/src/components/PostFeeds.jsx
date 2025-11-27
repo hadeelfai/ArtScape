@@ -24,7 +24,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
   const [isPending, startTransition] = useTransition()
   const [loggedInUser, setLoggedInUser] = useState(null)
 
-  const loggedInUserId = loggedInUser?._id
+  const loggedInUserId = loggedInUser?._id?.toString()
 
   // ---------------- Load logged-in user ----------------
   const loadLoggedInUser = useCallback(async () => {
@@ -37,7 +37,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
       const res = await fetch(`http://localhost:5500/users/${user._id || user.id}`)
       if (!res.ok) throw new Error('Failed to fetch user data')
       const fullUser = await res.json()
-      setLoggedInUser(fullUser)
+      setLoggedInUser({ ...fullUser, token: user.token });//
 
       localStorage.setItem(
         'artscape:user',
@@ -141,7 +141,8 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
       const res = await fetch(`http://localhost:5500/posts/${postId}`, {
         method: 'DELETE',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+        headers: { 'Content-Type': 'application/json',
+           Authorization: `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Failed to delete post')
       setPosts(prev => prev.filter(p => p._id !== postId))

@@ -22,13 +22,11 @@ router.post('/:postId', authMiddleware,async (req, res) => {
     await comment.save();
 
     //const populated = await comment.populate("user", "name profileImage");
-
     res.status(201).json(comment);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 //comment to a post 
 /*router.post ('/:postId' , async(req,res) => 
@@ -56,7 +54,6 @@ router.get('/:postId', async (req, res) => {
   }
 });
 
-
 /** //retrieve all comment on posts 
  * router.get('/:postId' , async (req,res) => { 
  * try { const comment = await Comments.find( req.params.postId) 
@@ -66,34 +63,37 @@ router.get('/:postId', async (req, res) => {
  * catch (error) 
  * { res.status(500).json({error: error.message}) } }) */
 
+
 // Add a reply 
-router.post('/reply/:commentId',authMiddleware, async (req, res) => {
+router.post('/reply/:commentId', authMiddleware, async (req, res) => {
   const { text } = req.body;
+  if (!text) return res.status(400).json({ error: "Reply text is required" });
 
   try {
     const comment = await Comments.findById(req.params.commentId);
-
     if (!comment) return res.status(404).json({ error: "Comment not found" });
+
+    // Push reply with user id only
     comment.replies.push({
-      user: {
-      _id: req.user.id
-    },
-      text
+      user: req.user.id, 
+      text,
+      createdAt: new Date()
     });
-//
+
     await comment.save();
-    const populatedComment = await comment
-      .populate("user", "name avatar")
-      .populate("replies.user", "name avatar");
-//
-    res.json(populatedComment);
 
-    res.json(comment);
+    // Populate user fields for comment and replies
+    const populatedComment = await Comments.findById(comment._id)
+      .populate("user", "name avatar ")
+      .populate("replies.user", "name avatar ");
 
+    res.status(201).json(populatedComment);
   } catch (error) {
+    console.error("Add reply error:", error);
     res.status(500).json({ error: error.message });
   }
 });
+
 
 router.get("/count/:postId" , async (req,res) => {
 

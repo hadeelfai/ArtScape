@@ -190,7 +190,7 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
 
                                         <div className='flex gap-2'>
                                             <img className='h-8 w-8 rounded-full object-cover' 
-                                            src={comment?.user?.avatar || "/avatar.png"}/>
+                                            src={comment?.user?.profileImage || "/avatar.png"}/>
 
                                             <div className='flex-1'> 
                                                 <div className='flex items-center gap-2'>
@@ -248,7 +248,7 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                     {comment?.replies?.map((reply, idx)=> (
                                                         
                                                         <div key={idx} className='flex gap-2'>
-                                                        <img src={reply?.user?.avatar || "/avatar.png"} 
+                                                        <img src={reply?.user?.profileImage || "/avatar.png"} 
                                                         className='h-6 w-6 rounded-full object-cover'/>
 
                                                         <div className='flex-1 bg-white p-2 rounded'> 

@@ -84,7 +84,7 @@ router.post("/like/:id" ,authMiddleware, async( req,res) => {
 
 
 //to edit posts
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {    
     try {
         const post = await Post.findById(req.params.id)
         if (!post) return res.status(404).json({ error: "Post not found" })
