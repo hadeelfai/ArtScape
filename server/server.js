@@ -8,7 +8,7 @@ import Comment from './routes/Comments.js'
 import Artwork from './routes/Artworks.js'
 import cookieParser from 'cookie-parser'
 import News from './routes/News.js'
-import Notifications from './routes/Notifications.js';
+import Notifications from './routes/Notification.js';
 import { authMiddleware } from './middleware/AuthMiddleware.js'
 import contactRoutes from "./routes/contact.js";
 

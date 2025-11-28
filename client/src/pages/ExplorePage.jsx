@@ -89,6 +89,8 @@ const ExplorePage = () => {
     const renderCard = (art) => {
         const user = lookupUser(art.artist);
         const username = user.username || user.name?.replace(/\s+/g, '').toLowerCase() || 'artist';
+        const avatarUrl = user.avatar || user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
+
         return (
             <div key={art._id || art.id} className="flex flex-col items-start gap-2">
                 <div className="aspect-[1/1] w-full overflow-hidden bg-gray-100 flex items-center justify-center">
@@ -98,9 +100,18 @@ const ExplorePage = () => {
                         className="w-full h-full object-cover"
                     />
                 </div>
+
+                <div className=" flex items-center gap-2 mb-1">
+                    <img
+                        src={avatarUrl}
+                        alt={username}
+                        className="w-6 h-6 rounded-full object-cover"
+                    />
+                    <p className="text-sm text-gray-500">{username.startsWith('@') ? username : `@${username}`}</p>
+                </div>
+
                 <div className="text-left">
                     <p className="font-semibold text-base text-gray-900">{art.title || 'Untitled'}</p>
-                    <p className="text-sm text-gray-500">{username.startsWith('@') ? username : `@${username}`}</p>
                 </div>
             </div>
         );

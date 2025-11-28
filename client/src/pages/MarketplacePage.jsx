@@ -115,6 +115,7 @@ const MarketplacePage = () => {
       user.username ||
       user.name?.replace(/\s+/g, "").toLowerCase() ||
       "artist";
+    const avatarUrl = user.avatar || user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
 
     return (
       <div key={art._id || art.id} className="flex flex-col items-start gap-2">
@@ -125,20 +126,29 @@ const MarketplacePage = () => {
             className="w-full h-full object-cover"
           />
         </div>
-
         <div className="text-left w-full">
-          <p className="font-semibold text-base text-gray-900">
-            {art.title || "Untitled"}
-          </p>
-          <p className="text-sm text-gray-500">{username.startsWith('@') ? username : `@${username}`}</p>
+
+          <div className="flex items-center gap-2 mb-1">
+            <img
+              src={avatarUrl}
+              alt={username}
+              className="w-6 h-6 rounded-full object-cover"
+            />
+            <p className="text-sm text-gray-500">{username.startsWith('@') ? username : `@${username}`}</p>
+          </div>
+
+          <div className="text-left w-full">
+            <p className="font-semibold text-base text-gray-900">
+              {art.title || "Untitled"}
+            </p>
+          </div>
 
           {/* PRICE HERE */}
           {art.price !== undefined && (
-            <p className="text-base font-bold flex items-center gap-1">
+            <p className="text-sm font-medium flex items-center gap-1">
               <span>{art.price}</span>
               SAR
             </p>
-
 
           )}
         </div>
