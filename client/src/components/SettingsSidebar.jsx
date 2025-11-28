@@ -1,20 +1,6 @@
 import { X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext"; // adjust path if needed
 
 export default function SettingsSidebar({ open, setOpen }) {
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-
-  const handleSignOut = async () => {
-    try {
-      await logout();
-      setOpen(false);
-      navigate("/signin");
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
 
   return (
     <>
@@ -69,16 +55,6 @@ export default function SettingsSidebar({ open, setOpen }) {
             <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors">
               <p className="font-medium text-gray-900">Help & Support</p>
               <p className="text-sm text-gray-500">Get help with ArtScape</p>
-            </button>
-          </div>
-          
-          {/* Sign Out */}
-          <div className="pt-4 border-t border-gray-200">
-            <button
-              onClick={handleSignOut}
-              className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600"
-            >
-              <p className="font-medium">Log Out</p>
             </button>
           </div>
         </div>

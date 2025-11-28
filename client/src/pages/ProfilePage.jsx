@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Settings, Heart, Bookmark, Image, Clock, X, Edit2, Trash2 } from 'lucide-react';
+import { Settings, Heart, Bookmark, Image, X, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
 import SettingsSidebar from "../components/SettingsSidebar";
@@ -201,8 +201,7 @@ export default function ArtScapeProfile({
   const allTabs = [
     { id: 'gallery', label: 'Gallery', icon: Image },
     { id: 'likes', label: 'Likes', icon: Heart },
-    { id: 'saved', label: 'Saved', icon: Bookmark },
-    { id: 'purchased', label: 'Purchased History', icon: Clock }
+    { id: 'saved', label: 'Saved', icon: Bookmark }
   ];
 
   // Filter tabs based on whether viewing own profile
@@ -1167,13 +1166,6 @@ if (authUser?.role === "admin") {
             </div>
           )}
 
-          {/* Purchased History Tab */}
-          {activeTab === 'purchased' && (
-            <div className="text-center py-8 sm:py-12 px-4">
-              <Clock className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-300 mb-3 sm:mb-4" />
-              <p className="text-sm sm:text-base text-gray-500">No purchase history yet</p>
-            </div>
-          )}
         </div>
       </div>
     </div>

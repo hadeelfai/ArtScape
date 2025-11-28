@@ -51,8 +51,7 @@ export default function FollowersFollowingPage() {
         const data = await response.json();
         if (data.user) {
           setUserName(data.user.name || 'User');
-          setFollowersCount(data.user.followers || 0);
-          setFollowingCount(data.user.following || 0);
+          // Don't set counts here - they should come from the followers/following API responses
         }
       }
     } catch (error) {
@@ -227,29 +226,29 @@ export default function FollowersFollowingPage() {
         // Show success message
         toast.success(newIsFollowing ? 'Followed successfully' : 'Unfollowed successfully');
 
-        // Refresh user info to get updated counts
+        // Refresh user info (name only, not counts)
         await fetchUserInfo();
         
-        // If we followed/unfollowed the profile owner (the user whose profile we're viewing),
-        // refresh the followers/following lists to get updated counts
+        // Refresh the followers/following lists to get updated counts
         const profileOwnerId = userId || currentUserId;
-        if (targetUserToFollowId === profileOwnerId) {
-          // Refresh the lists to get updated counts
-          const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${profileOwnerId}/followers`, {
-            credentials: 'include'
-          });
-          if (followersResponse.ok) {
-            const followersData = await followersResponse.json();
-            setFollowersCount(followersData.count || 0);
-          }
-          
-          const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${profileOwnerId}/following`, {
-            credentials: 'include'
-          });
-          if (followingResponse.ok) {
-            const followingData = await followingResponse.json();
-            setFollowingCount(followingData.count || 0);
-          }
+        const userIdString = String(profileOwnerId);
+        
+        // Refresh followers count
+        const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/followers`, {
+          credentials: 'include'
+        });
+        if (followersResponse.ok) {
+          const followersData = await followersResponse.json();
+          setFollowersCount(followersData.count || 0);
+        }
+        
+        // Refresh following count
+        const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/following`, {
+          credentials: 'include'
+        });
+        if (followingResponse.ok) {
+          const followingData = await followingResponse.json();
+          setFollowingCount(followingData.count || 0);
         }
       } else {
         const errorData = await response.json();
@@ -282,9 +281,15 @@ export default function FollowersFollowingPage() {
 
       if (response.ok) {
         setFollowers(followers.filter(user => user.id !== followerToRemoveId));
-        setFollowersCount(prev => Math.max(0, prev - 1));
-        // Refresh user info to get updated counts
-        await fetchUserInfo();
+        // Refresh followers list to get accurate count
+        const userIdString = String(targetUserId);
+        const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/followers`, {
+          credentials: 'include'
+        });
+        if (followersResponse.ok) {
+          const followersData = await followersResponse.json();
+          setFollowersCount(followersData.count || 0);
+        }
         toast.success('Follower removed successfully');
       } else {
         const errorData = await response.json();
@@ -314,9 +319,15 @@ export default function FollowersFollowingPage() {
 
       if (response.ok) {
         setFollowing(following.filter(user => user.id !== userToUnfollowId));
-        setFollowingCount(prev => Math.max(0, prev - 1));
-        // Refresh user info to get updated counts
-        await fetchUserInfo();
+        // Refresh following list to get accurate count
+        const userIdString = String(targetUserId);
+        const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/following`, {
+          credentials: 'include'
+        });
+        if (followingResponse.ok) {
+          const followingData = await followingResponse.json();
+          setFollowingCount(followingData.count || 0);
+        }
         toast.success('Unfollowed successfully');
       } else {
         const errorData = await response.json();
@@ -443,6 +454,9 @@ export default function FollowersFollowingPage() {
                           >
                             Remove
                           </button>
+                        ) : user.id === currentUserId ? (
+                          // Don't show button for yourself
+                          null
                         ) : (
                           // Other's profile: Show Follow/Following button
                           <button
@@ -500,6 +514,9 @@ export default function FollowersFollowingPage() {
                           >
                             Unfollow
                           </button>
+                        ) : user.id === currentUserId ? (
+                          // Don't show button for yourself
+                          null
                         ) : (
                           // Other's profile: Show Follow/Following button
                           <button
