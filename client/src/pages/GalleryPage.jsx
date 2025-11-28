@@ -3,13 +3,16 @@ import SearchBar from "../components/SearchBar";
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Link } from "react-router-dom";
-import { Filter, SlidersHorizontal } from 'lucide-react';
+import { Filter, SlidersHorizontal, ShoppingCart } from 'lucide-react';
 import { useGalleryData } from '../hooks/useGalleryData';
+import { useCart } from '../context/CartContext.jsx';
+import { toast } from 'sonner';
 
 const MAX_DISPLAY = 8;
 
 const GalleryPage = () => {
   const { users, artworks, loading } = useGalleryData();
+  const { addToCart, cartItems } = useCart();
 
   const latestExplore = useMemo(() => (
     artworks
@@ -33,36 +36,62 @@ const GalleryPage = () => {
     const avatarUrl = user.avatar || user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
 
     return (
-      <div key={art._id || art.id} className="flex flex-col items-start gap-2">
+      <Link to={`/artwork/${art._id || art.id}`} key={art._id || art.id} className="flex flex-col items-start gap-2 bg-white">
         <div className="aspect-[1/1] w-full overflow-hidden bg-gray-100 flex items-center justify-center">
           <img
-            src={art.image}
+            src={art.image && art.image.startsWith('http') ? art.image : '/Profileimages/User.jpg'}
             alt={art.title || 'Artwork'}
             className="w-full h-full object-cover"
+            onError={e => { e.target.onerror = null; e.target.src = '/Profileimages/User.jpg'; }}
           />
         </div>
         <div className="text-left w-full">
           <div className="flex items-center gap-2 mb-1">
-            <img
-              src={avatarUrl}
-              alt={username}
-              className="w-6 h-6 rounded-full object-cover"
-            />
-            <p className="text-sm text-gray-500">{username.startsWith('@') ? username : `@${username}`}</p>
+            <Link
+              to={user._id ? `/profile/${user._id}` : '#'}
+              onClick={e => e.stopPropagation()}
+            >
+              <img
+                src={avatarUrl}
+                alt={username}
+                className="w-6 h-6 rounded-full object-cover border"
+              />
+            </Link>
+            <Link
+              to={user._id ? `/profile/${user._id}` : '#'}
+              onClick={e => e.stopPropagation()}
+              className="text-sm text-gray-500 hover:underline"
+            >
+              {username.startsWith('@') ? username : `@${username}`}
+            </Link>
           </div>
           <p className="font-semibold text-base text-gray-900">{art.title || 'Untitled'}</p>
           {showPrice && art.price && (
-            <p className="text-sm font-medium text-gray-900 mt-1">{art.price} SAR</p>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm font-medium text-gray-900">{art.price} SAR</span>
+              <button title="Add to cart" className="ml-1 p-1 hover:bg-gray-100 rounded" onClick={e => { 
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                const success = addToCart(art, (error) => {
+                  toast.error(error);
+                });
+                if (success) {
+                  toast.success('Added to cart!');
+                }
+              }}>
+                <ShoppingCart className="w-5 h-5" />
+              </button>
+            </div>
           )}
         </div>
-      </div>
+      </Link>
     );
   };
 
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="pt-36 pb-12">
+      <div className="flex-1 pt-36 pb-12">
         <SearchBar variant="bar" />
 
         <section className="px-6 md:px-12 lg:px-20 mt-10">

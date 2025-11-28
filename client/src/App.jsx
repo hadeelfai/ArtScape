@@ -18,7 +18,8 @@ import ContactUs from './pages/ContactUs';
 import ForgotPasswordPage from './pages/ForgotPassword';
 import ResetPasswordPage from './pages/ResetPassword';
 import NotificationsPage from './pages/NotificationsPage';
-
+import ArtworkDetailsPage from './pages/ArtworkDetailsPage';
+import CartPage from './pages/CartPage';
 
 
 const App = () => {
@@ -37,6 +38,7 @@ const App = () => {
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/GalleryPage" element={<GalleryPage />} />
+        <Route path="/cart" element={<CartPage />} />
 
         <Route
           path="/CommunityPage" element={
@@ -50,6 +52,7 @@ const App = () => {
         <Route path="/News" element={<News />} />
         <Route path="/news/:id" element={<ArticleDetailPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
+        <Route path="/artwork/:id" element={<ArtworkDetailsPage />} />
 
         {/* Profile Routes */}
         <Route path="/profile" element={<ProfilePage />} />

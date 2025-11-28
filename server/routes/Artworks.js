@@ -1,7 +1,27 @@
 import express from 'express'
 import Artwork from '../models/Artwork.js'
+import nodemailer from 'nodemailer'
+import { authMiddleware } from '../middleware/AuthMiddleware.js'
 
 const router = express.Router()
+
+// Get user's liked and saved artworks (must come before /user/:userId to avoid route conflicts)
+router.get('/user/:userId/likes-saves', async (req, res) => {
+    try {
+        const userId = req.params.userId
+        
+        // Find all artworks where the user has liked or saved
+        const likedArtworks = await Artwork.find({ likes: userId }).select('_id')
+        const savedArtworks = await Artwork.find({ savedBy: userId }).select('_id')
+        
+        res.json({
+            liked: likedArtworks.map(art => art._id.toString()),
+            saved: savedArtworks.map(art => art._id.toString())
+        })
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
 
 // Get all artworks for a user
 router.get('/user/:userId', async (req, res) => {
@@ -119,6 +139,60 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: error.message })
   }
 })
+
+// Get a single artwork by ID
+router.get('/:id', async (req, res) => {
+    try {
+        const artwork = await Artwork.findById(req.params.id);
+        if (!artwork) {
+            return res.status(404).json({ error: 'Artwork not found' });
+        }
+        res.json(artwork);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Report artwork
+router.post('/:id/report', authMiddleware, async (req, res) => {
+  try {
+    const { reason, details } = req.body;
+    const artworkId = req.params.id;
+
+    const artwork = await Artwork.findById(artworkId).populate('artist');
+    if (!artwork) return res.status(404).json({ error: 'Artwork not found' });
+
+    // Email setup
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.ADMIN_EMAIL,
+        pass: process.env.ADMIN_EMAIL_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: `"${req.user.name}" <x.artscape.x@gmail.com>`,
+      to: 'x.artscape.x@gmail.com',
+      subject: 'Reported Artwork',
+      text: `
+        An artwork has been reported:
+        Reported Artwork ID: ${artworkId}
+        Artwork Title: ${artwork.title}
+        Reported By User: ${req.user.name} (${req.user.email})
+        Reason: ${reason}
+        ${details ? `Additional details:\n${details}\n` : ''}
+        Artwork Image URL: ${artwork.image}
+        Artist: ${artwork.artist?.name || 'Unknown'}
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.json({ message: 'Report sent to admin email.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to send report', details: err.message });
+  }
+});
 
 //deleting an artwork by id (for the admin page)
 router.delete('/:id', async (req, res) => {

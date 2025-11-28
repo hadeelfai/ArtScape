@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 import SettingsSidebar from "../components/SettingsSidebar";
 import { toast } from 'sonner';
 import AdminProfile from "./AdminProfile";
+import { useLikeSave } from '../context/LikeSaveContext.jsx';
 
 const DEFAULT_PROFILE_IMAGE = '/Profileimages/User.jpg';
 const DEFAULT_BANNER_IMAGE = '/Profileimages/Cover.jpg';
@@ -540,6 +541,71 @@ export default function ArtScapeProfile({
     };
   }, [artworkList]);
 
+  const { liked, saved } = useLikeSave();
+  const [likedArtworks, setLikedArtworks] = useState([]);
+  const [savedArtworks, setSavedArtworks] = useState([]);
+  
+  // Fetch liked/saved artworks by their IDs
+  useEffect(() => {
+    async function fetchLikedSavedArtworks() {
+      if (liked.length === 0 && saved.length === 0) {
+        setLikedArtworks([]);
+        setSavedArtworks([]);
+        return;
+      }
+
+      try {
+        // Fetch all artworks first
+        const allArtworksRes = await fetch(`${API_BASE_URL}/artworks`, {
+          credentials: 'include'
+        });
+        
+        if (allArtworksRes.ok) {
+          const allArtworks = await allArtworksRes.json();
+          
+          // Filter for liked artworks
+          const likedItems = allArtworks.filter(art => 
+            liked.includes(art._id || art.id)
+          ).map(art => ({
+            id: art._id || art.id,
+            title: art.title || '',
+            description: art.description || '',
+            tags: art.tags || '',
+            dimensions: art.dimensions || '',
+            year: art.year || '',
+            artworkType: art.artworkType || 'Explore',
+            price: art.price || null,
+            image: art.image || art.imageUrl
+          }));
+          
+          // Filter for saved artworks
+          const savedItems = allArtworks.filter(art => 
+            saved.includes(art._id || art.id)
+          ).map(art => ({
+            id: art._id || art.id,
+            title: art.title || '',
+            description: art.description || '',
+            tags: art.tags || '',
+            dimensions: art.dimensions || '',
+            year: art.year || '',
+            artworkType: art.artworkType || 'Explore',
+            price: art.price || null,
+            image: art.image || art.imageUrl
+          }));
+          
+          setLikedArtworks(likedItems);
+          setSavedArtworks(savedItems);
+        }
+      } catch (error) {
+        console.error('Error fetching liked/saved artworks:', error);
+      }
+    }
+
+    if (isOwnProfile) {
+      fetchLikedSavedArtworks();
+    }
+  }, [liked, saved, isOwnProfile]);
+
 
   const [open, setOpen] = useState(false);
 
@@ -946,24 +1012,22 @@ if (authUser?.role === "admin") {
                     </button>
                   )}
                   {artworkList.map((artwork) => (
-                    <div key={artwork.id} className="group">
+                    <Link to={`/artwork/${artwork.id}`} key={artwork.id} className="group block">
                       <div
-                        className={`relative bg-white overflow-hidden rounded-lg hover:shadow-2xl transition-shadow ${artwork.artworkType === 'Marketplace' ? 'cursor-pointer' : ''}`}
+                        className={`relative bg-white overflow-hidden ${artwork.artworkType === 'Marketplace' ? '' : ''}`}
                       >
                         <img
-                          src={artwork.image || artwork.imageUrl}
+                          src={artwork.image && artwork.image.startsWith('http') ? artwork.image : '/Profileimages/User.jpg'}
                           alt={artwork.title || 'Artwork'}
                           className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = '/Profileimages/User.jpg';
-                          }}
+                          onError={e => { e.target.onerror = null; e.target.src = '/Profileimages/User.jpg'; }}
                         />
                         {/* Edit and Delete Buttons - Only show for own profile */}
                         {isOwnProfile && (
                           <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                             <button
-                              onClick={(e) => {
+                              onClick={e => {
+                                e.preventDefault();
                                 e.stopPropagation();
                                 handleEditArtwork(artwork);
                               }}
@@ -973,7 +1037,8 @@ if (authUser?.role === "admin") {
                               <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-700" />
                             </button>
                             <button
-                              onClick={(e) => {
+                              onClick={e => {
+                                e.preventDefault();
                                 e.stopPropagation();
                                 handleDeleteArtwork(artwork.id);
                               }}
@@ -1005,7 +1070,7 @@ if (authUser?.role === "admin") {
                           </>
                         )}
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (
@@ -1018,17 +1083,87 @@ if (authUser?.role === "admin") {
 
           {/* Likes Tab */}
           {activeTab === 'likes' && (
-            <div className="text-center py-8 sm:py-12 px-4">
-              <Heart className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-300 mb-3 sm:mb-4" />
-              <p className="text-sm sm:text-base text-gray-500">No liked artworks yet</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8 px-2 sm:px-4">
+              {likedArtworks.length === 0 ? (
+                <div className="col-span-full text-center py-8 sm:py-12 text-gray-500">No liked artworks yet</div>
+              ) : (
+                likedArtworks.map(artwork => (
+                  <Link to={`/artwork/${artwork.id}`} key={artwork.id} className="group block">
+                    <div
+                      className={`relative bg-white overflow-hidden ${artwork.artworkType === 'Marketplace' ? '' : ''}`}
+                    >
+                      <img
+                        src={artwork.image && artwork.image.startsWith('http') ? artwork.image : '/Profileimages/User.jpg'}
+                        alt={artwork.title || 'Artwork'}
+                        className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover"
+                        onError={e => { e.target.onerror = null; e.target.src = '/Profileimages/User.jpg'; }}
+                      />
+                    </div>
+                    <div className="mt-2 sm:mt-3">
+                      <h3 className="text-sm sm:text-base font-medium text-gray-900 line-clamp-1">{artwork.title}</h3>
+                      {artwork.artworkType === 'Explore' ? (
+                        <>
+                          {artwork.description && (
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 line-clamp-2">{artwork.description}</p>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {artwork.description && (
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 line-clamp-2">{artwork.description}</p>
+                          )}
+                          {artwork.price && (
+                            <span className="text-base sm:text-lg font-bold text-gray-900 mt-1 sm:mt-2 block">{artwork.price} ر.س</span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           )}
 
           {/* Saved Tab */}
           {activeTab === 'saved' && (
-            <div className="text-center py-8 sm:py-12 px-4">
-              <Bookmark className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-300 mb-3 sm:mb-4" />
-              <p className="text-sm sm:text-base text-gray-500">No saved artworks yet</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8 px-2 sm:px-4">
+              {savedArtworks.length === 0 ? (
+                <div className="col-span-full text-center py-8 sm:py-12 text-gray-500">No saved artworks yet</div>
+              ) : (
+                savedArtworks.map(artwork => (
+                  <Link to={`/artwork/${artwork.id}`} key={artwork.id} className="group block">
+                    <div
+                      className={`relative bg-white overflow-hidden ${artwork.artworkType === 'Marketplace' ? '' : ''}`}
+                    >
+                      <img
+                        src={artwork.image && artwork.image.startsWith('http') ? artwork.image : '/Profileimages/User.jpg'}
+                        alt={artwork.title || 'Artwork'}
+                        className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover"
+                        onError={e => { e.target.onerror = null; e.target.src = '/Profileimages/User.jpg'; }}
+                      />
+                    </div>
+                    <div className="mt-2 sm:mt-3">
+                      <h3 className="text-sm sm:text-base font-medium text-gray-900 line-clamp-1">{artwork.title}</h3>
+                      {artwork.artworkType === 'Explore' ? (
+                        <>
+                          {artwork.description && (
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 line-clamp-2">{artwork.description}</p>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {artwork.description && (
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 line-clamp-2">{artwork.description}</p>
+                          )}
+                          {artwork.price && (
+                            <span className="text-base sm:text-lg font-bold text-gray-900 mt-1 sm:mt-2 block">{artwork.price} ر.س</span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           )}
 

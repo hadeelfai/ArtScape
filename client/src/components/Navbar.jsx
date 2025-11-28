@@ -1,17 +1,23 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Bell, Mail } from 'lucide-react';
+import { ShoppingCart, Bell } from 'lucide-react';
 import SearchBar from './SearchBar';
-import { useAuth } from '../context/AuthContext'; // Adjust the path based on your folder structure
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext.jsx';
 
 const Navbar = () => {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [showGallerySubmenu, setShowGallerySubmenu] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0); // Manage notification count from your notification system
 
   // Get user data from AuthContext
   const { user, isAuthenticated , isAdmin} = useAuth();
+  
+  // Check if we're on a Gallery sub-page (explore or marketplace)
+  const isGalleryActive = location.pathname === '/GalleryPage' || location.pathname === '/explore' || location.pathname === '/marketplace';
+  const { cartItems } = useCart();
 
   // Decide where the profile avatar should go
   const profilePath = user
@@ -127,24 +133,31 @@ const Navbar = () => {
               >
                 <NavLink
                   to={item.path}
-                  className={({ isActive }) =>
-                    `${isOpen ? "text-white" : "text-black"} font-albert lg:text-lg md:text-base 
+                  className={({ isActive }) => {
+                    // For Gallery, check if we're on Gallery or its sub-pages
+                    const shouldBeActive = item.name === 'Gallery' ? isGalleryActive : isActive;
+                    return `${isOpen ? "text-white" : "text-black"} font-albert lg:text-lg md:text-base 
                      transition-opacity duration-300 relative 
-                     ${!isActive ? "hover:opacity-60" : ""}`
-                  }
+                     ${!shouldBeActive ? "hover:opacity-60" : ""}`
+                  }}
                 >
-                  {({ isActive }) => (
-                    <>
-                      {item.name}
-                      {isActive && (
-                        <span
-                          className={`absolute top-full left-0 w-full h-[2px] 
-                            ${isOpen ? "bg-white" : "bg-black"} 
-                            lg:mt-[1.7rem] md:mt-[1.8rem]`}
-                        ></span>
-                      )}
-                    </>
-                  )}
+                  {({ isActive }) => {
+                    // For Gallery, check if we're on Gallery or its sub-pages
+                    const shouldBeActive = item.name === 'Gallery' ? isGalleryActive : isActive;
+                    return (
+                      <>
+                        {item.name}
+                        {shouldBeActive && (
+                          <span
+                            className={`absolute top-full left-0 w-full h-[2px] 
+                              ${isOpen ? "bg-white" : "bg-black"} 
+                              lg:mt-[1.7rem] md:mt-[1.8rem]`
+                            }
+                          ></span>
+                        )}
+                      </>
+                    );
+                  }}
                 </NavLink>
 
                 {/* Submenu Dropdown */}
@@ -205,7 +218,14 @@ const Navbar = () => {
                   to="/cart"
                   className={`p-2 hover:opacity-60 transition-opacity ${isOpen ? "text-white" : "text-black"}`}
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <div className="relative">
+                    <ShoppingCart className="w-5 h-5" />
+                    {cartItems.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                        {cartItems.length}
+                      </span>
+                    )}
+                  </div>
                 </Link>
 
                 <Link
@@ -218,13 +238,6 @@ const Navbar = () => {
                       {notificationCount}
                     </span>
                   )}
-                </Link>
-
-                <Link
-                  to="/messages"
-                  className={`p-2 hover:opacity-60 transition-opacity ${isOpen ? "text-white" : "text-black"}`}
-                >
-                  <Mail className="w-5 h-5" />
                 </Link>
 
                 <div className={`${isOpen ? "text-white" : "text-black"}`}> 
@@ -292,13 +305,6 @@ const Navbar = () => {
                       {notificationCount}
                     </span>
                   )}
-                </Link>
-
-                <Link
-                  to="/messages"
-                  className={`p-2 ${isOpen ? "text-white" : "text-black"}`}
-                >
-                  <Mail className="w-5 h-5" />
                 </Link>
 
                 <div className={`${isOpen ? "text-white" : "text-black"}`}>

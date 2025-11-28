@@ -1,0 +1,57 @@
+import React from 'react';
+import { useCart } from '../context/CartContext.jsx';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+
+export default function CartPage() {
+  const { cartItems, removeFromCart, clearCart } = useCart();
+
+  const total = cartItems.reduce((sum, item) => sum + (item.price ? Number(item.price) : 0), 0);
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Navbar />
+      <main className="max-w-3xl mx-auto py-24 px-4 flex-1 w-full">
+        <h1 className="text-3xl font-bold mb-8 text-gray-900">Cart</h1>
+        {cartItems.length === 0 ? (
+          <div className="text-center py-32 text-gray-500">Your cart is empty</div>
+        ) : (
+          <div>
+            <div className="divide-y divide-gray-200 mb-8">
+              {cartItems.map(item => (
+                <div key={item.id} className="flex items-center justify-between py-4">
+                  <Link to={`/artwork/${item.id}`} className="flex items-center gap-4">
+                    <img src={item.image} alt={item.title} className="w-20 h-20 object-cover bg-gray-100" />
+                    <div>
+                      <div className="font-semibold text-base">{item.title}</div>
+                      <div className="text-sm text-gray-600">{item.price} SAR</div>
+                    </div>
+                  </Link>
+                  <button className="ml-4 border text-red-600 border-red-200 px-3 py-1 rounded hover:bg-red-50" onClick={() => removeFromCart(item.id)}>
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between mb-8">
+              <span className="font-medium text-lg">Total:</span>
+              <span className="text-xl font-bold">{total} SAR</span>
+            </div>
+            <button 
+              className="w-full bg-black text-white py-4 rounded font-medium text-lg hover:bg-gray-900" 
+              onClick={() => {
+                toast.info('Checkout functionality coming soon!');
+                // Don't clear cart - keep items for now
+              }}
+            >
+              Checkout
+            </button>
+          </div>
+        )}
+      </main>
+      <Footer />
+    </div>
+  );
+}

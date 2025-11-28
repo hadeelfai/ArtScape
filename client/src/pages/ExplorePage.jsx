@@ -6,6 +6,7 @@ import { Filter, SlidersHorizontal } from 'lucide-react';
 import { useGalleryData } from '../hooks/useGalleryData';
 import { CATEGORY_TABS, matchesArtType, matchesCategory, matchesColor, matchesSize } from '../utils/artworkFilters';
 import DropdownMenu from '../components/DropdownMenu';
+import { Link } from 'react-router-dom';
 
 const SIZE_FILTERS = [
     { value: 'any', label: 'All sizes' },
@@ -92,35 +93,45 @@ const ExplorePage = () => {
         const avatarUrl = user.avatar || user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
 
         return (
-            <div key={art._id || art.id} className="flex flex-col items-start gap-2">
+            <Link to={`/artwork/${art._id || art.id}`} key={art._id || art.id} className="flex flex-col items-start gap-2 bg-white">
                 <div className="aspect-[1/1] w-full overflow-hidden bg-gray-100 flex items-center justify-center">
                     <img
-                        src={art.image}
+                        src={art.image && art.image.startsWith('http') ? art.image : '/Profileimages/User.jpg'}
                         alt={art.title || 'Artwork'}
                         className="w-full h-full object-cover"
+                        onError={e => { e.target.onerror = null; e.target.src = '/Profileimages/User.jpg'; }}
                     />
                 </div>
-
                 <div className=" flex items-center gap-2 mb-1">
-                    <img
-                        src={avatarUrl}
-                        alt={username}
-                        className="w-6 h-6 rounded-full object-cover"
-                    />
-                    <p className="text-sm text-gray-500">{username.startsWith('@') ? username : `@${username}`}</p>
+                    <Link
+                        to={user._id ? `/profile/${user._id}` : '#'}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <img
+                            src={avatarUrl}
+                            alt={username}
+                            className="w-6 h-6 rounded-full object-cover border"
+                        />
+                    </Link>
+                    <Link
+                        to={user._id ? `/profile/${user._id}` : '#'}
+                        onClick={e => e.stopPropagation()}
+                        className="text-sm text-gray-500 hover:underline"
+                    >
+                        {username.startsWith('@') ? username : `@${username}`}
+                    </Link>
                 </div>
-
                 <div className="text-left">
                     <p className="font-semibold text-base text-gray-900">{art.title || 'Untitled'}</p>
                 </div>
-            </div>
+            </Link>
         );
     };
 
     return (
-        <div>
+        <div className="min-h-screen flex flex-col">
             <Navbar />
-            <div className="pt-36 pb-16">
+            <div className="flex-1 pt-36 pb-16">
                 <SearchBar variant="bar" />
 
                 <div className="px-6 md:px-12 lg:px-20 mt-6 space-y-6">
@@ -205,12 +216,7 @@ const ExplorePage = () => {
                 )}
                 <div ref={sentinelRef} className="h-2" />
             </div>
-
-            <div className="pt-96">
-                <Footer />
-            </div>
-
-
+            <Footer />
         </div>
     );
 };
