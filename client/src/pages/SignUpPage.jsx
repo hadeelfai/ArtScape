@@ -39,8 +39,11 @@ export default function SignUpPage() {
       return;
     }
 
+    // Normalize username: remove @ symbol and trim
+    const normalizedUsername = formData.username ? formData.username.trim().replace(/^@+/, '') : '';
+    
     // Validate username if provided
-    if (formData.username && !/^@?[a-zA-Z0-9_]{3,30}$/.test(formData.username.trim())) {
+    if (normalizedUsername && !/^[a-zA-Z0-9_]{3,30}$/.test(normalizedUsername)) {
       setError('Username must be 3-30 characters and contain only letters, numbers, and underscores. @ symbol is optional.');
       setIsLoading(false);
       return;
@@ -50,10 +53,8 @@ export default function SignUpPage() {
       // Combine country code and phone number
       const phoneNumber = formData.phone ? `${formData.countryCode}${formData.phone}` : '';
       
-      // Use provided username or generate one from name (backend will also generate one if needed)
-      const username = formData.username.trim() 
-        ? (formData.username.trim().startsWith('@') ? formData.username.trim() : `@${formData.username.trim()}`)
-        : `@${name.toLowerCase().replace(/\s+/g, '_')}`;
+      // Use normalized username (without @) or let backend generate one from name
+      const username = normalizedUsername || '';
 
       const result = await register(
         name,

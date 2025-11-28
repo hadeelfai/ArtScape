@@ -466,10 +466,20 @@ export default function EditProfilePage() {
     setError(null);
 
     try {
+      // Normalize username: trim and remove leading @ symbol
+      const normalizedUsername = formData.username ? formData.username.trim().replace(/^@+/, '') : '';
+      
+      // Validate username is not empty (required field)
+      if (!normalizedUsername || normalizedUsername.length === 0) {
+        setError('Username is required. Please enter a valid username.');
+        setIsSaving(false);
+        return;
+      }
+
       // Prepare the update payload
       const updatePayload = {
         name: `${formData.firstName} ${formData.lastName}`.trim() || authUser.name, // Combine first and last name
-        username: formData.username,
+        username: normalizedUsername,
         firstName: formData.firstName,
         lastName: formData.lastName,
         phoneNumber: formData.phoneNumber,
@@ -515,7 +525,7 @@ export default function EditProfilePage() {
         const updatedUser = {
           ...authUser,
           name: updatePayload.name || authUser.name,
-          username: formData.username || authUser.username,
+          username: normalizedUsername || authUser.username,
           profileImage: profileImage,
           avatar: profileImage, // Also update avatar field for compatibility with Navbar
           bannerImage: coverImage,
@@ -1121,7 +1131,7 @@ export default function EditProfilePage() {
               <button
                 onClick={handleSaveChanges}
                 disabled={isSaving}
-                className="bg-black text-white px-12 py-3 rounded-... font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-black text-white px-12 py-3 rounded-full hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Saving...' : 'Save Changes'}
               </button>

@@ -118,9 +118,45 @@ function buildProfileUpdatePayload(body) {
 //POST - Register new user
 router.post('/register', async (req, res) => {
     try {
-        const { name, email, password } = req.body
+        const { name, email, password, username, firstName, lastName, phoneNumber } = req.body
+        
+        // Normalize username: remove @ symbol and trim
+        let normalizedUsername = username ? username.trim().replace(/^@+/, '') : '';
+        
+        // Generate username from name if not provided
+        if (!normalizedUsername || normalizedUsername.length === 0) {
+            normalizedUsername = name.toLowerCase().trim().replace(/\s+/g, '_');
+        }
+        
+        // Ensure username meets minimum length requirement
+        if (normalizedUsername.length < 3) {
+            normalizedUsername = normalizedUsername.padEnd(3, '_');
+        }
+        
+        // Check if username already exists, append number if needed
+        let finalUsername = normalizedUsername;
+        let counter = 1;
+        while (await User.findOne({ username: finalUsername })) {
+            finalUsername = `${normalizedUsername}${counter}`;
+            counter++;
+        }
+        
         const hashedPassword = await bcrypt.hash(password, 10)
-        const user = new User({ name, email, password: hashedPassword })
+        
+        // Build user object with all provided fields
+        const userData = {
+            name,
+            email,
+            password: hashedPassword,
+            username: finalUsername
+        };
+        
+        // Add optional fields if provided
+        if (firstName) userData.firstName = firstName;
+        if (lastName) userData.lastName = lastName;
+        if (phoneNumber) userData.phoneNumber = phoneNumber;
+        
+        const user = new User(userData)
         await user.save()
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -136,6 +172,7 @@ router.post('/register', async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                username: user.username,
                 role: user.role,  
                 profileImage: user.profileImage || null, // ✅ Added
                 bannerImage: user.bannerImage || null, // ✅ Added
