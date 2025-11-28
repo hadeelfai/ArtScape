@@ -2,10 +2,9 @@ import { Heart, Edit2, Trash, MessageCircle, Flag } from "lucide-react";
 import React, {
   useCallback,
   useEffect,
-  useOptimistic,
   useState,
-  useTransition,
 } from "react";
+
 import { toast } from "sonner";
 import CommentsSection from "./CommentsSection";
 import { getCommentCount } from "../api/comments";
@@ -17,9 +16,6 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
-
-  // To disable like button while updating
-  const [isPending, startTransition] = useTransition();
 
   // Show/hide comments per post id
   const [showComments, setShowComments] = useState({});
@@ -37,26 +33,6 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
   const [reportError, setReportError] = useState("");
-
-  /**
-   * useOptimistic:
-   * - Base state: posts
-   * - When we call setOptimisticPosts with { postId, liked, likesCount }
-   *   it returns a "preview" version of posts to use in the UI.
-   */
-  const [optimisticPosts, setOptimisticPosts] = useOptimistic(
-    posts,
-    (state, { postId, liked, likesCount }) =>
-      state.map((post) =>
-        post._id === postId
-          ? {
-              ...post,
-              likes: Array(likesCount).fill(null),
-              isLikedByUser: liked,
-            }
-          : post
-      )
-  );
 
   // Load logged-in user (full data) from backend
   const loadLoggedInUser = useCallback(async () => {
@@ -166,45 +142,29 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
     }));
   };
 
-  // Like/unlike a post
-  const handleLike = async (postId, currentLikesCount, isCurrentlyLiked) => {
+  // Like / unlike a post (server is the source of truth)
+  const handleLike = async (postId, isCurrentlyLiked) => {
     const token = loggedInUser?.token;
     if (!token) {
       toast.error("Please sign in to like posts");
       return;
     }
 
-    const newLiked = !isCurrentlyLiked;
-    const newLikesCount = newLiked
-      ? currentLikesCount + 1
-      : currentLikesCount - 1;
-
-    // Optimistic UI
-    startTransition(() => {
-      setOptimisticPosts({
-        postId,
-        liked: newLiked,
-        likesCount: newLikesCount,
-      });
-    });
-
     try {
-      const res = await fetch(
-        `http://localhost:5500/posts/like/${postId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`http://localhost:5500/posts/like/${postId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const data = await res.json();
+      const data = await res.json(); // { id, liked, likesCount }
 
-      // Sync posts with server response
+      // Update only this post using values from backend
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           post._id === postId
@@ -217,8 +177,10 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
         )
       );
     } catch (error) {
+      console.error(error);
       toast.error("Failed to update like");
-      loadPosts(); // fallback if something goes wrong
+      // fallback to reloading from server if something went wrong
+      loadPosts();
     }
   };
 
@@ -296,7 +258,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
     return <div className="p-4 text-sm text-red-600">{err}</div>;
   }
 
-  if (!optimisticPosts.length) {
+  if (!posts.length) {
     return (
       <div className="text-gray-500 flex items-center justify-center">
         No posts yet...
@@ -306,7 +268,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
 
   return (
     <div>
-      {optimisticPosts
+      {posts
         .filter((post) => post.user)
         .map((post) => (
           <article
@@ -360,14 +322,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
                 <button
                   type="button"
                   className="flex items-center gap-2 hover:text-red"
-                  disabled={isPending}
-                  onClick={() =>
-                    handleLike(
-                      post._id,
-                      Array.isArray(post.likes) ? post.likes.length : 0,
-                      post.isLikedByUser
-                    )
-                  }
+                  onClick={() => handleLike(post._id, post.isLikedByUser)}
                 >
                   <Heart
                     className={
