@@ -87,7 +87,7 @@ export default function FollowersFollowingPage() {
         if (currentUserId) {
           try {
             const currentUserStringId = String(currentUserId);
-            const currentUserResponse = await fetch(`${API_BASE_URL}/users/${currentUserStringId}/following`, {
+            const currentUserResponse = await fetch(`${API_BASE_URL}/users/profile/${currentUserStringId}/following`, {
               credentials: 'include'
             });
             if (currentUserResponse.ok) {
@@ -100,8 +100,8 @@ export default function FollowersFollowingPage() {
         }
         
         // Fetch followers
-        console.log('Fetching followers from:', `${API_BASE_URL}/users/${userIdString}/followers`);
-        const followersResponse = await fetch(`${API_BASE_URL}/users/${userIdString}/followers`, {
+        console.log('Fetching followers from:', `${API_BASE_URL}/users/profile/${userIdString}/followers`);
+        const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/followers`, {
           credentials: 'include'
         });
         
@@ -139,8 +139,8 @@ export default function FollowersFollowingPage() {
         }
 
         // Fetch following
-        console.log('Fetching following from:', `${API_BASE_URL}/users/${userIdString}/following`);
-        const followingResponse = await fetch(`${API_BASE_URL}/users/${userIdString}/following`, {
+        console.log('Fetching following from:', `${API_BASE_URL}/users/profile/${userIdString}/following`);
+        const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/following`, {
           credentials: 'include'
         });
         
@@ -235,7 +235,7 @@ export default function FollowersFollowingPage() {
         const profileOwnerId = userId || currentUserId;
         if (targetUserToFollowId === profileOwnerId) {
           // Refresh the lists to get updated counts
-          const followersResponse = await fetch(`${API_BASE_URL}/users/${profileOwnerId}/followers`, {
+          const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${profileOwnerId}/followers`, {
             credentials: 'include'
           });
           if (followersResponse.ok) {
@@ -243,7 +243,7 @@ export default function FollowersFollowingPage() {
             setFollowersCount(followersData.count || 0);
           }
           
-          const followingResponse = await fetch(`${API_BASE_URL}/users/${profileOwnerId}/following`, {
+          const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${profileOwnerId}/following`, {
             credentials: 'include'
           });
           if (followingResponse.ok) {

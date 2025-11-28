@@ -148,7 +148,11 @@ router.post('/register', async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            username: finalUsername
+            username: finalUsername,
+            followersArray: [], // Initialize empty arrays
+            followingArray: [],
+            followers: 0,
+            following: 0
         };
         
         // Add optional fields if provided
@@ -418,20 +422,36 @@ router.post('/follow/:id', async (req, res) => {
         if (!user || !targetUser)
             return res.status(404).json({ error: 'User not found' })
 
-        const isFollowing = user.followingArray.includes(targetUserId)
+        // Ensure arrays are initialized
+        if (!user.followingArray) user.followingArray = []
+        if (!user.followersArray) user.followersArray = []
+        if (!targetUser.followingArray) targetUser.followingArray = []
+        if (!targetUser.followersArray) targetUser.followersArray = []
+
+        // Convert ObjectIds to strings for comparison
+        const userFollowingIds = user.followingArray.map(id => id.toString())
+        const targetFollowersIds = targetUser.followersArray.map(id => id.toString())
+        
+        const isFollowing = userFollowingIds.includes(targetUserId.toString())
 
         if (isFollowing) {
             // Unfollow
-            user.followingArray = user.followingArray.filter(id => id.toString() !== targetUserId)
-            targetUser.followersArray = targetUser.followersArray.filter(id => id.toString() !== userId)
-            user.following -= 1
-            targetUser.followers -= 1
+            user.followingArray = user.followingArray.filter(id => id.toString() !== targetUserId.toString())
+            targetUser.followersArray = targetUser.followersArray.filter(id => id.toString() !== userId.toString())
+            // Sync counts with actual array lengths
+            user.following = user.followingArray.length
+            targetUser.followers = targetUser.followersArray.length
         } else {
-            // Follow
-            user.followingArray.push(targetUserId)
-            targetUser.followersArray.push(userId)
-            user.following += 1
-            targetUser.followers += 1
+            // Follow - check for duplicates first
+            if (!userFollowingIds.includes(targetUserId.toString())) {
+                user.followingArray.push(targetUserId)
+            }
+            if (!targetFollowersIds.includes(userId.toString())) {
+                targetUser.followersArray.push(userId)
+            }
+            // Sync counts with actual array lengths
+            user.following = user.followingArray.length
+            targetUser.followers = targetUser.followersArray.length
         }
 
         await user.save()
@@ -520,7 +540,14 @@ router.get('/profile/:id/followers', async (req, res) => {
         if (!user)
             return res.status(404).json({ error: 'User not found' })
 
-        const followers = user.followersArray.map(follower => ({
+        // Ensure arrays are initialized
+        if (!user.followersArray || !Array.isArray(user.followersArray)) {
+            user.followersArray = []
+            user.followers = 0
+            await user.save()
+        }
+
+        const followers = (user.followersArray || []).map(follower => ({
             id: follower._id.toString(),
             name: follower.name,
             username: follower.username || `@${follower.name.toLowerCase().replace(/\s+/g, '_')}`,
@@ -530,9 +557,18 @@ router.get('/profile/:id/followers', async (req, res) => {
             following: follower.following || 0
         }))
 
+        // Always use actual array length as count to ensure accuracy
+        const actualCount = followers.length
+        
+        // Sync the stored count with actual array length if they differ
+        if (user.followers !== actualCount) {
+            user.followers = actualCount
+            await user.save()
+        }
+
         res.json({
             followers,
-            count: user.followers || 0
+            count: actualCount
         })
     } catch (error) {
         res.status(500).json({ error: error.message })
@@ -549,7 +585,14 @@ router.get('/profile/:id/following', async (req, res) => {
         if (!user)
             return res.status(404).json({ error: 'User not found' })
 
-        const following = user.followingArray.map(followed => ({
+        // Ensure arrays are initialized
+        if (!user.followingArray || !Array.isArray(user.followingArray)) {
+            user.followingArray = []
+            user.following = 0
+            await user.save()
+        }
+
+        const following = (user.followingArray || []).map(followed => ({
             id: followed._id.toString(),
             name: followed.name,
             username: followed.username || `@${followed.name.toLowerCase().replace(/\s+/g, '_')}`,
@@ -559,9 +602,18 @@ router.get('/profile/:id/following', async (req, res) => {
             following: followed.following || 0
         }))
 
+        // Always use actual array length as count to ensure accuracy
+        const actualCount = following.length
+        
+        // Sync the stored count with actual array length if they differ
+        if (user.following !== actualCount) {
+            user.following = actualCount
+            await user.save()
+        }
+
         res.json({
             following,
-            count: user.following || 0
+            count: actualCount
         })
     } catch (error) {
         res.status(500).json({ error: error.message })
