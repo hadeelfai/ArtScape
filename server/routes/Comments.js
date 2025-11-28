@@ -1,6 +1,10 @@
 import express from 'express';
 import Comments from '../models/Comments.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
+import Post from '../models/Posts.js';
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
+
 
 const router = express.Router();
 
@@ -21,6 +25,27 @@ router.post('/:postId', authMiddleware, async (req, res) => {
     });
 
     await comment.save();
+
+        // NEW: notify post owner when someone comments on their post
+    const post = await Post.findById(req.params.postId).populate(
+      'user',
+      'name username'
+    );
+
+    if (post && post.user._id.toString() !== req.user.id.toString()) {
+      const actor = await User.findById(req.user.id).select('name username');
+
+      await Notification.create({
+        user: post.user._id, // owner
+        fromUser: req.user.id, // commenter
+        post: post._id,
+        type: 'comment',
+        message: `${
+          actor?.username || actor?.name || 'Someone'
+        } commented on your post`,
+      });
+    }
+
 
     // Return comment with populated user fields (name, profileImage, username)
     const populatedComment = await Comments.findById(comment._id)

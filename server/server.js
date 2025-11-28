@@ -8,6 +8,7 @@ import Comment from './routes/Comments.js'
 import Artwork from './routes/Artworks.js'
 import cookieParser from 'cookie-parser'
 import News from './routes/News.js'
+import Notifications from './routes/Notifications.js';
 import { authMiddleware } from './middleware/AuthMiddleware.js'
 import contactRoutes from "./routes/contact.js";
 
@@ -31,6 +32,8 @@ app.use('/comments',authMiddleware, Comment);
 app.use('/artworks', Artwork);
 app.use('/news', News)
 app.use("/contact", contactRoutes);
+app.use('/notifications', Notifications);
+
 
 // Connect to DB
 mongoose.connect(process.env.MONGO_URL)

@@ -17,6 +17,8 @@ import MarketplacePage from './pages/MarketplacePage';
 import ContactUs from './pages/ContactUs';
 import ForgotPasswordPage from './pages/ForgotPassword';
 import ResetPasswordPage from './pages/ResetPassword';
+import NotificationsPage from './pages/NotificationsPage';
+
 
 
 const App = () => {
@@ -29,21 +31,21 @@ const App = () => {
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/login" element={<SignInPage />} /> {/* Alias */}
-<Route path="/forgot-password" element={<ForgotPasswordPage />} />
-<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/GalleryPage" element={<GalleryPage />} />
 
-        <Route 
+        <Route
           path="/CommunityPage" element={
             <Layout>
               <CommunityPage />
             </Layout>
           }
         />
-        <Route path="/contact" element={<ContactUs /> }/>
+        <Route path="/contact" element={<ContactUs />} />
 
         <Route path="/News" element={<News />} />
         <Route path="/news/:id" element={<ArticleDetailPage />} />
@@ -68,6 +70,12 @@ const App = () => {
         {/* Admin Profile */}
 
         <Route path="/admin" element={<AdminProfile />} />
+        <Route path="/notifications" element={<Layout>
+          <NotificationsPage />
+        </Layout>
+        }
+        />
+
 
       </Routes>
     </>

@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingCart, Bell, Mail } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useAuth } from '../context/AuthContext'; // Adjust the path based on your folder structure
@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext'; // Adjust the path based on yo
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showGallerySubmenu, setShowGallerySubmenu] = useState(false);
-  const [notificationCount] = useState(3); // Manage notification count from your notification system
+  const [notificationCount, setNotificationCount] = useState(0); // Manage notification count from your notification system
 
   // Get user data from AuthContext
   const { user, isAuthenticated , isAdmin} = useAuth();
@@ -37,6 +37,45 @@ const Navbar = () => {
     { name: "Community", path: "/CommunityPage" },
     { name: "News", path: "/News" },
   ];
+
+  //Getting notification count
+    // Getting notification count from backend
+  useEffect(() => {
+    // Only try if user is logged in
+    if (!isAuthenticated || !user) return;
+
+    const token = user.token;
+    if (!token) return;
+
+    const fetchNotificationCount = async () => {
+      try {
+        const res = await fetch("http://localhost:5500/notifications", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          console.error("Failed to load notifications, status:", res.status);
+          return;
+        }
+
+        const data = await res.json(); // should be an array
+        const unreadCount = Array.isArray(data)
+          ? data.filter((n) => !n.read).length
+          : 0;
+
+        setNotificationCount(unreadCount);
+      } catch (error) {
+        console.error("Error loading notifications:", error);
+      }
+    };
+
+    fetchNotificationCount();
+  }, [isAuthenticated, user]);
 
   return (
     <>

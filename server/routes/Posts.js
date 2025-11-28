@@ -3,6 +3,9 @@ import Post from '../models/Posts.js'
 import {authMiddleware} from '../middleware/AuthMiddleware.js'
 import cloudinary from '../utils/cloudinary.js'
 import nodemailer from "nodemailer";
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
+
 
 
 const router = express.Router()
@@ -23,6 +26,33 @@ router.post('/' , authMiddleware,async (req,res)=>{
         res.status(500).json({error: error.message})
     }
 })
+
+    // NEW: create notifications for all followers of the author
+    const author = await User.findById(req.user.id).select(
+      'followersArray name username'
+    );
+
+    if (author && Array.isArray(author.followersArray)) {
+      const notificationsToInsert = author.followersArray
+        .filter(
+          (followerId) =>
+            followerId.toString() !== author._id.toString() // don't notify yourself
+        )
+        .map((followerId) => ({
+          user: followerId, // who receives it
+          fromUser: author._id, // who triggered it
+          post: newPost._id,
+          type: 'new_post',
+          message: `${
+            author.username || author.name || 'Someone'
+          } posted in the community`,
+        }));
+
+      if (notificationsToInsert.length > 0) {
+        await Notification.insertMany(notificationsToInsert);
+      }
+    }
+
 // get all posts for feed
 router.get('/' , async (req,res)=>{
     try {
@@ -81,6 +111,20 @@ router.post("/like/:id" ,authMiddleware, async( req,res) => {
         res.status(500).json({ error: error.message})
     }
 })
+  // NEW: notify the post owner when someone (else) likes their post
+  if (post.user.toString() !== req.user.id.toString() && !hasLiked) {
+    const actor = await User.findById(req.user.id).select('name username');
+
+    await Notification.create({
+      user: post.user, // owner
+      fromUser: req.user.id, // liker
+      post: post._id,
+      type: 'like',
+      message: `${
+        actor?.username || actor?.name || 'Someone'
+      } liked your post`,
+    });
+  }
 
 
 //to edit posts
