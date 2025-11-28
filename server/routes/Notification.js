@@ -4,14 +4,17 @@ import { authMiddleware } from '../middleware/AuthMiddleware.js';
 
 const router = express.Router();
 
-// All notification routes require auth
+//User must be logged in
 router.use(authMiddleware);
 
-// GET /notifications -> list notifications for logged-in user
+//GET the notififcation
 router.get('/', async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
+    if (!userId) {
+      return res.status(401).json({ message: 'User not found in request' });
+    }
 
     const notifications = await Notification.find({ user: userId })
       .sort({ createdAt: -1 })
@@ -19,10 +22,10 @@ router.get('/', async (req, res) => {
       .populate('fromUser', 'name username profileImage')
       .populate('post', 'text image');
 
-    res.json(notifications);
+    return res.json(notifications);
   } catch (error) {
     console.error('Get notifications error:', error);
-    res.status(500).json({ message: 'Failed to load notifications' });
+    return res.status(500).json({ message: 'Failed to load notifications' });
   }
 });
 
