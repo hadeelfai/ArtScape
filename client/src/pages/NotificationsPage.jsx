@@ -5,27 +5,29 @@ const NotificationsPage = () => {
   const { user } = useAuth();
   const token = user?.token;
 
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState('');
+  const [notifications, setNotifications] = useState([]); //list of notifications
+  const [loading, setLoading] = useState(false);//show loading spinner or message
+  const [err, setErr] = useState(''); //display error messages
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) return; // If user not logged in don’t fetch anything
 
+    //function to fetch notifications from backend
     const fetchNotifications = async () => {
       try {
         setLoading(true);
         setErr('');
-
+        //API request to get this user notifications
         const res = await fetch('http://localhost:5500/notifications', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`, //Sending token for authentication
           },
           credentials: 'include',
         });
 
+        //parsing response with JSON 
         let data = [];
         try {
           data = await res.json();
@@ -33,14 +35,35 @@ const NotificationsPage = () => {
           data = [];
         }
 
+        //If response fail exist
         if (!res.ok) {
           console.error('Failed to load notifications, status:', res.status, data);
           setNotifications([]);
           return;
         }
-
+        
+        //If response is valid then store notifications in state
         setNotifications(Array.isArray(data) ? data : []);
         setErr('');
+
+        // After successfully loading notifications, mark them as read in the backend
+        try {
+          await fetch('http://localhost:5500/notifications/mark_read', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            credentials: 'include',
+          });
+
+          // Telling Navbar notification is read
+          window.dispatchEvent(new Event('notificationsRead'));
+        } catch (readMarkError) {
+          console.error('Failed to mark notifications as read:', readMarkError);
+        }
+
+
       } catch (error) {
         console.error('Error loading notifications:', error);
         setErr('Failed to load notifications');
@@ -48,15 +71,18 @@ const NotificationsPage = () => {
       } finally {
         setLoading(false);
       }
+
+
     };
 
     fetchNotifications();
-  }, [token]);
+  }, [token]); //Rerun when token changes
 
   if (!token) {
     return <div className="p-4">Please sign in to see notifications.</div>;
   }
 
+  //Notification page Interface
   return (
     <div className="max-w-2xl mx-auto p-4">
       <h1 className="text-xl font-semibold mb-4">Notifications</h1>

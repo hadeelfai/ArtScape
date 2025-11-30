@@ -11,16 +11,15 @@ router.use(authMiddleware);
 router.get('/', async (req, res) => {
   try {
     const userId = req.user.id;
-
+//Safety check
     if (!userId) {
       return res.status(401).json({ message: 'User not found in request' });
     }
 
     const notifications = await Notification.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .limit(30)
-      .populate('fromUser', 'name username profileImage')
-      .populate('post', 'text image');
+      .sort({ createdAt: -1 }) //start from neweset
+      .populate('fromUser', 'name username profileImage')//show name, username and profile image
+      .populate('post', 'text image'); //show text of the post and image
 
     return res.json(notifications);
   } catch (error) {
@@ -28,5 +27,26 @@ router.get('/', async (req, res) => {
     return res.status(500).json({ message: 'Failed to load notifications' });
   }
 });
+
+
+//Mark all unread notifications as read 
+router.patch('/mark_read',async(req, res) =>{
+try{
+const userId= req.user.id;
+
+//Update all notification from read: false to true.
+await Notification.updateMany(
+
+{user: userId, read: false},
+{$set: {read: true}}
+);
+
+res.sendStatus(200);
+} catch(error){
+console.error('mark_read_error', error);
+res.sendStatus(500);
+}
+});
+
 
 export default router;

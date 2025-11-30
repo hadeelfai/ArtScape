@@ -19,6 +19,51 @@ const Navbar = () => {
   const isGalleryActive = location.pathname === '/GalleryPage' || location.pathname === '/explore' || location.pathname === '/marketplace';
   const { cartItems } = useCart();
 
+  //fetch unread notification count from backend
+  const fetchNotificationCount = async () => {
+    // If user is not logged in no notifications mark
+    if (!isAuthenticated || !user?.token) {
+      setNotificationCount(0);
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5500/notifications", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`, // passing token so backend knows who we are
+        },
+        credentials: "include", // keeps cookies if used
+      });
+
+      // If backend responded with an error, just silently fail
+      if (!res.ok) {
+        console.error("Failed to load notifications:", res.status);
+        return;
+      }
+
+      // Read notifications array
+      let data = [];
+      try {
+        data = await res.json();
+      } catch {
+        data = [];
+      }
+
+      // Count only unread notifications
+      const unreadCount = Array.isArray(data)
+        ? data.filter((item) => item.read === false).length
+        : 0;
+
+      // Update bell badge number
+      setNotificationCount(unreadCount);
+    } catch (error) {
+      console.error("Error fetching notifications in Navbar:", error);
+    }
+  };
+
+
   // Decide where the profile avatar should go
   const profilePath = user
   ? isAdmin
@@ -44,44 +89,28 @@ const Navbar = () => {
     { name: "News", path: "/News" },
   ];
 
-  //Getting notification count
-    // Getting notification count from backend
+
+   // Checking notification count when user logs in,
   useEffect(() => {
-    // Only try if user is logged in
-    if (!isAuthenticated || !user) return;
+    fetchNotificationCount();
+  }, [isAuthenticated, user?.token, location.pathname]);
 
-    const token = user.token;
-    if (!token) return;
-
-    const fetchNotificationCount = async () => {
-      try {
-        const res = await fetch("http://localhost:5500/notifications", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          console.error("Failed to load notifications, status:", res.status);
-          return;
-        }
-
-        const data = await res.json(); // should be an array
-        const unreadCount = Array.isArray(data)
-          ? data.filter((n) => !n.read).length
-          : 0;
-
-        setNotificationCount(unreadCount);
-      } catch (error) {
-        console.error("Error loading notifications:", error);
-      }
+    // Listen for global "notificationsRead" event (fired from NotificationsPage)
+  useEffect(() => {
+    const handleNotificationsRead = () => {
+      // Re-fetch count so the red badge disappears
+      fetchNotificationCount();
     };
 
-    fetchNotificationCount();
-  }, [isAuthenticated, user]);
+    window.addEventListener("notificationsRead", handleNotificationsRead);
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("notificationsRead", handleNotificationsRead);
+    };
+  }, [isAuthenticated, user?.token]); // re-bind if auth state changes
+
+
 
   return (
     <>
