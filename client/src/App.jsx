@@ -20,6 +20,7 @@ import ResetPasswordPage from './pages/ResetPassword';
 import NotificationsPage from './pages/NotificationsPage';
 import ArtworkDetailsPage from './pages/ArtworkDetailsPage';
 import CartPage from './pages/CartPage';
+import OrdersPage from './pages/OrdersPage';
 
 
 const App = () => {
@@ -39,6 +40,8 @@ const App = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/GalleryPage" element={<GalleryPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/sales" element={<OrdersPage />} />
 
         <Route
           path="/CommunityPage" element={

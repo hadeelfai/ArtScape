@@ -1,0 +1,211 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { Package, Palette } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+
+export default function OrdersPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isAuthenticated } = useAuth();
+  const [activeTab, setActiveTab] = useState('orders');
+  const [orders, setOrders] = useState([]);
+  const [sales, setSales] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Determine initial tab from URL
+  useEffect(() => {
+    if (location.pathname === '/sales') {
+      setActiveTab('sales');
+    } else {
+      setActiveTab('orders');
+    }
+  }, [location.pathname]);
+
+  // Redirect to signin if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      navigate('/signin');
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // Fetch orders (placeholder - replace with actual API calls)
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user?.id) return;
+
+      setIsLoading(true);
+      try {
+        // Placeholder: Empty orders for now
+        setOrders([]);
+        setSales([]);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isAuthenticated && user) {
+      fetchOrders();
+    }
+  }, [user, isAuthenticated]);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'sales') {
+      navigate('/sales', { replace: true });
+    } else {
+      navigate('/orders', { replace: true });
+    }
+  };
+
+  if (!isAuthenticated || !user) {
+    return null; // Will redirect
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Navbar />
+      <main className="max-w-6xl mx-auto py-24 px-4 flex-1 w-full">
+        <h1 className="text-3xl font-bold mb-8 text-gray-900">My Orders</h1>
+
+        {/* Tabs */}
+        <div className="bg-white rounded-lg shadow-sm mb-6">
+          <div className="border-b border-gray-200">
+            <div className="flex">
+              <button
+                onClick={() => handleTabChange('orders')}
+                className={`flex-1 py-4 px-6 text-center font-medium transition-colors flex items-center justify-center gap-2 ${
+                  activeTab === 'orders'
+                    ? 'text-black border-b-2 border-black'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Package className="w-5 h-5" />
+                My Orders
+              </button>
+              <button
+                onClick={() => handleTabChange('sales')}
+                className={`flex-1 py-4 px-6 text-center font-medium transition-colors flex items-center justify-center gap-2 ${
+                  activeTab === 'sales'
+                    ? 'text-black border-b-2 border-black'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Palette className="w-5 h-5" />
+                My Sales
+              </button>
+            </div>
+          </div>
+
+          {/* Orders Tab Content */}
+          {activeTab === 'orders' && (
+            <div className="p-6">
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-600">Loading orders...</p>
+                </div>
+              ) : orders.length > 0 ? (
+                <div className="space-y-4">
+                  {orders.map((order) => (
+                    <div
+                      key={order.id || order._id}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            Order #{order.orderNumber || order.id}
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {order.date || new Date(order.createdAt).toLocaleDateString()}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-2">
+                            Status: <span className="font-medium">{order.status || 'Pending'}</span>
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-gray-900">
+                            {order.total || 0} SAR
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500">No orders yet</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sales Tab Content */}
+          {activeTab === 'sales' && (
+            <div className="p-6">
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-600">Loading sales...</p>
+                </div>
+              ) : sales.length > 0 ? (
+                <div className="space-y-4">
+                  {sales.map((order) => (
+                    <div
+                      key={order.id || order._id}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-start gap-4">
+                        {order.artwork?.image && (
+                          <img
+                            src={order.artwork.image}
+                            alt={order.artwork.title || 'Artwork'}
+                            className="w-24 h-24 object-cover rounded-lg"
+                            onError={(e) => {
+                              e.target.src = '/Profileimages/User.jpg';
+                            }}
+                          />
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">
+                            {order.artwork?.title || 'Artwork'}
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Order #{order.orderNumber || order.id}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-2">
+                            Status: <span className="font-medium">{order.status || 'Pending'}</span>
+                          </p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {order.date || new Date(order.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-gray-900">
+                            {order.total || order.artwork?.price || 0} SAR
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Palette className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500">No sales yet</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+

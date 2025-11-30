@@ -94,28 +94,32 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
 
    
 //reply to comment
-    const handleAddReply = async (commentId) => {
-        const text = replyText [commentId].trim()
+ const handleAddReply = async (commentId) => {
+  const text = replyText[commentId]?.trim();
+  if (!text) {
+    toast.error("Reply cannot be empty");
+    return;
+  }
+  try {
+    const updatedComment = await addReply(commentId, text);
 
-        if(!text){
-            toast.error("Reply cannot be empty")
-            return 
-        }
-        try {
-            const updatedComment = await addReply(commentId,text)
-            setComments(prev=> prev.map (comment => comment._id === commentId ? updatedComment : comment))
-            
-            setReplyText(prev => ({...prev , [commentId]: ""}))
-            toast.success("reply added")
+    setComments(prev => prev.map(comment =>
+      comment._id === commentId ? updatedComment : comment
+    ));
 
-            if(onCountChange) {
-      onCountChange(commentsCount + 1) // increment count when reply added
+    // Clear input
+    setReplyText(prev => ({ ...prev, [commentId]: "" }));
+    toast.success("Reply added");
+
+    // Update count based on previous state
+    if (onCountChange) {
+      onCountChange(prevCount => prevCount + 1); 
     }
-        } catch (error) {
-            toast.error("Failed to add reply")
-            console.error(error)            
-        }
-    }
+  } catch (error) {
+    toast.error("Failed to add reply");
+    console.error(error);
+  }
+};
 
 // delete a reply
     const deleteReply = async (replyId, commentId) => {
@@ -267,12 +271,14 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                             <p className='text-xs mt-1'>{reply?.text}</p>
                                                         </div>
                                                         {/*button to delete reply */}
+                                                        {JSON.parse(localStorage.getItem("artscape:user"))?.id === reply?.user?._id && (//only for the reply owner
                                                             <button
                                                             onClick={() => deleteReply(reply._id, comment._id)}
                                                             className="text-red-500 hover:text-red-700 text-xs "
                                                         >
                                                             Delete
                                                         </button>
+                                                    )}
                                                         </div>
 
                                                         

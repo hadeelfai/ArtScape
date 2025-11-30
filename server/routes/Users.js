@@ -297,14 +297,75 @@ router.get('/:id', async (req, res) => {
 // Get user profile with artworks
 router.get('/profile/:id', async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select('-password')
+        const user = await User.findById(req.params.id)
+            .select('-password')
+            .populate('followersArray', '_id')
+            .populate('followingArray', '_id')
+        
         if (!user)
             return res.status(404).json({ error: 'User not found' })
+
+        // Filter out null/invalid entries (deleted users) and count only valid ones
+        const validFollowers = Array.isArray(user.followersArray) 
+            ? user.followersArray.filter(f => f && f._id).length 
+            : 0
+        const validFollowing = Array.isArray(user.followingArray) 
+            ? user.followingArray.filter(f => f && f._id).length 
+            : 0
+
+        // Clean up invalid IDs from arrays and sync counts
+        if (user.followers !== validFollowers || user.following !== validFollowing) {
+            // Get the raw arrays to clean them
+            const rawUser = await User.findById(req.params.id).select('followersArray followingArray')
+            
+            if (rawUser) {
+                // Get all valid user IDs in one query
+                const allFollowerIds = Array.isArray(rawUser.followersArray) ? rawUser.followersArray : []
+                const allFollowingIds = Array.isArray(rawUser.followingArray) ? rawUser.followingArray : []
+                
+                // Check which IDs actually exist in the database
+                const existingFollowerUsers = await User.find({ _id: { $in: allFollowerIds } }).select('_id')
+                const existingFollowingUsers = await User.find({ _id: { $in: allFollowingIds } }).select('_id')
+                
+                const validFollowerIds = existingFollowerUsers.map(u => u._id)
+                const validFollowingIds = existingFollowingUsers.map(u => u._id)
+                
+                // Remove duplicates (in case there are any)
+                const uniqueFollowerIds = Array.from(new Map(
+                    validFollowerIds.map(id => [id.toString(), id])
+                ).values())
+                const uniqueFollowingIds = Array.from(new Map(
+                    validFollowingIds.map(id => [id.toString(), id])
+                ).values())
+                
+                // Update arrays and counts atomically
+                await User.findByIdAndUpdate(
+                    req.params.id,
+                    { 
+                        $set: { 
+                            followersArray: uniqueFollowerIds,
+                            followingArray: uniqueFollowingIds,
+                            followers: uniqueFollowerIds.length,
+                            following: uniqueFollowingIds.length
+                        } 
+                    }
+                )
+                
+                // Update the user object for the response
+                user.followers = uniqueFollowerIds.length
+                user.following = uniqueFollowingIds.length
+            }
+        } else {
+            // Just update counts if arrays are clean
+            user.followers = validFollowers
+            user.following = validFollowing
+        }
 
         const artworks = await Artwork.find({ artist: req.params.id })
 
         res.json(buildProfileResponse(user, artworks))
     } catch (error) {
+        console.error('Get profile error:', error)
         res.status(500).json({ error: error.message })
     }
 })
@@ -416,52 +477,87 @@ router.post('/follow/:id', async (req, res) => {
         const { userId } = req.body // The user who is following
         const targetUserId = req.params.id // The user to follow
 
-        const user = await User.findById(userId)
-        const targetUser = await User.findById(targetUserId)
-
-        if (!user || !targetUser)
-            return res.status(404).json({ error: 'User not found' })
-
-        // Ensure arrays are initialized
-        if (!user.followingArray) user.followingArray = []
-        if (!user.followersArray) user.followersArray = []
-        if (!targetUser.followingArray) targetUser.followingArray = []
-        if (!targetUser.followersArray) targetUser.followersArray = []
-
-        // Convert ObjectIds to strings for comparison
-        const userFollowingIds = user.followingArray.map(id => id.toString())
-        const targetFollowersIds = targetUser.followersArray.map(id => id.toString())
-        
-        const isFollowing = userFollowingIds.includes(targetUserId.toString())
-
-        if (isFollowing) {
-            // Unfollow
-            user.followingArray = user.followingArray.filter(id => id.toString() !== targetUserId.toString())
-            targetUser.followersArray = targetUser.followersArray.filter(id => id.toString() !== userId.toString())
-            // Sync counts with actual array lengths
-            user.following = user.followingArray.length
-            targetUser.followers = targetUser.followersArray.length
-        } else {
-            // Follow - check for duplicates first
-            if (!userFollowingIds.includes(targetUserId.toString())) {
-                user.followingArray.push(targetUserId)
-            }
-            if (!targetFollowersIds.includes(userId.toString())) {
-                targetUser.followersArray.push(userId)
-            }
-            // Sync counts with actual array lengths
-            user.following = user.followingArray.length
-            targetUser.followers = targetUser.followersArray.length
+        if (!userId || !targetUserId) {
+            return res.status(400).json({ error: 'User ID and target user ID are required' })
         }
 
-        await user.save()
-        await targetUser.save()
+        // Prevent users from following themselves
+        if (userId.toString() === targetUserId.toString()) {
+            return res.status(400).json({ error: 'You cannot follow yourself' })
+        }
+
+        // Check if already following
+        const user = await User.findById(userId).select('followingArray')
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' })
+        }
+
+        const isFollowing = user.followingArray?.some(id => id.toString() === targetUserId.toString()) || false
+
+        if (isFollowing) {
+            // Unfollow - use atomic operations
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                { $pull: { followingArray: targetUserId } },
+                { new: true }
+            )
+            
+            const updatedTargetUser = await User.findByIdAndUpdate(
+                targetUserId,
+                { $pull: { followersArray: userId } },
+                { new: true }
+            )
+
+            // Update counts based on actual array lengths (using atomic update to avoid version conflicts)
+            if (updatedUser) {
+                await User.findByIdAndUpdate(
+                    userId,
+                    { $set: { following: updatedUser.followingArray?.length || 0 } }
+                )
+            }
+            
+            if (updatedTargetUser) {
+                await User.findByIdAndUpdate(
+                    targetUserId,
+                    { $set: { followers: updatedTargetUser.followersArray?.length || 0 } }
+                )
+            }
+        } else {
+            // Follow - use atomic operations with $addToSet to prevent duplicates
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                { $addToSet: { followingArray: targetUserId } },
+                { new: true }
+            )
+            
+            const updatedTargetUser = await User.findByIdAndUpdate(
+                targetUserId,
+                { $addToSet: { followersArray: userId } },
+                { new: true }
+            )
+
+            // Update counts based on actual array lengths (using atomic update to avoid version conflicts)
+            if (updatedUser) {
+                await User.findByIdAndUpdate(
+                    userId,
+                    { $set: { following: updatedUser.followingArray?.length || 0 } }
+                )
+            }
+            
+            if (updatedTargetUser) {
+                await User.findByIdAndUpdate(
+                    targetUserId,
+                    { $set: { followers: updatedTargetUser.followersArray?.length || 0 } }
+                )
+            }
+        }
 
         res.json({
             message: isFollowing ? 'Unfollowed successfully' : 'Followed successfully',
             isFollowing: !isFollowing
         })
     } catch (error) {
+        console.error('Follow/unfollow error:', error)
         res.status(500).json({ error: error.message })
     }
 })
@@ -540,14 +636,10 @@ router.get('/profile/:id/followers', async (req, res) => {
         if (!user)
             return res.status(404).json({ error: 'User not found' })
 
-        // Ensure arrays are initialized
-        if (!user.followersArray || !Array.isArray(user.followersArray)) {
-            user.followersArray = []
-            user.followers = 0
-            await user.save()
-        }
+        // Ensure arrays are initialized (read-only check, don't save)
+        const followersArray = Array.isArray(user.followersArray) ? user.followersArray : []
 
-        const followers = (user.followersArray || []).map(follower => ({
+        const followers = followersArray.map(follower => ({
             id: follower._id.toString(),
             name: follower.name,
             username: follower.username || `@${follower.name.toLowerCase().replace(/\s+/g, '_')}`,
@@ -559,18 +651,13 @@ router.get('/profile/:id/followers', async (req, res) => {
 
         // Always use actual array length as count to ensure accuracy
         const actualCount = followers.length
-        
-        // Sync the stored count with actual array length if they differ
-        if (user.followers !== actualCount) {
-            user.followers = actualCount
-            await user.save()
-        }
 
         res.json({
             followers,
             count: actualCount
         })
     } catch (error) {
+        console.error('Get followers error:', error)
         res.status(500).json({ error: error.message })
     }
 })
@@ -585,14 +672,10 @@ router.get('/profile/:id/following', async (req, res) => {
         if (!user)
             return res.status(404).json({ error: 'User not found' })
 
-        // Ensure arrays are initialized
-        if (!user.followingArray || !Array.isArray(user.followingArray)) {
-            user.followingArray = []
-            user.following = 0
-            await user.save()
-        }
+        // Ensure arrays are initialized (read-only check, don't save)
+        const followingArray = Array.isArray(user.followingArray) ? user.followingArray : []
 
-        const following = (user.followingArray || []).map(followed => ({
+        const following = followingArray.map(followed => ({
             id: followed._id.toString(),
             name: followed.name,
             username: followed.username || `@${followed.name.toLowerCase().replace(/\s+/g, '_')}`,
@@ -604,18 +687,13 @@ router.get('/profile/:id/following', async (req, res) => {
 
         // Always use actual array length as count to ensure accuracy
         const actualCount = following.length
-        
-        // Sync the stored count with actual array length if they differ
-        if (user.following !== actualCount) {
-            user.following = actualCount
-            await user.save()
-        }
 
         res.json({
             following,
             count: actualCount
         })
     } catch (error) {
+        console.error('Get following error:', error)
         res.status(500).json({ error: error.message })
     }
 })

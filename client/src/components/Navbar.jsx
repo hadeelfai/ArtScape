@@ -1,19 +1,23 @@
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import { ShoppingCart, Bell } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ShoppingCart, Bell, LogOut, User, Package, Palette } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext.jsx';
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [showGallerySubmenu, setShowGallerySubmenu] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0); // Manage notification count from your notification system
+  const profileDropdownRefDesktop = useRef(null);
+  const profileDropdownRefMobile = useRef(null);
 
   // Get user data from AuthContext
-  const { user, isAuthenticated , isAdmin} = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   
   // Check if we're on a Gallery sub-page (explore or marketplace)
   const isGalleryActive = location.pathname === '/GalleryPage' || location.pathname === '/explore' || location.pathname === '/marketplace';
@@ -70,6 +74,16 @@ const Navbar = () => {
     ? "/admin"
     : `/profile/${user.id || user._id}`
   : "/signin";
+
+  // Note: Desktop dropdown uses hover (onMouseEnter/onMouseLeave), so no click-outside handler needed
+  // Mobile dropdown still uses click for better touch experience
+
+  // Handle logout
+  const handleLogout = async () => {
+    setShowProfileDropdown(false);
+    await logout();
+    navigate('/signin');
+  };
 
 
 
@@ -274,21 +288,70 @@ const Navbar = () => {
                 </div>
 
                 {user && (
-                  <Link
-                    to={profilePath}
-                    className="hover:opacity-60 transition-opacity"
+                  <div 
+                    className="relative" 
+                    ref={profileDropdownRefDesktop}
+                    onMouseEnter={() => setShowProfileDropdown(true)}
+                    onMouseLeave={() => setShowProfileDropdown(false)}
                   >
-                    <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-                      <img
-                        src={user.profileImage || user.avatar || '/Profileimages/User.jpg'}
-                        alt={user.name || "User"}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.src = '/Profileimages/User.jpg';
-                        }}
-                      />
+                    <div className="hover:opacity-60 transition-opacity cursor-pointer">
+                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+                        <img
+                          src={user.profileImage || user.avatar || '/Profileimages/User.jpg'}
+                          alt={user.name || "User"}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src = '/Profileimages/User.jpg';
+                          }}
+                        />
+                      </div>
                     </div>
-                  </Link>
+
+                    {/* Profile Dropdown Menu */}
+                    <AnimatePresence>
+                      {showProfileDropdown && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                        >
+                          <div className="py-1">
+                            <Link
+                              to={profilePath}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                              <User className="w-4 h-4 mr-3" />
+                              My Profile
+                            </Link>
+                            <Link
+                              to="/orders"
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                              <Package className="w-4 h-4 mr-3" />
+                              My Orders
+                            </Link>
+                            <Link
+                              to="/sales"
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                              <Palette className="w-4 h-4 mr-3" />
+                              My Sales
+                            </Link>
+                            <div className="border-t border-gray-200 my-1"></div>
+                            <button
+                              onClick={handleLogout}
+                              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <LogOut className="w-4 h-4 mr-3" />
+                              Log out
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 )}
               </div>
             ) : (
@@ -340,21 +403,83 @@ const Navbar = () => {
                   <SearchBar variant='icon' />
                 </div>
 
-                <Link
-                  to={profilePath}
-                  className={`${isOpen ? "text-white" : "text-black"}`}
-                >
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-                    <img
-                      src={user?.profileImage || user?.avatar || '/Profileimages/User.jpg'}
-                      alt={user?.name || "User"}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = '/Profileimages/User.jpg';
-                      }}
-                    />
-                  </div>
-                </Link>
+                <div className="relative" ref={profileDropdownRefMobile}>
+                  <button
+                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                    className={`${isOpen ? "text-white" : "text-black"} focus:outline-none`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+                      <img
+                        src={user?.profileImage || user?.avatar || '/Profileimages/User.jpg'}
+                        alt={user?.name || "User"}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = '/Profileimages/User.jpg';
+                        }}
+                      />
+                    </div>
+                  </button>
+
+                  {/* Profile Dropdown Menu - Mobile */}
+                  <AnimatePresence>
+                    {showProfileDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                      >
+                        <div className="py-1">
+                          <Link
+                            to={profilePath}
+                            onClick={() => {
+                              setShowProfileDropdown(false);
+                              setIsOpen(false);
+                            }}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <User className="w-4 h-4 mr-3" />
+                            My Profile
+                          </Link>
+                          <Link
+                            to="/orders"
+                            onClick={() => {
+                              setShowProfileDropdown(false);
+                              setIsOpen(false);
+                            }}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <Package className="w-4 h-4 mr-3" />
+                            My Orders
+                          </Link>
+                          <Link
+                            to="/sales"
+                            onClick={() => {
+                              setShowProfileDropdown(false);
+                              setIsOpen(false);
+                            }}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <Palette className="w-4 h-4 mr-3" />
+                            My Sales
+                          </Link>
+                          <div className="border-t border-gray-200 my-1"></div>
+                          <button
+                            onClick={() => {
+                              handleLogout();
+                              setIsOpen(false);
+                            }}
+                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <LogOut className="w-4 h-4 mr-3" />
+                            Log out
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </>
             ) : (
               // Mobile - Not Logged In
