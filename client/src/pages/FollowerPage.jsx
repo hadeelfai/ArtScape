@@ -13,10 +13,8 @@ export default function FollowersFollowingPage() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
   
-  // Determine which tab to show based on URL path
   const getDefaultTab = () => {
-    if (location.pathname.includes('/following')) return 'following';
-    return 'followers';
+    return location.pathname.includes('/following') ? 'following' : 'followers';
   };
 
   const [activeTab, setActiveTab] = useState(getDefaultTab());
@@ -31,16 +29,12 @@ export default function FollowersFollowingPage() {
   const targetUserId = userId || currentUserId;
   const isOwnProfile = userId === currentUserId || (!userId && currentUserId);
 
-  // Update tab when URL changes
   useEffect(() => {
     setActiveTab(getDefaultTab());
   }, [location.pathname]);
 
-  // Function to fetch user profile info
   const fetchUserInfo = useCallback(async () => {
-    if (!targetUserId) {
-      return;
-    }
+    if (!targetUserId) return;
 
     try {
       const response = await fetch(`${API_BASE_URL}/users/profile/${targetUserId}`, {
@@ -51,7 +45,6 @@ export default function FollowersFollowingPage() {
         const data = await response.json();
         if (data.user) {
           setUserName(data.user.name || 'User');
-          // Don't set counts here - they should come from the followers/following API responses
         }
       }
     } catch (error) {
@@ -59,12 +52,10 @@ export default function FollowersFollowingPage() {
     }
   }, [targetUserId]);
 
-  // Fetch user profile info on mount
   useEffect(() => {
     fetchUserInfo();
   }, [fetchUserInfo]);
 
-  // Fetch followers/following data
   useEffect(() => {
     const fetchData = async () => {
       if (!targetUserId) {
@@ -74,19 +65,15 @@ export default function FollowersFollowingPage() {
         return;
       }
 
-      // Ensure targetUserId is a string
       const userIdString = String(targetUserId);
-      console.log('Fetching followers/following for user:', userIdString);
 
       try {
         setIsLoading(true);
         
-        // Fetch current user's following list to check isFollowing status
         let currentUserFollowing = [];
         if (currentUserId) {
           try {
-            const currentUserStringId = String(currentUserId);
-            const currentUserResponse = await fetch(`${API_BASE_URL}/users/profile/${currentUserStringId}/following`, {
+            const currentUserResponse = await fetch(`${API_BASE_URL}/users/profile/${String(currentUserId)}/following`, {
               credentials: 'include'
             });
             if (currentUserResponse.ok) {
@@ -98,82 +85,36 @@ export default function FollowersFollowingPage() {
           }
         }
         
-        // Fetch followers
-        console.log('Fetching followers from:', `${API_BASE_URL}/users/profile/${userIdString}/followers`);
         const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/followers`, {
           credentials: 'include'
         });
         
         if (followersResponse.ok) {
           const followersData = await followersResponse.json();
-          console.log('Followers API response:', followersData);
+          const followersArray = Array.isArray(followersData.followers) ? followersData.followers : [];
           
-          // Ensure followers is an array
-          const followersArray = Array.isArray(followersData.followers) 
-            ? followersData.followers 
-            : [];
-          
-          const followersWithStatus = followersArray.map(follower => ({
+          setFollowers(followersArray.map(follower => ({
             ...follower,
             isFollowing: currentUserFollowing.includes(follower.id)
-          }));
+          })));
           
-          console.log('Processed followers:', followersWithStatus);
-          setFollowers(followersWithStatus);
-          
-          // Use count from API response or fall back to array length
-          const count = followersData.count !== undefined 
-            ? followersData.count 
-            : followersArray.length;
-          setFollowersCount(count);
-        } else {
-          const errorText = await followersResponse.text();
-          console.error('Failed to fetch followers:', followersResponse.status, errorText);
-          try {
-            const errorData = JSON.parse(errorText);
-            console.error('Followers error data:', errorData);
-          } catch (e) {
-            // Error is not JSON, already logged as text
-          }
+          setFollowersCount(followersData.count ?? followersArray.length);
         }
 
-        // Fetch following
-        console.log('Fetching following from:', `${API_BASE_URL}/users/profile/${userIdString}/following`);
         const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/following`, {
           credentials: 'include'
         });
         
         if (followingResponse.ok) {
           const followingData = await followingResponse.json();
-          console.log('Following API response:', followingData);
+          const followingArray = Array.isArray(followingData.following) ? followingData.following : [];
           
-          // Ensure following is an array
-          const followingArray = Array.isArray(followingData.following) 
-            ? followingData.following 
-            : [];
-          
-          const followingWithStatus = followingArray.map(followed => ({
+          setFollowing(followingArray.map(followed => ({
             ...followed,
-            // If viewing own profile, all are being followed. Otherwise check current user's following list.
             isFollowing: isOwnProfile ? true : currentUserFollowing.includes(followed.id)
-          }));
+          })));
           
-          setFollowing(followingWithStatus);
-          
-          // Use count from API response or fall back to array length
-          const count = followingData.count !== undefined 
-            ? followingData.count 
-            : followingArray.length;
-          setFollowingCount(count);
-        } else {
-          const errorText = await followingResponse.text();
-          console.error('Failed to fetch following:', followingResponse.status, errorText);
-          try {
-            const errorData = JSON.parse(errorText);
-            console.error('Following error data:', errorData);
-          } catch (e) {
-            // Error is not JSON, already logged as text
-          }
+          setFollowingCount(followingData.count ?? followingArray.length);
         }
       } catch (error) {
         console.error('Error fetching followers/following:', error);
@@ -192,11 +133,9 @@ export default function FollowersFollowingPage() {
     }
 
     try {
-      // Find the current state to determine new state
       const userList = listType === 'followers' ? followers : following;
       const currentUser = userList.find(u => u.id === targetUserToFollowId);
-      const currentlyFollowing = currentUser?.isFollowing || false;
-      const newIsFollowing = !currentlyFollowing;
+      const newIsFollowing = !(currentUser?.isFollowing || false);
 
       const response = await fetch(`${API_BASE_URL}/users/follow/${targetUserToFollowId}`, {
         method: 'POST',
@@ -208,47 +147,36 @@ export default function FollowersFollowingPage() {
       });
 
       if (response.ok) {
-        // Update local state
+        const updateUser = (user) => 
+          user.id === targetUserToFollowId 
+            ? { ...user, isFollowing: newIsFollowing }
+            : user;
+
         if (listType === 'followers') {
-          setFollowers(followers.map(user => 
-            user.id === targetUserToFollowId 
-              ? { ...user, isFollowing: newIsFollowing }
-              : user
-          ));
+          setFollowers(followers.map(updateUser));
         } else {
-          setFollowing(following.map(user => 
-            user.id === targetUserToFollowId 
-              ? { ...user, isFollowing: newIsFollowing }
-              : user
-          ));
+          setFollowing(following.map(updateUser));
         }
 
-        // Show success message
         toast.success(newIsFollowing ? 'Followed successfully' : 'Unfollowed successfully');
-
-        // Refresh user info (name only, not counts)
         await fetchUserInfo();
         
-        // Refresh the followers/following lists to get updated counts
         const profileOwnerId = userId || currentUserId;
-        const userIdString = String(profileOwnerId);
-        
-        // Refresh followers count
-        const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/followers`, {
-          credentials: 'include'
-        });
-        if (followersResponse.ok) {
-          const followersData = await followersResponse.json();
-          setFollowersCount(followersData.count || 0);
-        }
-        
-        // Refresh following count
-        const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/following`, {
-          credentials: 'include'
-        });
-        if (followingResponse.ok) {
-          const followingData = await followingResponse.json();
-          setFollowingCount(followingData.count || 0);
+        if (targetUserToFollowId === profileOwnerId) {
+          const [followersRes, followingRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/users/profile/${profileOwnerId}/followers`, { credentials: 'include' }),
+            fetch(`${API_BASE_URL}/users/profile/${profileOwnerId}/following`, { credentials: 'include' })
+          ]);
+          
+          if (followersRes.ok) {
+            const data = await followersRes.json();
+            setFollowersCount(data.count ?? 0);
+          }
+          
+          if (followingRes.ok) {
+            const data = await followingRes.json();
+            setFollowingCount(data.count ?? 0);
+          }
         }
       } else {
         const errorData = await response.json();
@@ -267,9 +195,6 @@ export default function FollowersFollowingPage() {
     }
 
     try {
-      // To remove a follower, we need to block them from following us
-      // We do this by having them unfollow us (i.e., they call the follow endpoint to unfollow)
-      // But since we're doing it on behalf of them removing us, we call it with them as the user
       const response = await fetch(`${API_BASE_URL}/users/follow/${currentUserId}`, {
         method: 'POST',
         headers: {
@@ -281,15 +206,15 @@ export default function FollowersFollowingPage() {
 
       if (response.ok) {
         setFollowers(followers.filter(user => user.id !== followerToRemoveId));
-        // Refresh followers list to get accurate count
-        const userIdString = String(targetUserId);
-        const followersResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/followers`, {
+        
+        const countResponse = await fetch(`${API_BASE_URL}/users/profile/${String(targetUserId)}/followers`, {
           credentials: 'include'
         });
-        if (followersResponse.ok) {
-          const followersData = await followersResponse.json();
-          setFollowersCount(followersData.count || 0);
+        if (countResponse.ok) {
+          const data = await countResponse.json();
+          setFollowersCount(data.count ?? 0);
         }
+        
         toast.success('Follower removed successfully');
       } else {
         const errorData = await response.json();
@@ -319,15 +244,15 @@ export default function FollowersFollowingPage() {
 
       if (response.ok) {
         setFollowing(following.filter(user => user.id !== userToUnfollowId));
-        // Refresh following list to get accurate count
-        const userIdString = String(targetUserId);
-        const followingResponse = await fetch(`${API_BASE_URL}/users/profile/${userIdString}/following`, {
+        
+        const countResponse = await fetch(`${API_BASE_URL}/users/profile/${String(targetUserId)}/following`, {
           credentials: 'include'
         });
-        if (followingResponse.ok) {
-          const followingData = await followingResponse.json();
-          setFollowingCount(followingData.count || 0);
+        if (countResponse.ok) {
+          const data = await countResponse.json();
+          setFollowingCount(data.count ?? 0);
         }
+        
         toast.success('Unfollowed successfully');
       } else {
         const errorData = await response.json();
@@ -341,19 +266,12 @@ export default function FollowersFollowingPage() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    // Update URL when tab changes
     const profilePath = userId ? `/profile/${userId}` : '/profile';
-    if (tab === 'followers') {
-      navigate(`${profilePath}/followers`, { replace: true });
-    } else {
-      navigate(`${profilePath}/following`, { replace: true });
-    }
+    navigate(`${profilePath}/${tab}`, { replace: true });
   };
   
-  // Get profile link
   const getProfileLink = () => {
-    if (userId) return `/profile/${userId}`;
-    return '/profile';
+    return userId ? `/profile/${userId}` : '/profile';
   };
 
   if (isLoading) {
@@ -382,8 +300,6 @@ export default function FollowersFollowingPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
-        
-        {/* Header */}
         <div className="mb-6">
           <Link to={getProfileLink()} className="inline-block">
             <button
@@ -396,7 +312,6 @@ export default function FollowersFollowingPage() {
           <h1 className="text-3xl font-bold text-gray-900">{userName}</h1>
         </div>
 
-        {/* Tabs */}
         <div className="bg-white rounded-lg shadow-sm">
           <div className="border-b border-gray-200">
             <div className="flex">
@@ -423,7 +338,6 @@ export default function FollowersFollowingPage() {
             </div>
           </div>
 
-          {/* Followers Tab */}
           {activeTab === 'followers' && (
             <div className="p-6">
               {followers.length > 0 ? (
@@ -447,18 +361,13 @@ export default function FollowersFollowingPage() {
 
                       <div className="flex gap-2">
                         {isOwnProfile ? (
-                          // Own profile: Show Remove button
                           <button
                             onClick={() => handleRemoveFollower(user.id)}
                             className="px-4 py-2 text-sm font-medium text-red-600 border border-red-600 rounded-full hover:bg-red-50 transition-colors"
                           >
                             Remove
                           </button>
-                        ) : user.id === currentUserId ? (
-                          // Don't show button for yourself
-                          null
-                        ) : (
-                          // Other's profile: Show Follow/Following button
+                        ) : user.id === currentUserId ? null : (
                           <button
                             onClick={() => handleFollowToggle(user.id, 'followers')}
                             className={`px-6 py-2 text-sm font-medium rounded-full transition-colors ${
@@ -483,7 +392,6 @@ export default function FollowersFollowingPage() {
             </div>
           )}
 
-          {/* Following Tab */}
           {activeTab === 'following' && (
             <div className="p-6">
               {following.length > 0 ? (
@@ -507,18 +415,13 @@ export default function FollowersFollowingPage() {
 
                       <div className="flex gap-2">
                         {isOwnProfile ? (
-                          // Own profile: Show Unfollow button
                           <button
                             onClick={() => handleUnfollow(user.id)}
                             className="px-6 py-2 text-sm font-medium bg-gray-200 text-gray-900 rounded-full hover:bg-gray-300 transition-colors"
                           >
                             Unfollow
                           </button>
-                        ) : user.id === currentUserId ? (
-                          // Don't show button for yourself
-                          null
-                        ) : (
-                          // Other's profile: Show Follow/Following button
+                        ) : user.id === currentUserId ? null : (
                           <button
                             onClick={() => handleFollowToggle(user.id, 'following')}
                             className={`px-6 py-2 text-sm font-medium rounded-full transition-colors ${

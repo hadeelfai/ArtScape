@@ -67,42 +67,26 @@ export default function EditProfilePage() {
   const coverImageInputRef = useRef(null);
   const profileImageInputRef = useRef(null);
 
-  // Default images - used as fallback
   const DEFAULT_PROFILE_IMAGE = '/Profileimages/User.jpg';
   const DEFAULT_COVER_IMAGE = '/Profileimages/Cover.jpg';
 
-  // Old backend defaults that should be replaced
-  const OLD_DEFAULT_PROFILE_IMAGE = '/assets/images/profilepicture.jpg';
-  const OLD_DEFAULT_BANNER_IMAGE = '/assets/images/profileheader.jpg';
-
-  // Helper function to get the correct image path, using defaults if needed
   const getProfileImage = (image) => {
     if (!image || typeof image !== 'string' || !image.trim()) {
       return DEFAULT_PROFILE_IMAGE;
     }
-    const trimmed = image.trim();
-    if (trimmed === OLD_DEFAULT_PROFILE_IMAGE || trimmed === '') {
-      return DEFAULT_PROFILE_IMAGE;
-    }
-    return trimmed;
+    return image.trim();
   };
 
   const getBannerImage = (image) => {
     if (!image || typeof image !== 'string' || !image.trim()) {
       return DEFAULT_COVER_IMAGE;
     }
-    const trimmed = image.trim();
-    if (trimmed === OLD_DEFAULT_BANNER_IMAGE || trimmed === '') {
-      return DEFAULT_COVER_IMAGE;
-    }
-    return trimmed;
+    return image.trim();
   };
 
-  // Fetch current profile data when page loads
   useEffect(() => {
     const fetchProfile = async () => {
       if (!authUser?.id) {
-        // Wait a moment for auth context to initialize, then redirect if still no user
         const checkAuth = setTimeout(() => {
           if (!authUser?.id) {
             navigate('/signin');
@@ -123,18 +107,14 @@ export default function EditProfilePage() {
           if (data.user) {
             const user = data.user;
 
-            // Split name into firstName and lastName if needed
             let firstName = user.firstName || '';
             let lastName = user.lastName || '';
 
-            // If firstName/lastName are empty but name exists, try to split it
             if (!firstName && !lastName && user.name) {
               const nameParts = user.name.trim().split(/\s+/);
               firstName = nameParts[0] || '';
               lastName = nameParts.slice(1).join(' ') || '';
             }
-
-            // Populate form with fetched data
             setFormData({
               username: user.username ? user.username.replace(/^@+/, '') : '',
               firstName: firstName,
@@ -157,19 +137,15 @@ export default function EditProfilePage() {
               bio: user.bio || ''
             });
 
-            // Update images: use user's saved images if they exist, otherwise use defaults
             setProfileImage(getProfileImage(user.profileImage));
             setCoverImage(getBannerImage(user.bannerImage));
           }
         } else {
-          console.error('Failed to fetch profile');
-          // Set default images on fetch failure
           setProfileImage(DEFAULT_PROFILE_IMAGE);
           setCoverImage(DEFAULT_COVER_IMAGE);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
-        // Set default images on error
         setProfileImage(DEFAULT_PROFILE_IMAGE);
         setCoverImage(DEFAULT_COVER_IMAGE);
       } finally {
@@ -195,7 +171,6 @@ export default function EditProfilePage() {
       [name]: value
     }));
 
-    // Check password strength when new password changes
     if (name === 'newPassword') {
       checkPasswordStrength(value);
     }
@@ -217,7 +192,6 @@ export default function EditProfilePage() {
       return;
     }
 
-    let score = 0;
     const requirements = {
       length: password.length >= 8,
       lowercase: /[a-z]/.test(password),
@@ -226,12 +200,7 @@ export default function EditProfilePage() {
       special: /[^a-zA-Z0-9]/.test(password)
     };
 
-    // Calculate score
-    if (requirements.length) score += 1;
-    if (requirements.lowercase) score += 1;
-    if (requirements.uppercase) score += 1;
-    if (requirements.number) score += 1;
-    if (requirements.special) score += 1;
+    const score = Object.values(requirements).filter(Boolean).length;
 
     setPasswordStrength({
       score,
@@ -246,28 +215,23 @@ export default function EditProfilePage() {
       return;
     }
 
-    // Reset errors
     setPasswordError(null);
 
-    // Validate all fields are filled
     if (!passwordFormData.currentPassword || !passwordFormData.newPassword || !passwordFormData.confirmPassword) {
       setPasswordError('All fields are required.');
       return;
     }
 
-    // Validate passwords match
     if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
       setPasswordError('New passwords do not match.');
       return;
     }
 
-    // Validate password strength
     if (passwordStrength.score < 3) {
       setPasswordError('Password is too weak. Please use a stronger password.');
       return;
     }
 
-    // Validate new password is different from current
     if (passwordFormData.currentPassword === passwordFormData.newPassword) {
       setPasswordError('New password must be different from current password.');
       return;
@@ -277,7 +241,6 @@ export default function EditProfilePage() {
     setPasswordError(null);
 
     try {
-      // Use the dedicated password change endpoint
       const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}/password`, {
         method: 'PUT',
         headers: {
@@ -295,10 +258,7 @@ export default function EditProfilePage() {
         throw new Error(errorData.error || 'Failed to change password. Please check your current password.');
       }
 
-      // Success
       toast.success('Password changed successfully!');
-
-      // Reset form
       setPasswordFormData({
         currentPassword: '',
         newPassword: '',
@@ -343,22 +303,13 @@ export default function EditProfilePage() {
     return data.secure_url;
   };
 
-  // Helper function to save image to backend
   const saveImageToBackend = async (imageType, imageUrl) => {
     if (!authUser?.id) return;
 
     try {
-      // Create update payload with only the image field
-      // The backend will only update the fields provided, preserving other data
-      const updatePayload = {};
-
-      if (imageType === 'profile') {
-        updatePayload.profileImage = imageUrl;
-      } else if (imageType === 'cover') {
-        updatePayload.bannerImage = imageUrl;
-      }
-
-      // Save to backend
+      const updatePayload = imageType === 'profile' 
+        ? { profileImage: imageUrl }
+        : { bannerImage: imageUrl };
       const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}`, {
         method: 'PUT',
         headers: {
@@ -382,36 +333,26 @@ export default function EditProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Show preview immediately
     const previewUrl = URL.createObjectURL(file);
     setCoverImage(previewUrl);
 
     setUploadingCover(true);
     try {
-      // Upload to Cloudinary
       const imageUrl = await uploadImageToCloudinary(file, 'profiles');
       setCoverImage(imageUrl);
-
-      // Save to backend immediately
       await saveImageToBackend('cover', imageUrl);
 
-      // Update AuthContext user state to reflect the new banner image
       if (authUser && setUser) {
-        setUser({
-          ...authUser,
-          bannerImage: imageUrl
-        });
+        setUser({ ...authUser, bannerImage: imageUrl });
       }
 
       toast.success('Cover photo uploaded and saved successfully!');
     } catch (error) {
       console.error('Error uploading cover image:', error);
       toast.error('Failed to upload cover photo. Please try again.');
-      // Revert to previous image on error
       setCoverImage(DEFAULT_COVER_IMAGE);
     } finally {
       setUploadingCover(false);
-      // Clean up preview URL
       URL.revokeObjectURL(previewUrl);
     }
   };
@@ -420,38 +361,30 @@ export default function EditProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Show preview immediately
     const previewUrl = URL.createObjectURL(file);
     setProfileImage(previewUrl);
 
     setUploadingProfile(true);
     try {
-      // Upload to Cloudinary
       const imageUrl = await uploadImageToCloudinary(file, 'profiles');
       setProfileImage(imageUrl);
-
-      // Save to backend immediately
       await saveImageToBackend('profile', imageUrl);
 
-      // Update AuthContext user state to reflect the new profile image
       if (authUser && setUser) {
-        const updatedUser = {
+        setUser({
           ...authUser,
           profileImage: imageUrl,
-          avatar: imageUrl // Also update avatar field for compatibility
-        };
-        setUser(updatedUser);
+          avatar: imageUrl
+        });
       }
 
       toast.success('Profile picture uploaded and saved successfully!');
     } catch (error) {
       console.error('Error uploading profile image:', error);
       toast.error('Failed to upload profile picture. Please try again.');
-      // Revert to previous image on error
       setProfileImage(DEFAULT_PROFILE_IMAGE);
     } finally {
       setUploadingProfile(false);
-      // Clean up preview URL
       URL.revokeObjectURL(previewUrl);
     }
   };
@@ -466,19 +399,16 @@ export default function EditProfilePage() {
     setError(null);
 
     try {
-      // Normalize username: trim and remove leading @ symbol
       const normalizedUsername = formData.username ? formData.username.trim().replace(/^@+/, '') : '';
       
-      // Validate username is not empty (required field)
       if (!normalizedUsername || normalizedUsername.length === 0) {
         setError('Username is required. Please enter a valid username.');
         setIsSaving(false);
         return;
       }
 
-      // Prepare the update payload
       const updatePayload = {
-        name: `${formData.firstName} ${formData.lastName}`.trim() || authUser.name, // Combine first and last name
+        name: `${formData.firstName} ${formData.lastName}`.trim() || authUser.name,
         username: normalizedUsername,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -498,11 +428,9 @@ export default function EditProfilePage() {
         twitter: formData.twitter,
         link: formData.link,
         bio: formData.bio,
-        profileImage: profileImage, // Include uploaded profile image URL
-        bannerImage: coverImage    // Include uploaded cover image URL
+        profileImage: profileImage,
+        bannerImage: coverImage
       };
-
-      // Note: Password changes are handled separately via the Change Password form
 
       const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}`, {
         method: 'PUT',
@@ -520,19 +448,17 @@ export default function EditProfilePage() {
 
       const data = await response.json();
 
-      // Update AuthContext user state to reflect the updated profile
       if (authUser && setUser) {
-        const updatedUser = {
+        setUser({
           ...authUser,
           name: updatePayload.name || authUser.name,
           username: normalizedUsername || authUser.username,
           profileImage: profileImage,
-          avatar: profileImage, // Also update avatar field for compatibility with Navbar
+          avatar: profileImage,
           bannerImage: coverImage,
           artisticSpecialization: formData.artisticSpecialization || authUser.artisticSpecialization,
           bio: formData.bio || authUser.bio
-        };
-        setUser(updatedUser);
+        });
       }
 
       toast.success('Profile updated successfully!');
@@ -562,7 +488,6 @@ export default function EditProfilePage() {
   };
 
   const handleDeleteAccount = async () => {
-    // Validate password
     if (!deletePassword) {
       setDeleteError('Please enter your current password.');
       return;
@@ -572,7 +497,6 @@ export default function EditProfilePage() {
     setDeleteError(null);
 
     try {
-      // Send DELETE request with password in body
       const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}`, {
         method: 'DELETE',
         headers: {
@@ -588,15 +512,11 @@ export default function EditProfilePage() {
         let errorMessage = 'Failed to delete account. Please check your password.';
 
         try {
-          // Try to parse as JSON first
           const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
+          if (contentType?.includes('application/json')) {
             const errorData = await response.json();
             errorMessage = errorData.error || errorMessage;
           } else {
-            // Response is not JSON (likely HTML error page)
-            const errorText = await response.text();
-            console.error('Non-JSON error response:', response.status, errorText.substring(0, 200));
             if (response.status === 404) {
               errorMessage = 'Account deletion endpoint not found. Please contact support.';
             } else if (response.status === 401) {
@@ -606,13 +526,10 @@ export default function EditProfilePage() {
             }
           }
         } catch (parseError) {
-          // If parsing fails, provide a user-friendly error message
           console.error('Error parsing response:', parseError);
-          if (response.status === 404) {
-            errorMessage = 'Account deletion endpoint not found. Please contact support.';
-          } else {
-            errorMessage = 'An unexpected error occurred. Please try again.';
-          }
+          errorMessage = response.status === 404 
+            ? 'Account deletion endpoint not found. Please contact support.'
+            : 'An unexpected error occurred. Please try again.';
         }
 
         throw new Error(errorMessage);
@@ -624,22 +541,19 @@ export default function EditProfilePage() {
       navigate('/');
     } catch (error) {
       console.error('Error deleting account:', error);
-      // Check if error is a SyntaxError or JSON parse error
-      if (error instanceof SyntaxError || error.message.includes('JSON') || error.message.includes('Unexpected token')) {
-        setDeleteError('Server error occurred. The server returned an invalid response. Please try again or contact support.');
-      } else {
-        setDeleteError(error.message || 'Failed to delete account. Please try again.');
-      }
+      const isParseError = error instanceof SyntaxError || error.message.includes('JSON') || error.message.includes('Unexpected token');
+      setDeleteError(isParseError 
+        ? 'Server error occurred. The server returned an invalid response. Please try again or contact support.'
+        : error.message || 'Failed to delete account. Please try again.');
       toast.error(error.message || 'Failed to delete account. Please try again.');
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleFieldFocus = (event) => {
-    const { target } = event;
-    if (typeof target.select === 'function') {
-      requestAnimationFrame(() => target.select());
+  const handleFieldFocus = (e) => {
+    if (typeof e.target.select === 'function') {
+      requestAnimationFrame(() => e.target.select());
     }
   };
 
@@ -875,22 +789,8 @@ export default function EditProfilePage() {
                       type="button"
                       onClick={() => {
                         setShowPasswordForm(false);
-                        setPasswordFormData({
-                          currentPassword: '',
-                          newPassword: '',
-                          confirmPassword: ''
-                        });
-                        setPasswordStrength({
-                          score: 0,
-                          feedback: '',
-                          requirements: {
-                            length: false,
-                            lowercase: false,
-                            uppercase: false,
-                            number: false,
-                            special: false
-                          }
-                        });
+                        setPasswordFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                        setPasswordStrength({ score: 0, feedback: '', requirements: { length: false, lowercase: false, uppercase: false, number: false, special: false } });
                         setPasswordError(null);
                       }}
                       className="px-6 py-2.5 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors font-medium text-sm text-black"

@@ -5,8 +5,6 @@ import Footer from '../components/Footer';
 import { Package, Palette } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
-
 export default function OrdersPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,30 +14,22 @@ export default function OrdersPage() {
   const [sales, setSales] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Determine initial tab from URL
   useEffect(() => {
-    if (location.pathname === '/sales') {
-      setActiveTab('sales');
-    } else {
-      setActiveTab('orders');
-    }
+    setActiveTab(location.pathname === '/sales' ? 'sales' : 'orders');
   }, [location.pathname]);
 
-  // Redirect to signin if not authenticated
   useEffect(() => {
     if (!isAuthenticated || !user) {
       navigate('/signin');
     }
   }, [isAuthenticated, user, navigate]);
 
-  // Fetch orders (placeholder - replace with actual API calls)
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user?.id) return;
 
       setIsLoading(true);
       try {
-        // Placeholder: Empty orders for now
         setOrders([]);
         setSales([]);
       } catch (error) {
@@ -56,15 +46,19 @@ export default function OrdersPage() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    if (tab === 'sales') {
-      navigate('/sales', { replace: true });
-    } else {
-      navigate('/orders', { replace: true });
-    }
+    navigate(`/${tab}`, { replace: true });
   };
 
+  const formatDate = (date) => {
+    if (!date) return '';
+    return date instanceof Date ? date.toLocaleDateString() : new Date(date).toLocaleDateString();
+  };
+
+  const getOrderId = (order) => order.id || order._id || '';
+  const getOrderNumber = (order) => order.orderNumber || order.id || '';
+
   if (!isAuthenticated || !user) {
-    return null; // Will redirect
+    return null;
   }
 
   return (
@@ -73,7 +67,6 @@ export default function OrdersPage() {
       <main className="max-w-6xl mx-auto py-24 px-4 flex-1 w-full">
         <h1 className="text-3xl font-bold mb-8 text-gray-900">My Orders</h1>
 
-        {/* Tabs */}
         <div className="bg-white rounded-lg shadow-sm mb-6">
           <div className="border-b border-gray-200">
             <div className="flex">
@@ -102,7 +95,6 @@ export default function OrdersPage() {
             </div>
           </div>
 
-          {/* Orders Tab Content */}
           {activeTab === 'orders' && (
             <div className="p-6">
               {isLoading ? (
@@ -113,16 +105,16 @@ export default function OrdersPage() {
                 <div className="space-y-4">
                   {orders.map((order) => (
                     <div
-                      key={order.id || order._id}
+                      key={getOrderId(order)}
                       className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-semibold text-gray-900">
-                            Order #{order.orderNumber || order.id}
+                            Order #{getOrderNumber(order)}
                           </h3>
                           <p className="text-sm text-gray-500 mt-1">
-                            {order.date || new Date(order.createdAt).toLocaleDateString()}
+                            {formatDate(order.date || order.createdAt)}
                           </p>
                           <p className="text-sm text-gray-600 mt-2">
                             Status: <span className="font-medium">{order.status || 'Pending'}</span>
@@ -146,7 +138,6 @@ export default function OrdersPage() {
             </div>
           )}
 
-          {/* Sales Tab Content */}
           {activeTab === 'sales' && (
             <div className="p-6">
               {isLoading ? (
@@ -157,7 +148,7 @@ export default function OrdersPage() {
                 <div className="space-y-4">
                   {sales.map((order) => (
                     <div
-                      key={order.id || order._id}
+                      key={getOrderId(order)}
                       className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-start gap-4">
@@ -167,6 +158,7 @@ export default function OrdersPage() {
                             alt={order.artwork.title || 'Artwork'}
                             className="w-24 h-24 object-cover rounded-lg"
                             onError={(e) => {
+                              e.target.onerror = null;
                               e.target.src = '/Profileimages/User.jpg';
                             }}
                           />
@@ -176,13 +168,13 @@ export default function OrdersPage() {
                             {order.artwork?.title || 'Artwork'}
                           </h3>
                           <p className="text-sm text-gray-500 mt-1">
-                            Order #{order.orderNumber || order.id}
+                            Order #{getOrderNumber(order)}
                           </p>
                           <p className="text-sm text-gray-600 mt-2">
                             Status: <span className="font-medium">{order.status || 'Pending'}</span>
                           </p>
                           <p className="text-sm text-gray-500 mt-1">
-                            {order.date || new Date(order.createdAt).toLocaleDateString()}
+                            {formatDate(order.date || order.createdAt)}
                           </p>
                         </div>
                         <div className="text-right">
@@ -208,4 +200,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-

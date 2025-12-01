@@ -11,31 +11,18 @@ import { useLikeSave } from '../context/LikeSaveContext.jsx';
 const DEFAULT_PROFILE_IMAGE = '/Profileimages/User.jpg';
 const DEFAULT_BANNER_IMAGE = '/Profileimages/Cover.jpg';
 
-// Old backend defaults that should be replaced
-const OLD_DEFAULT_PROFILE_IMAGE = '/assets/images/profilepicture.jpg';
-const OLD_DEFAULT_BANNER_IMAGE = '/assets/images/profileheader.jpg';
-
-// Helper function to get the correct image path, using defaults if needed
-const getProfileImage = (image) => {
+export const getProfileImage = (image) => {
   if (!image || typeof image !== 'string' || !image.trim()) {
     return DEFAULT_PROFILE_IMAGE;
   }
-  const trimmed = image.trim();
-  if (trimmed === OLD_DEFAULT_PROFILE_IMAGE || trimmed === '') {
-    return DEFAULT_PROFILE_IMAGE;
-  }
-  return trimmed;
+  return image.trim();
 };
 
-const getBannerImage = (image) => {
+export const getBannerImage = (image) => {
   if (!image || typeof image !== 'string' || !image.trim()) {
     return DEFAULT_BANNER_IMAGE;
   }
-  const trimmed = image.trim();
-  if (trimmed === OLD_DEFAULT_BANNER_IMAGE || trimmed === '') {
-    return DEFAULT_BANNER_IMAGE;
-  }
-  return trimmed;
+  return image.trim();
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
@@ -113,9 +100,8 @@ export default function ArtScapeProfile({
     fetchProfile();
   }, [routeUserId, authUser?.id, userDataProp, location.key]);
 
-  const resolvedProfileData = profileData;
   const loggedInUserId = loggedInUserIdProp || authUser?.id || null;
-  const resolvedProfileId = resolvedProfileData?.id || routeUserId || null;
+  const resolvedProfileId = profileData?.id || routeUserId || null;
   const isOwnProfile = Boolean(loggedInUserId && resolvedProfileId && resolvedProfileId === loggedInUserId);
 
   // Check if current user is following this profile
@@ -141,7 +127,9 @@ export default function ArtScapeProfile({
       }
     };
 
-    checkFollowingStatus();
+    if (resolvedProfileId) {
+      checkFollowingStatus();
+    }
   }, [authUser?.id, resolvedProfileId, isOwnProfile]);
 
   // Create a stable reference for artworks using useMemo
@@ -275,11 +263,6 @@ export default function ArtScapeProfile({
       console.error('Error following/unfollowing user:', error);
       toast.error('Failed to follow/unfollow user. Please try again.');
     }
-  };
-
-  const handleAddToCart = (artwork) => {
-    console.log('Added to cart:', artwork);
-    toast.success(`"${artwork.title}" added to cart!`);
   };
 
   const handleArtworkFieldChange = (e) => {
@@ -610,10 +593,10 @@ export default function ArtScapeProfile({
 
   // If the user is signed out, auto-redirect to home (not SignIn)
   useEffect(() => {
-    if (!isLoading && !resolvedProfileData) {
+    if (!isLoading && !profileData) {
       navigate('/', { replace: true });
     }
-  }, [isLoading, resolvedProfileData, navigate]);
+  }, [isLoading, profileData, navigate]);
 
   if (isLoading) {
     return (
@@ -631,8 +614,7 @@ if (authUser?.role === "admin") {
 }
 
 
-  if (!resolvedProfileData) {
-    // You may want a brief fallback UI, but this should be nearly instant redirect
+  if (!profileData) {
     return null;
   }
 
@@ -863,15 +845,15 @@ if (authUser?.role === "admin") {
       {/* Hero Banner with Profile Image Overlaid */}
       <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
         <img
-          src={getBannerImage(resolvedProfileData.bannerImage)}
+          src={getBannerImage(profileData.bannerImage)}
           alt="Profile banner"
           className="w-full h-full object-cover"
         />
         {/* Profile Image - Overlaid on top of banner */}
         <div className="absolute bottom-0 left-1/2 sm:left-6 lg:left-8 transform -translate-x-1/2 sm:translate-x-0 translate-y-1/2 flex-shrink-0 z-20">
           <img
-            src={getProfileImage(resolvedProfileData.profileImage)}
-            alt={resolvedProfileData.name}
+            src={getProfileImage(profileData.profileImage)}
+            alt={profileData.name}
             className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full border-1 border-white shadow-xl bg-white"
           />
         </div>
@@ -884,20 +866,20 @@ if (authUser?.role === "admin") {
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 w-full sm:w-auto">
             {/* Profile Info - Always in white area below banner */}
             <div className="pb-0 sm:pb-6 text-center sm:text-left w-full sm:w-auto pt-12 sm:pt-0 sm:ml-32 md:ml-40 lg:ml-48">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{resolvedProfileData.name}</h1>
-              {resolvedProfileData.username && (
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{profileData.name}</h1>
+              {profileData.username && (
                 <p className="text-sm sm:text-base text-gray-500 mt-1">
-                  {resolvedProfileData.username.startsWith('@') 
-                    ? resolvedProfileData.username 
-                    : `@${resolvedProfileData.username}`}
+                  {profileData.username.startsWith('@') 
+                    ? profileData.username 
+                    : `@${profileData.username}`}
                 </p>
               )}
               <p className="text-sm sm:text-base text-gray-600 mt-1 mb-2 sm:mb-3">
-                {resolvedProfileData.artisticSpecialization}
+                {profileData.artisticSpecialization}
               </p>
-              {resolvedProfileData.bio && (
+              {profileData.bio && (
                 <p className="text-sm sm:text-base text-gray-700 mt-3 sm:mt-4 mb-3 sm:mb-4 max-w-4xl leading-relaxed">
-                  {resolvedProfileData.bio}
+                  {profileData.bio}
                 </p>
               )}
               <div className="flex items-center justify-center sm:justify-start space-x-4 sm:space-x-6 mt-2 text-xs sm:text-sm mb-3 sm:mb-4">
@@ -905,14 +887,14 @@ if (authUser?.role === "admin") {
                   to={`/profile/${resolvedProfileId}/followers`}
                   className="hover:underline cursor-pointer"
                 >
-                  <span><strong>{resolvedProfileData.followers}</strong> Followers</span>
+                  <span><strong>{profileData.followers}</strong> Followers</span>
                 </Link>
                 <span className="text-gray-400">|</span>
                 <Link
                   to={`/profile/${resolvedProfileId}/following`}
                   className="hover:underline cursor-pointer"
                 >
-                  <span><strong>{resolvedProfileData.following}</strong> Following</span>
+                  <span><strong>{profileData.following}</strong> Following</span>
                 </Link>
               </div>
             </div>
