@@ -7,9 +7,9 @@ export default function SignInPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  // new: use one field for email or username instead of two separate ones
   const [formData, setFormData] = useState({
-    email: '',
-    username: '',
+    identifier: '', // user writes email or username here
     password: ''
   });
 
@@ -28,16 +28,17 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
-      // Allow login using email OR username (at least one is required)
-      if (!formData.email && !formData.username) {
+      // check the single identifier field is not empty
+      if (!formData.identifier) {
         setError('Please enter your email or username.');
         setIsLoading(false);
         return;
       }
 
+      // new: send the same identifier as both email and username to reuse backend logic
       const result = await login(
-        formData.email,
-        formData.username,
+        formData.identifier,
+        formData.identifier,
         formData.password
       );
 
@@ -89,38 +90,22 @@ export default function SignInPage() {
             </h1>
 
             <form onSubmit={handleLogin} className="space-y-4 lg:space-y-5">
-              {/* Username (optional, you can log in with email instead) */}
+              {/* new: one input where the user can type email or username */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Username
+                  Email or Username
                 </label>
                 <input
                   type="text"
-                  name="username"
-                  value={formData.username}
+                  name="identifier"
+                  value={formData.identifier}
                   onChange={handleInputChange}
-                  placeholder="@sara_alshareef"
+                  placeholder="Enter your email or username"
                   disabled={isLoading}
-                  className="w-full px-4 py-2.5 lg:py-3 text-sm lg:text-base bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Sara.Alshareef1@Gmail.com"
-                  disabled={isLoading}
-                  className="w-full px-4 py-2.5 lg:py-3 text-sm lg:text-base bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2.5 lg:py-3 text-sm ...transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  You can sign in with either your email or your username.
+                  You can sign in using your email or your username in this box.
                 </p>
               </div>
 
@@ -137,7 +122,7 @@ export default function SignInPage() {
                   placeholder="••••••••••"
                   required
                   disabled={isLoading}
-                  className="w-full px-4 py-2.5 lg:py-3 text-sm lg:text-base bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2.5 lg:py-3 text-sm ...transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
 
