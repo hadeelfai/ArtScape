@@ -1,10 +1,11 @@
 import CardsList from '../components/CardsList'
-import Hero from '../components/Hero'
-import MasonryImageList from '../components/MasonryImageList';
 import Navbar from '../components/Navbar'
 import ScrollVelocity from '../components/ScrollVelocity'
 import { motion } from "framer-motion";
 import Footer from '../components/Footer';
+import { Link } from 'react-router-dom';
+import HomeNewsSection from '../components/HomeNewsSection';
+import HomeArticlesSection from '../components/HomeArticlesSection';
 
 
 const steps = [
@@ -47,12 +48,8 @@ const HomePage = () => {
     <div>
       <Navbar />
 
-      {/* Hero section 
-      <Hero />
-*/}
-
       <div className="relative">
-        <img src='d.gif' className='w-full'/>
+        <img src='d.gif' className='w-full' />
         <h1 className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-3xl md:text-5xl lg:text-7xl font-highcruiser text-center'>ArtScape</h1>
         <h2 className="absolute top-2/4 pt-20 md:pt-36 lg:pt-48 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-3xl md:text-5xl lg:text-7xl font-highcruiser text-center">
           everyone is an Artist
@@ -63,7 +60,7 @@ const HomePage = () => {
       <div>
         <div className='flex justify-between'>
           <h1 className='font-albert text-4xl lg:text-5xl pl-24 pt-20 pb-4'>Latest <span className='font-highcruiser'>Pieces</span></h1>
-          <h1 className='font-albert text-lg md:text-xl lg:text-2xl underline underline-offset-4 pr-10 pt-20 pb-4'>See More</h1>
+          <Link to={"/marketplace"}> <h1 className='font-albert text-lg md:text-xl lg:text-2xl underline underline-offset-4 pr-10 pt-20 pb-4'>See More</h1> </Link>
         </div>
         <CardsList />
       </div>
@@ -129,8 +126,13 @@ const HomePage = () => {
 
       </div>
 
+      <div className='pt-20 text-center text-3xl lg:text-6xl'>
+        <h1 className='font-akshar'>Stay Updated With <span className='font-highcruiser'>ArtScape</span></h1>
+      </div>
 
-      <MasonryImageList />
+      <HomeArticlesSection />
+
+      <HomeNewsSection />
 
       <div className='pt-44'>
         <Footer />
