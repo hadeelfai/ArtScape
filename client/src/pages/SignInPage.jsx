@@ -7,9 +7,8 @@ export default function SignInPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  // new: use one field for email or username instead of two separate ones
   const [formData, setFormData] = useState({
-    identifier: '', // user writes email or username here
+    identifier: '',
     password: ''
   });
 
@@ -28,14 +27,12 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
-      // check the single identifier field is not empty
       if (!formData.identifier) {
         setError('Please enter your email or username.');
         setIsLoading(false);
         return;
       }
 
-      // new: send the same identifier as both email and username to reuse backend logic
       const result = await login(
         formData.identifier,
         formData.identifier,
@@ -61,7 +58,7 @@ export default function SignInPage() {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      setError('Incorrect email/username or password. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -70,6 +67,7 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
+
       <div className="flex-1 flex flex-col lg:flex-row pt-20 lg:pt-20">
         <div className="w-full lg:w-1/2 h-64 sm:h-80 lg:h-screen lg:min-h-screen">
           <img
@@ -83,17 +81,19 @@ export default function SignInPage() {
           />
         </div>
 
+        {/* Right Panel */}
         <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pt-24 lg:pt-24">
           <div className="w-full max-w-md lg:max-w-lg">
+
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-8 lg:mb-12">
               Welcome Back!
             </h1>
 
             <form onSubmit={handleLogin} className="space-y-4 lg:space-y-5">
-              {/* new: one input where the user can type email or username */}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email or Username
+                  Email or Username <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -102,14 +102,10 @@ export default function SignInPage() {
                   onChange={handleInputChange}
                   placeholder="Enter your email or username"
                   disabled={isLoading}
-                  className="w-full px-4 py-2.5 lg:py-3 text-sm ...transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2.5 lg:py-3 text-sm lg:text-base bg-white border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  You can sign in using your email or your username in this box.
-                </p>
               </div>
 
-              {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Password <span className="text-red-500">*</span>
@@ -122,7 +118,7 @@ export default function SignInPage() {
                   placeholder="••••••••••"
                   required
                   disabled={isLoading}
-                  className="w-full px-4 py-2.5 lg:py-3 text-sm ...transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2.5 lg:py-3 text-sm lg:text-base bg-white border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -135,16 +131,18 @@ export default function SignInPage() {
                 </Link>
               </div>
 
+              {/* Error */}
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm whitespace-pre-line">
                   {error}
                 </div>
               )}
 
+              {/* Sign In Button */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-black text-white py-3 lg:py-4 rounded-lg font-semibold text-sm lg:text-base hover:bg-gray-800 transition-colors mt-6 lg:mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-black text-white py-3 lg:py-4 rounded-lg font-semibold text-sm lg:text-base hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center">
@@ -175,6 +173,7 @@ export default function SignInPage() {
                 )}
               </button>
 
+              {/* Footer */}
               <div className="text-center mt-6 lg:mt-8">
                 <p className="text-sm text-gray-600">
                   Don't have an account?{' '}
@@ -186,6 +185,7 @@ export default function SignInPage() {
                   </Link>
                 </p>
               </div>
+
             </form>
           </div>
         </div>

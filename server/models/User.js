@@ -21,6 +21,18 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
+    // PASSWORD RESET FIELDS    
+    passwordResetToken: {
+      type: String,
+      default: undefined,
+    },
+
+    passwordResetExpires: {
+      type: Date,
+      default: undefined,
+    },
+    //  END OF PASSWORD RESET FIELDS
+
     role: {
       type: String,
       enum: ['user', 'admin'],
@@ -40,10 +52,10 @@ const userSchema = new mongoose.Schema(
     // ---- PROFILE FIELDS ----
     username: {
       type: String,
-      required: true,     // ✔️ username إلزامي
-      unique: true,       // ✔️ يمنع التكرار في الداتابيس
-      lowercase: true,    // ✔️ يحفظه بحروف صغيرة
-      trim: true,         // ✔️ يشيل المسافات
+      required: true,    
+      unique: true,     
+      lowercase: true,    
+      trim: true,         
     },
 
     firstName: String,
