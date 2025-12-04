@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { normalizeTagList } from '../utils/tagDefinitions';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
@@ -20,7 +21,11 @@ export const useGalleryData = () => {
           artworksRes.json()
         ]);
         setUsers(usersData);
-        setArtworks(artworksData);
+        const normalizedArtworks = artworksData.map(artwork => ({
+          ...artwork,
+          tags: normalizeTagList(artwork.tags)
+        }));
+        setArtworks(normalizedArtworks);
       } catch (error) {
         console.error('Gallery data fetch failed', error);
       } finally {

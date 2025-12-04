@@ -5,6 +5,22 @@ import { authMiddleware } from '../middleware/AuthMiddleware.js'
 
 const router = express.Router()
 
+const normalizeTagsInput = (tags) => {
+    if (!tags) return []
+    if (Array.isArray(tags)) {
+        return tags
+            .map(tag => typeof tag === 'string' ? tag.trim() : '')
+            .filter(Boolean)
+    }
+    if (typeof tags === 'string') {
+        return tags
+            .split(',')
+            .map(tag => tag.trim())
+            .filter(Boolean)
+    }
+    return []
+}
+
 // Get user's liked and saved artworks (must come before /user/:userId to avoid route conflicts)
 router.get('/user/:userId/likes-saves', async (req, res) => {
     try {
@@ -37,13 +53,19 @@ router.get('/user/:userId', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const { title, image, price, artist, description, tags, artworkType, dimensions, year } = req.body
+        const normalizedTags = normalizeTagsInput(tags)
+
+        if (normalizedTags.length < 3) {
+            return res.status(400).json({ error: 'Please provide at least three tags related to the artwork.' })
+        }
+
         const artwork = new Artwork({ 
             title, 
             image, 
             price, 
             artist, 
             description,
-            tags,
+            tags: normalizedTags,
             dimensions,
             year,
             artworkType: artworkType || 'Explore'
@@ -70,7 +92,13 @@ router.put('/:id', async (req, res) => {
         if (image !== undefined) artwork.image = image
         if (price !== undefined) artwork.price = price
         if (description !== undefined) artwork.description = description
-        if (tags !== undefined) artwork.tags = tags
+        if (tags !== undefined) {
+            const normalizedTags = normalizeTagsInput(tags)
+            if (normalizedTags.length < 3) {
+                return res.status(400).json({ error: 'Please provide at least three tags related to the artwork.' })
+            }
+            artwork.tags = normalizedTags
+        }
         if (artworkType !== undefined) artwork.artworkType = artworkType
         if (dimensions !== undefined) artwork.dimensions = dimensions
         if (year !== undefined) artwork.year = year

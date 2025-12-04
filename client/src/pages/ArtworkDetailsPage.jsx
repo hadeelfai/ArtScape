@@ -8,6 +8,7 @@ import { useCart } from '../context/CartContext.jsx';
 import ReportModal from '../components/ReportModal';
 import { useLikeSave } from '../context/LikeSaveContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { normalizeTagList } from '../utils/tagDefinitions';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
@@ -34,8 +35,12 @@ const ArtworkDetailsPage = () => {
         const artworkRes = await fetch(`${API_BASE}/artworks/${id}`);
         if (!artworkRes.ok) throw new Error('Artwork not found');
         const artworkData = await artworkRes.json();
-        setArtwork(artworkData);
-        setLikes(Array.isArray(artworkData.likes) ? artworkData.likes.length : (artworkData.likes || 0));
+        const normalizedArtwork = {
+          ...artworkData,
+          tags: normalizeTagList(artworkData.tags)
+        };
+        setArtwork(normalizedArtwork);
+        setLikes(Array.isArray(normalizedArtwork.likes) ? normalizedArtwork.likes.length : (normalizedArtwork.likes || 0));
         // Fetch artist
         const userId = artworkData.artist;
         if (userId) {

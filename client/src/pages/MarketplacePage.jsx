@@ -43,6 +43,7 @@ const ART_TYPE_FILTERS = [
 ];
 
 const SORT_OPTIONS = [
+  { value: "latest", label: "Latest" },
   { value: "priceDesc", label: "Price high → low" },
   { value: "priceAsc", label: "Price low → high" },
 ];
@@ -58,7 +59,7 @@ const MarketplacePage = () => {
   });
 
   const [category, setCategory] = useState("For You");
-  const [sortOption, setSortOption] = useState("priceDesc");
+  const [sortOption, setSortOption] = useState("latest");
 
   const [limit, setLimit] = useState(12);
   const sentinelRef = useRef(null);
@@ -78,11 +79,17 @@ const MarketplacePage = () => {
       .filter((art) => matchesColor(art, filters.color))
       .filter((art) => matchesArtType(art, filters.artType))
       .sort((a, b) => {
+        if (sortOption === "latest") {
+          const timeA = new Date(a.createdAt || 0).getTime();
+          const timeB = new Date(b.createdAt || 0).getTime();
+          return timeB - timeA;
+        }
+
         const priceA = a.price || 0;
         const priceB = b.price || 0;
 
         if (sortOption === "priceAsc") return priceA - priceB;
-        return priceB - priceA; // default price high to low
+        return priceB - priceA; // price high to low
       });
   }, [artworks, category, filters, sortOption]);
 
@@ -297,27 +304,18 @@ const MarketplacePage = () => {
               className="left-0 mt-2 shadow-xl max-w-[45px] px-0 py-0"
             >
               <div className="divide-y divide-gray-200 rounded-[2rem] overflow-hidden">
-                <button
-                  className={`w-full py-4 px-6 text-base ${sortOption === "priceDesc" && "font-bold bg-gray-100"
-                    }`}
-                  onClick={() => {
-                    setSortOption("priceDesc");
-                    setIsSortOpen(false);
-                  }}
-                >
-                  Price High → Low
-                </button>
-
-                <button
-                  className={`w-full py-4 px-6 text-base ${sortOption === "priceAsc" && "font-bold bg-gray-100"
-                    }`}
-                  onClick={() => {
-                    setSortOption("priceAsc");
-                    setIsSortOpen(false);
-                  }}
-                >
-                  Price Low → High
-                </button>
+                {SORT_OPTIONS.map(option => (
+                  <button
+                    key={option.value}
+                    className={`w-full py-4 px-6 text-base ${sortOption === option.value ? "font-bold bg-gray-100" : ""}`}
+                    onClick={() => {
+                      setSortOption(option.value);
+                      setIsSortOpen(false);
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
             </DropdownMenu>
           </div>
