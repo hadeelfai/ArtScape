@@ -1,6 +1,7 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto' // ✅ NEW: Added for password reset token generation
 import User from '../models/User.js'
 import Artwork from '../models/Artwork.js'
 
@@ -178,12 +179,12 @@ router.post('/register', async (req, res) => {
                 email: user.email,
                 username: user.username,
                 role: user.role,  
-                profileImage: user.profileImage || null, // ✅ Added
-                bannerImage: user.bannerImage || null, // ✅ Added
-                bio: user.bio || null, // ✅ Added
-                artisticSpecialization: user.artisticSpecialization || null, // ✅ Added
-                followers: user.followers || 0, // ✅ Added
-                following: user.following || 0 // ✅ Added
+                profileImage: user.profileImage || null,
+                bannerImage: user.bannerImage || null,
+                bio: user.bio || null,
+                artisticSpecialization: user.artisticSpecialization || null,
+                followers: user.followers || 0,
+                following: user.following || 0
             }
         })
 
@@ -192,7 +193,6 @@ router.post('/register', async (req, res) => {
     }
 })
 
-// POST - Login user
 // POST - Login user (email OR username)
 router.post('/login', async (req, res) => {
   try {
@@ -219,7 +219,6 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Blocked and suspended users cannot log in
     if (user.accountStatus === "blocked") {
       return res
         .status(403)
@@ -280,6 +279,104 @@ router.post('/logout', (req, res) => {
     }
 })
 
+// ========================================
+// ✅ NEW: FORGOT PASSWORD ROUTES START
+// ========================================
+
+// POST - Forgot Password (generate reset token)
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        // Find user by email (case-insensitive)
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            return res.status(404).json({ error: 'No account found with this email address' });
+        }
+
+        // Generate reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenHash = crypto
+            .createHash('sha256')
+            .update(resetToken)
+            .digest('hex');
+
+        // Save hashed token and expiry to user
+        user.passwordResetToken = resetTokenHash;
+        user.passwordResetExpires = Date.now() + 3600000; // 1 hour
+        await user.save();
+
+        // Create reset URL
+        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+
+        // In development, just log the URL (in production, you'd send an email)
+        console.log('Password Reset URL:', resetUrl);
+        console.log('Reset Token:', resetToken);
+
+        res.status(200).json({
+            message: 'Password reset link generated successfully',
+            url: resetUrl,
+        });
+
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Failed to process password reset request' });
+    }
+});
+
+// POST - Reset Password (using token)
+router.post('/reset-password/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ error: 'New password is required' });
+        }
+
+        // Hash the token from URL to compare with stored hash
+        const resetTokenHash = crypto
+            .createHash('sha256')
+            .update(token)
+            .digest('hex');
+
+        // Find user with valid token and not expired
+        const user = await User.findOne({
+            passwordResetToken: resetTokenHash,
+            passwordResetExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid or expired reset token' });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Update password and clear reset token fields
+        user.password = hashedPassword;
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save();
+
+        res.status(200).json({
+            message: 'Password reset successful. You can now login with your new password.'
+        });
+
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ error: 'Failed to reset password' });
+    }
+});
+
+// ========================================
+// ✅ NEW: FORGOT PASSWORD ROUTES END
+// ========================================
 
 router.get('/:id', async (req, res) => {
     try {
@@ -697,16 +794,5 @@ router.get('/profile/:id/following', async (req, res) => {
         res.status(500).json({ error: error.message })
     }
 })
-
-// Get all users (for gallery)
-router.get('/', async (req, res) => {
-  try {
-    // only pick safe fields
-    const users = await User.find({}, 'id _id name username profileImage avatar');
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 export default router

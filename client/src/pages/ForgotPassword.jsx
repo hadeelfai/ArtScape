@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
 
       if (res.ok) {
-        setMessage('A password reset link has been generated. Check your email (or server console in dev).');
+        setMessage('A password reset link has been sent. Please check your email (or server console in dev).');
         setError('');
         console.log('Reset URL:', data.url);
       } else {
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
                 }}
                 required
                 className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-black focus:border-black transition-all"
-                placeholder="example@email.com"
+                placeholder="Sara.Alshareef1@email.com"
               />
             </div>
 
