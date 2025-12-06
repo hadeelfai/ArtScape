@@ -1,4 +1,9 @@
+import { CATEGORY_KEYWORDS, normalizeTagList } from './tagDefinitions';
+
 export const CATEGORY_TABS = ['For You', 'Photography', 'Graphic Design', 'Illustration', 'Paintings', 'Pottery'];
+
+const getNormalizedTags = (art) => normalizeTagList(art.tags).map(tag => tag.toLowerCase());
+
 const parseSizeValue = (dimensions) => {
   if (!dimensions) return null;
   const cleaned = dimensions.replace(/[^0-9x×\s.]/gi, '').toLowerCase();
@@ -19,19 +24,21 @@ export const matchesSize = (art, sizeFilter) => {
 
 export const matchesColor = (art, colorFilter) => {
   if (colorFilter === 'any') return true;
-  const tags = (art.tags || '').toLowerCase();
-  return tags.includes(colorFilter);
+  const tags = getNormalizedTags(art);
+  const target = colorFilter.toLowerCase();
+  return tags.some(tag => tag.includes(target));
 };
 
 export const matchesArtType = (art, artTypeFilter) => {
   if (artTypeFilter === 'any') return true;
-  const tags = (art.tags || '').toLowerCase();
-  return tags.includes(artTypeFilter);
+  const tags = getNormalizedTags(art);
+  const target = artTypeFilter.toLowerCase();
+  return tags.some(tag => tag.includes(target));
 };
 
 export const matchesCategory = (art, category) => {
   if (!category || category === 'For You') return true;
-  const target = category.toLowerCase();
-  const tags = (art.tags || '').toLowerCase();
-  return tags.includes(target);
+  const tags = getNormalizedTags(art);
+  const keywords = CATEGORY_KEYWORDS[category] || [category.toLowerCase()];
+  return tags.some(tag => keywords.some(keyword => tag.includes(keyword)));
 };

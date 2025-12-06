@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Settings, Heart, Bookmark, Image, X, Edit2, Trash2 } from 'lucide-react';
+import { Settings, Heart, Bookmark, Image, X, Edit2, Trash2, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
 import SettingsSidebar from "../components/SettingsSidebar";
 import { toast } from 'sonner';
 import AdminProfile from "./AdminProfile";
 import { useLikeSave } from '../context/LikeSaveContext.jsx';
+import { TAG_GROUPS, normalizeTagList } from '../utils/tagDefinitions';
 
 const DEFAULT_PROFILE_IMAGE = '/Profileimages/User.jpg';
 const DEFAULT_BANNER_IMAGE = '/Profileimages/Cover.jpg';
@@ -26,6 +27,18 @@ export const getBannerImage = (image) => {
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+
+const createEmptyArtworkState = () => ({
+  title: '',
+  description: '',
+  tags: [],
+  dimensions: '',
+  year: '',
+  artworkType: 'Explore',
+  price: '',
+  imageFile: null,
+  imagePreview: ''
+});
 
 export default function ArtScapeProfile({
   userData: userDataProp = null,
@@ -142,7 +155,7 @@ export default function ArtScapeProfile({
       id: artwork._id || artwork.id,
       title: artwork.title || '',
       description: artwork.description || '',
-      tags: artwork.tags || '',
+      tags: normalizeTagList(artwork.tags),
       dimensions: artwork.dimensions || '',
       year: artwork.year || '',
       artworkType: artwork.artworkType || 'Explore',
@@ -164,17 +177,8 @@ export default function ArtScapeProfile({
       prevArtworksRef.current = currentArtworksStr;
     }
   }, [mappedArtworks]);
-  const [newArtwork, setNewArtwork] = useState({
-    title: '',
-    description: '',
-    tags: '',
-    dimensions: '',
-    year: '',
-    artworkType: 'Explore', // 'Explore' or 'Marketplace'
-    price: '',
-    imageFile: null,
-    imagePreview: ''
-  });
+  const [newArtwork, setNewArtwork] = useState(() => createEmptyArtworkState());
+  const [tagSearchTerm, setTagSearchTerm] = useState('');
   const [isAddingArtwork, setIsAddingArtwork] = useState(false);
   const [isUploadingArtwork, setIsUploadingArtwork] = useState(false);
   const [editingArtwork, setEditingArtwork] = useState(null);
@@ -185,6 +189,37 @@ export default function ArtScapeProfile({
   const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState('gallery');
   const showAddArtworkTile = isOwnProfile && activeTab === 'gallery' && !isAddingArtwork;
+
+  const filteredTagGroups = useMemo(() => {
+    const query = tagSearchTerm.trim().toLowerCase();
+    if (!query) return TAG_GROUPS;
+
+    return TAG_GROUPS
+      .map(group => ({
+        ...group,
+        tags: group.tags.filter(tag => tag.toLowerCase().includes(query))
+      }))
+      .filter(group => group.tags.length > 0);
+  }, [tagSearchTerm]);
+
+  const handleToggleTag = (tag) => {
+    setNewArtwork((prev) => {
+      const exists = prev.tags.includes(tag);
+      const tags = exists
+        ? prev.tags.filter(t => t !== tag)
+        : [...prev.tags, tag];
+      return { ...prev, tags };
+    });
+  };
+
+  const handleRemoveTag = (tag, event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    setNewArtwork((prev) => ({
+      ...prev,
+      tags: prev.tags.filter(t => t !== tag)
+    }));
+  };
 
   const allTabs = [
     { id: 'gallery', label: 'Gallery', icon: Image },
@@ -318,6 +353,10 @@ export default function ArtScapeProfile({
       toast.error('Please upload an image for the artwork.');
       return;
     }
+    if (newArtwork.tags.length < 3) {
+      toast.error('Please select at least three tags related to your artwork.');
+      return;
+    }
 
     if (!authUser?.id) {
       toast.error('Please log in to add artworks.');
@@ -338,7 +377,7 @@ export default function ArtScapeProfile({
       const artworkData = {
         title: newArtwork.title,
         description: newArtwork.description || '',
-        tags: newArtwork.tags || '',
+        tags: newArtwork.tags,
         dimensions: newArtwork.dimensions || '',
         year: newArtwork.year || '',
         artworkType: newArtwork.artworkType,
@@ -384,7 +423,7 @@ export default function ArtScapeProfile({
               ...art,
               title: result.artwork.title,
               description: result.artwork.description,
-              tags: result.artwork.tags,
+              tags: normalizeTagList(result.artwork.tags),
               dimensions: result.artwork.dimensions,
               year: result.artwork.year,
               artworkType: result.artwork.artworkType,
@@ -400,7 +439,7 @@ export default function ArtScapeProfile({
           id: result.artwork._id,
           title: result.artwork.title,
           description: result.artwork.description,
-          tags: result.artwork.tags,
+          tags: normalizeTagList(result.artwork.tags),
           dimensions: result.artwork.dimensions,
           year: result.artwork.year,
           artworkType: result.artwork.artworkType,
@@ -413,17 +452,8 @@ export default function ArtScapeProfile({
       }
 
       // Reset form
-      setNewArtwork({
-        title: '',
-        description: '',
-        tags: '',
-        dimensions: '',
-        year: '',
-        artworkType: 'Explore',
-        price: '',
-        imageFile: null,
-        imagePreview: ''
-      });
+      setNewArtwork(createEmptyArtworkState());
+      setTagSearchTerm('');
       setIsAddingArtwork(false);
       setEditingArtwork(null);
 
@@ -446,25 +476,17 @@ export default function ArtScapeProfile({
     if (newArtwork.imagePreview) {
       URL.revokeObjectURL(newArtwork.imagePreview);
     }
-    setNewArtwork({
-      title: '',
-      description: '',
-      tags: '',
-      dimensions: '',
-      year: '',
-      artworkType: 'Explore',
-      price: '',
-      imageFile: null,
-      imagePreview: ''
-    });
+    setNewArtwork(createEmptyArtworkState());
+    setTagSearchTerm('');
   };
 
   const handleEditArtwork = (artwork) => {
+    const normalizedTags = normalizeTagList(artwork.tags);
     setEditingArtwork(artwork);
     setNewArtwork({
       title: artwork.title || '',
       description: artwork.description || '',
-      tags: artwork.tags || '',
+      tags: normalizedTags,
       dimensions: artwork.dimensions || '',
       year: artwork.year || '',
       artworkType: artwork.artworkType || 'Explore',
@@ -472,6 +494,7 @@ export default function ArtScapeProfile({
       imageFile: null,
       imagePreview: artwork.image || ''
     });
+    setTagSearchTerm('');
     setIsAddingArtwork(true);
   };
 
@@ -552,7 +575,7 @@ export default function ArtScapeProfile({
             id: art._id || art.id,
             title: art.title || '',
             description: art.description || '',
-            tags: art.tags || '',
+            tags: normalizeTagList(art.tags),
             dimensions: art.dimensions || '',
             year: art.year || '',
             artworkType: art.artworkType || 'Explore',
@@ -567,7 +590,7 @@ export default function ArtScapeProfile({
             id: art._id || art.id,
             title: art.title || '',
             description: art.description || '',
-            tags: art.tags || '',
+            tags: normalizeTagList(art.tags),
             dimensions: art.dimensions || '',
             year: art.year || '',
             artworkType: art.artworkType || 'Explore',
@@ -734,16 +757,71 @@ if (authUser?.role === "admin") {
               {/* Tags */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tags
+                  Tags <span className="text-xs text-gray-500">(select at least 3)</span>
                 </label>
-                <input
-                  type="text"
-                  name="tags"
-                  value={newArtwork.tags}
-                  onChange={handleArtworkFieldChange}
-                  placeholder="e.g., abstract, painting, digital art (comma separated)"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-900"
-                />
+                <div className="border border-gray-200 rounded-2xl p-4 space-y-4">
+                  <div className="flex flex-wrap gap-2 min-h-[44px]">
+                    {newArtwork.tags.length > 0 ? (
+                      newArtwork.tags.map(tag => (
+                        <span key={tag} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-800">
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={(event) => handleRemoveTag(tag, event)}
+                            className="text-gray-500 hover:text-gray-900"
+                            aria-label={`Remove ${tag}`}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500">No tags selected yet.</p>
+                    )}
+                  </div>
+                  <div className="rounded-2xl border border-gray-200">
+                    <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-2">
+                      <Search className="w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={tagSearchTerm}
+                        onChange={(e) => setTagSearchTerm(e.target.value)}
+                        placeholder="Search creative fields"
+                        className="w-full bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none"
+                      />
+                    </div>
+                    <div className="max-h-64 overflow-y-auto p-4 space-y-5">
+                      {filteredTagGroups.length === 0 ? (
+                        <p className="text-sm text-gray-500">No tags match "{tagSearchTerm}".</p>
+                      ) : (
+                        filteredTagGroups.map(group => (
+                          <div key={group.title} className="space-y-2">
+                            <p className="text-xs uppercase tracking-wide text-gray-500">{group.title}</p>
+                            <div className="space-y-2">
+                              {group.tags.map(tag => {
+                                const isChecked = newArtwork.tags.includes(tag);
+                                return (
+                                  <label key={tag} className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => handleToggleTag(tag)}
+                                      className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                                    />
+                                    <span>{tag}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <p className={`mt-2 text-sm ${newArtwork.tags.length < 3 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {newArtwork.tags.length} of 3 required tags selected
+                </p>
               </div>
 
               {/* Dimensions */}
@@ -1046,7 +1124,7 @@ if (authUser?.role === "admin") {
                               <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 line-clamp-2">{artwork.description}</p>
                             )}
                             {artwork.price && (
-                              <span className="text-base sm:text-lg font-bold text-gray-900 mt-1 sm:mt-2 block">{artwork.price} ر.س</span>
+                              <span className="text-base sm:text-lg font-bold text-gray-900 mt-1 sm:mt-2 block">{artwork.price} SAR</span>
                             )}
                           </>
                         )}
@@ -1094,7 +1172,7 @@ if (authUser?.role === "admin") {
                             <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 line-clamp-2">{artwork.description}</p>
                           )}
                           {artwork.price && (
-                            <span className="text-base sm:text-lg font-bold text-gray-900 mt-1 sm:mt-2 block">{artwork.price} ر.س</span>
+                            <span className="text-base sm:text-lg font-bold text-gray-900 mt-1 sm:mt-2 block">{artwork.price} SAR</span>
                           )}
                         </>
                       )}
@@ -1137,7 +1215,7 @@ if (authUser?.role === "admin") {
                             <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 line-clamp-2">{artwork.description}</p>
                           )}
                           {artwork.price && (
-                            <span className="text-base sm:text-lg font-bold text-gray-900 mt-1 sm:mt-2 block">{artwork.price} ر.س</span>
+                            <span className="text-base sm:text-lg font-bold text-gray-900 mt-1 sm:mt-2 block">{artwork.price} SAR</span>
                           )}
                         </>
                       )}

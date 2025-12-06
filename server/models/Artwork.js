@@ -1,5 +1,21 @@
 import mongoose from 'mongoose'
 
+const normalizeTags = (tags) => {
+    if (!tags) return []
+    if (Array.isArray(tags)) {
+        return tags
+            .map(tag => typeof tag === 'string' ? tag.trim() : '')
+            .filter(Boolean)
+    }
+    if (typeof tags === 'string') {
+        return tags
+            .split(',')
+            .map(tag => tag.trim())
+            .filter(Boolean)
+    }
+    return []
+}
+
 const artworkSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -13,7 +29,18 @@ const artworkSchema = new mongoose.Schema({
         type: Number,
         required: false
     },
-    tags: String,
+    tags: {
+        type: [String],
+        required: true,
+        set: normalizeTags,
+        validate: {
+            validator: function (tags) {
+                return Array.isArray(tags) && tags.filter(Boolean).length >= 3
+            },
+            message: 'Please provide at least three tags for the artwork.'
+        },
+        default: []
+    },
     artworkType: {
         type: String,
         enum: ['Explore', 'Marketplace'],

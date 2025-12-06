@@ -1,7 +1,7 @@
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Bell, LogOut, User, Package, Palette } from 'lucide-react';
+import { ShoppingCart, Bell, LogOut, User, Package, Palette, ChevronDown } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext.jsx';
@@ -294,7 +294,11 @@ const Navbar = () => {
                     onMouseEnter={() => setShowProfileDropdown(true)}
                     onMouseLeave={() => setShowProfileDropdown(false)}
                   >
-                    <div className="hover:opacity-60 transition-opacity cursor-pointer">
+                    <Link
+                      to={profilePath}
+                      className="hover:opacity-60 transition-opacity cursor-pointer block"
+                      onClick={() => setShowProfileDropdown(false)}
+                    >
                       <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
                         <img
                           src={user.profileImage || user.avatar || '/Profileimages/User.jpg'}
@@ -305,7 +309,7 @@ const Navbar = () => {
                           }}
                         />
                       </div>
-                    </div>
+                    </Link>
 
                     {/* Profile Dropdown Menu */}
                     <AnimatePresence>
@@ -403,10 +407,14 @@ const Navbar = () => {
                   <SearchBar variant='icon' />
                 </div>
 
-                <div className="relative" ref={profileDropdownRefMobile}>
-                  <button
-                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                    className={`${isOpen ? "text-white" : "text-black"} focus:outline-none`}
+                <div className="relative flex items-center gap-1" ref={profileDropdownRefMobile}>
+                  <Link
+                    to={profilePath}
+                    className={`${isOpen ? "text-white" : "text-black"} block`}
+                    onClick={() => {
+                      setShowProfileDropdown(false);
+                      setIsOpen(false);
+                    }}
                   >
                     <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
                       <img
@@ -418,6 +426,13 @@ const Navbar = () => {
                         }}
                       />
                     </div>
+                  </Link>
+                  <button
+                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                    className={`${isOpen ? "text-white" : "text-black"} focus:outline-none`}
+                    aria-label="Open profile menu"
+                  >
+                    <ChevronDown className="w-4 h-4" />
                   </button>
 
                   {/* Profile Dropdown Menu - Mobile */}
