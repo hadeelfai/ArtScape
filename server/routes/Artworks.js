@@ -2,6 +2,10 @@ import express from 'express'
 import Artwork from '../models/Artwork.js'
 import nodemailer from 'nodemailer'
 import { authMiddleware } from '../middleware/AuthMiddleware.js'
+import { computeEmbeddingInBackground } from '../utils/embedQueue.js';
+import { getSimilarArtworks } from '../controllers/artworkController.js';
+import User from '../models/User.js';
+
 
 const router = express.Router()
 
@@ -46,9 +50,13 @@ router.post('/', async (req, res) => {
             tags,
             dimensions,
             year,
-            artworkType: artworkType || 'Explore'
+            artworkType: artworkType || 'Explore',
+            embedding: null,//store empty then compute in background
         })
         await artwork.save()
+        // Trigger background embedding computation *no waiting
+        computeEmbeddingInBackground(artwork._id, image);
+
         res.status(201).json({ message: 'Artwork created successfully', artwork })
     } catch (error) {
         res.status(500).json({ error: error.message })
@@ -67,7 +75,11 @@ router.put('/:id', async (req, res) => {
 
         // Update fields
         if (title !== undefined) artwork.title = title
-        if (image !== undefined) artwork.image = image
+        if (image !== undefined && image !== artwork.image) {
+            artwork.image = image;
+            computeEmbeddingInBackground(artwork._id, image);
+            // recompute embedding for update
+}
         if (price !== undefined) artwork.price = price
         if (description !== undefined) artwork.description = description
         if (tags !== undefined) artwork.tags = tags
@@ -206,6 +218,66 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ error: error.message })
   }
 })
+
+//NEW section
+router.get("/:id/similar", getSimilarArtworks);
+//get similarity
+
+
+// personlized recommendation
+router.get('/recommended/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId).populate('likes'); // artworks liked
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Collect all tags from liked artworks
+    const likedTags = user.likes.flatMap(art => art.tags?.split(',') || []);
+
+    // Find artworks that match these tags and are not yet liked
+    const recommended = await Artwork.find({
+      artworkType: 'Explore',
+      _id: { $nin: user.likes.map(a => a._id) },
+      tags: { $in: likedTags },
+    })
+    .limit(50)
+    .lean();
+
+    res.json(recommended);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+
+// to track views
+router.post('/:id/view', async (req, res) => {
+  try {
+    const { userId, duration } = req.body;
+
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    if (!duration || isNaN(duration)) return res.status(400).json({ error: 'duration must be a number' });
+
+    const artwork = await Artwork.findById(req.params.id);
+    if (!artwork) return res.status(404).json({ error: 'Artwork not found' });
+
+    artwork.views.push({ 
+      user: userId, 
+      duration: Number(duration), 
+      timestamp: new Date() 
+    });
+
+    await artwork.save();
+    res.json({ message: 'View recorded' });
+  } catch (err) {
+    console.error('Error recording view:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 
 export default router

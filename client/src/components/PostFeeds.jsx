@@ -240,6 +240,21 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
     }
   };
 
+    // Block Following tab if user not logged in
+    if (activeTab === "following" && !loggedInUser) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-gray-600">
+          <p className="mb-4">You must be signed in to view the Following feed.</p>
+          <button
+            className="px-4 py-2 bg-black text-white rounded-full hover:bg-gray-800"
+            onClick={() => window.location.href = "/login"}
+          >
+            Sign In
+          </button>
+        </div>
+      );
+    }
+
   // Let parent open edit UI
   const handleEditClick = (post) => {
     if (onStartEditing) onStartEditing(post);

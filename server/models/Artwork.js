@@ -35,7 +35,14 @@ const artworkSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
-    embedding: { type: [Number], default: [] } // AI vector
+    views: // view data for each artwork
+    [{ user: 
+        { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        duration: Number, timestamp: Date }],
+    embedding: 
+    { type: [Number], // store embedding in db
+        default: [] 
+    }, 
 }, {timestamps: true})
 
 export default mongoose.model('Artwork', artworkSchema)

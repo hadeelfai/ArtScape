@@ -24,6 +24,43 @@ const ArtworkDetailsPage = () => {
   const { addToCart } = useCart();
   const { user: authUser } = useAuth();
   const [isFollowing, setIsFollowing] = useState(false);
+  const [similar, setSimilar] = useState([]);
+
+  //similar artwork section
+  //NEW section
+    useEffect(() => {
+    if (!authUser?._id || !artwork?._id) return;
+
+    const startTime = Date.now();
+
+    const handleUnload = async () => {
+      const duration = (Date.now() - startTime) / 1000; // seconds
+      await fetch(`${API_BASE}/artworks/${artwork._id}/view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: authUser._id, duration })
+      });
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [authUser, artwork]);
+
+
+    useEffect(() => {
+    async function getSimilar() {
+      try {
+        const res = await fetch(`${API_BASE}/artworks/${id}/similar`);
+        const data = await res.json();
+        // Extract just the artworks
+        setSimilar(data.map(item => item.artwork));
+      } catch (err) {
+        console.error("Failed to fetch similar artworks:", err);
+        setSimilar([]);
+      }
+    }
+    getSimilar();
+  }, [id]);
+//NEW section END
 
   // Fetch artwork and artist
   useEffect(() => {
@@ -201,7 +238,7 @@ const ArtworkDetailsPage = () => {
                 />
               )}
             </div>
-          </div>
+          </div>         
           {/* Right Column - Details */}
           <div className="space-y-6">
             <div>
@@ -281,6 +318,34 @@ const ArtworkDetailsPage = () => {
                 </button>
               )}
             </div>
+            {/* Similar Artworks Section */}
+            {/* NEW section*/} 
+            <div className="mt-12">
+              <h2 className="text-2xl font-bold mb-4">More Like This</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {similar.length === 0 ? (
+                  <p className="text-gray-600">No similar artworks found.</p>
+                ) : (
+                  similar.map(a => (
+                    <div
+                      key={a._id}
+                      onClick={() => navigate(`/artwork/${a._id}`)}
+                      className="cursor-pointer flex flex-col"
+                    >
+                      <div className="w-full aspect-[1/1.1] overflow-hidden rounded-lg bg-gray-100">
+                        <img
+                          src={a.image}
+                          alt={a.title}
+                          className="w-full h-full object-cover"
+                          onError={e => { e.target.onerror = null; e.target.src = '/Profileimages/User.jpg'; }}
+                        />
+                      </div>
+                      <p className="mt-2 text-sm text-center">{a.title}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -288,8 +353,12 @@ const ArtworkDetailsPage = () => {
       {showReport &&
         <ReportModal onClose={() => setShowReport(false)} artworkId={artwork._id || artwork.id} />
       }
+      
     </div>
+    
   );
+
+  
 };
 
 export default ArtworkDetailsPage;
