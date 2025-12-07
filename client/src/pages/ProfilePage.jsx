@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Settings, Heart, Bookmark, Image, X, Edit2, Trash2, Search } from 'lucide-react';
+import { Heart, Bookmark, Image, X, Edit2, Trash2, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
-import SettingsSidebar from "../components/SettingsSidebar";
 import { toast } from 'sonner';
 import AdminProfile from "./AdminProfile";
 import { useLikeSave } from '../context/LikeSaveContext.jsx';
@@ -610,8 +609,6 @@ export default function ArtScapeProfile({
       fetchLikedSavedArtworks();
     }
   }, [liked, saved, isOwnProfile]);
-
-
   const [open, setOpen] = useState(false);
 
   // If the user is signed out, auto-redirect to home (not SignIn)
@@ -982,17 +979,6 @@ if (authUser?.role === "admin") {
           <div className="pb-0 sm:pb-6 w-full sm:w-auto flex justify-center sm:justify-end mt-0 sm:mt-0">
             {isOwnProfile ? (
               <div className="flex items-center gap-2 sm:gap-3">
-                {/* Settings Icon Button */}
-                <button
-                  type="button"
-                  onClick={() => setOpen(true)}
-                  className="p-2 sm:p-2.5 bg-white border border-gray-300 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
-                >
-                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
-                </button>
-
-                <SettingsSidebar open={open} setOpen={setOpen} />
-
                 {/* Edit Profile Button */}
                 <button
                   type="button"

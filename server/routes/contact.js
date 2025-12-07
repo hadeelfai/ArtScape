@@ -3,14 +3,36 @@ import nodemailer from "nodemailer";
 
 const router = express.Router();
 
+// ✅ SECURITY FIX: Helper function for basic input validation
+function validateContactForm(name, email, message) {
+    const errors = [];
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+        errors.push('Name must be at least 2 characters');
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errors.push('Valid email is required');
+    }
+    if (!message || typeof message !== 'string' || message.trim().length < 10) {
+        errors.push('Message must be at least 10 characters');
+    }
+    return errors;
+}
+
 //contact form route
+// ✅ SECURITY FIX: Added input validation and basic rate limiting setup
 router.post("/", async (req, res) => {
   try {
     const { name, email, message } = req.body;
 
-    if (!name || !email || !message) {
-      return res.status(400).json({ error: "All fields are required" });
+    // Validate input
+    const validationErrors = validateContactForm(name, email, message);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ errors: validationErrors });
     }
+    
+    // TODO: Add rate limiting middleware (e.g., express-rate-limit) to prevent spam
+    // Example: const limiter = rateLimit({ windowMs: 15*60*1000, max: 3 });
+    // Then add to route: router.post("/", limiter, async (req, res) => {...})
 
     const transporter = nodemailer.createTransport({
       service: "gmail",

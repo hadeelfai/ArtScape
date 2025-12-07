@@ -1,4 +1,5 @@
 import express from 'express'
+import mongoose from 'mongoose'
 import Artwork from '../models/Artwork.js'
 import nodemailer from 'nodemailer'
 import { authMiddleware } from '../middleware/AuthMiddleware.js'
@@ -126,22 +127,44 @@ router.put('/:id', async (req, res) => {
 router.post('/:id/like', async (req, res) => {
     try {
         const { userId } = req.body
-        const artwork = await Artwork.findById(req.params.id)
         
+        // Convert userId string to ObjectId for proper comparison
+        let userIdObj
+        try {
+            userIdObj = new mongoose.Types.ObjectId(userId)
+        } catch (e) {
+            return res.status(400).json({ error: 'Invalid userId format' })
+        }
+
+        // Get current artwork to check if liked
+        const artwork = await Artwork.findById(req.params.id)
         if (!artwork)
             return res.status(404).json({ error: 'Artwork not found' })
 
-        const isLiked = artwork.likes.includes(userId)
+        const isLiked = artwork.likes.some(id => {
+            try {
+                return id.equals(userIdObj)
+            } catch {
+                return id.toString() === userId
+            }
+        })
 
+        // Use updateOne to avoid full validation
         if (isLiked) {
-            artwork.likes = artwork.likes.filter(id => id.toString() !== userId)
+            await Artwork.updateOne(
+                { _id: req.params.id },
+                { $pull: { likes: userIdObj } }
+            )
         } else {
-            artwork.likes.push(userId)
+            await Artwork.updateOne(
+                { _id: req.params.id },
+                { $push: { likes: userIdObj } }
+            )
         }
 
-        await artwork.save()
         res.json({ message: isLiked ? 'Unliked' : 'Liked', isLiked: !isLiked })
     } catch (error) {
+        console.error('Like endpoint error:', error)
         res.status(500).json({ error: error.message })
     }
 })
@@ -150,22 +173,44 @@ router.post('/:id/like', async (req, res) => {
 router.post('/:id/save', async (req, res) => {
     try {
         const { userId } = req.body
-        const artwork = await Artwork.findById(req.params.id)
         
+        // Convert userId string to ObjectId for proper comparison
+        let userIdObj
+        try {
+            userIdObj = new mongoose.Types.ObjectId(userId)
+        } catch (e) {
+            return res.status(400).json({ error: 'Invalid userId format' })
+        }
+
+        // Get current artwork to check if saved
+        const artwork = await Artwork.findById(req.params.id)
         if (!artwork)
             return res.status(404).json({ error: 'Artwork not found' })
 
-        const isSaved = artwork.savedBy.includes(userId)
+        const isSaved = artwork.savedBy.some(id => {
+            try {
+                return id.equals(userIdObj)
+            } catch {
+                return id.toString() === userId
+            }
+        })
 
+        // Use updateOne to avoid full validation
         if (isSaved) {
-            artwork.savedBy = artwork.savedBy.filter(id => id.toString() !== userId)
+            await Artwork.updateOne(
+                { _id: req.params.id },
+                { $pull: { savedBy: userIdObj } }
+            )
         } else {
-            artwork.savedBy.push(userId)
+            await Artwork.updateOne(
+                { _id: req.params.id },
+                { $push: { savedBy: userIdObj } }
+            )
         }
 
-        await artwork.save()
         res.json({ message: isSaved ? 'Unsaved' : 'Saved', isSaved: !isSaved })
     } catch (error) {
+        console.error('Save endpoint error:', error)
         res.status(500).json({ error: error.message })
     }
 })

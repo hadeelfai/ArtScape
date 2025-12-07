@@ -1,5 +1,6 @@
 import express from "express";
 import News from "../models/News.js";
+import { authMiddleware } from "../middleware/AuthMiddleware.js"; // ✅ SECURITY FIX: Add auth import
 
 const router = express.Router();
 
@@ -38,8 +39,9 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// ✅ SECURITY FIX: Protect POST with authMiddleware (admin-only intended)
 // POST /news → create new
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
   try {
     const { title, badge, text, content, date, image, type, isHero } = req.body;
 
@@ -62,8 +64,9 @@ router.post("/", async (req, res) => {
   }
 });
 
+// ✅ SECURITY FIX: Protect PUT with authMiddleware (admin-only intended)
 // PUT /news/:id → update existing
-router.put("/:id", async (req, res) => {
+router.put("/:id", authMiddleware, async (req, res) => {
   try {
     const { title, badge, text, content, date, image, type, isHero } = req.body;
 
@@ -93,8 +96,9 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// ✅ SECURITY FIX: Protect DELETE with authMiddleware (admin-only intended)
 // DELETE /news/:id → delete
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const item = await News.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ error: "News item not found" });

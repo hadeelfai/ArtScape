@@ -113,7 +113,7 @@ const HomePage = () => {
                 </div>
 
                 {/* Content */}
-                <div>
+                <div className='font-albert'>
                   <h2 className="lg:text-2xl font-medium">{step.title}</h2>
                   <p className="uppercase tracking-wide mt-1 text-sm">{step.subtitle}</p>
                 </div>

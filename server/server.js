@@ -12,7 +12,7 @@ import ArtworkRoutes from './routes/Artworks.js';
 import NewsRoutes from './routes/News.js';
 import NotificationsRoutes from './routes/Notification.js';
 import ContactRoutes from './routes/contact.js';
-
+import searchRouter from './routes/search.js';
 // Middleware
 import { authMiddleware } from './middleware/AuthMiddleware.js';
 
@@ -36,6 +36,7 @@ app.use('/artworks', ArtworkRoutes);
 app.use('/news', NewsRoutes);
 app.use('/notifications', NotificationsRoutes);
 app.use('/contact', ContactRoutes);
+app.use("/api/search", searchRouter);
 
 // ----- MongoDB Connection and Server Start -----
 const PORT = process.env.PORT || 5500;

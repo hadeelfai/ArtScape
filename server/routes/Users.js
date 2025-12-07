@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto' // ✅ NEW: Added for password reset token generation
 import User from '../models/User.js'
 import Artwork from '../models/Artwork.js'
+import { authMiddleware } from '../middleware/AuthMiddleware.js' // ✅ SECURITY FIX: Add auth import
 
 const router = express.Router()
 
@@ -378,17 +379,6 @@ router.post('/reset-password/:token', async (req, res) => {
 // ✅ NEW: FORGOT PASSWORD ROUTES END
 // ========================================
 
-router.get('/:id', async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id).select('-password')
-        if (!user)
-            return res.status(404).json({ error: 'user not found' })
-        res.json(user)
-    } catch (error) {
-        res.status(500).json({ error: error.message })
-    }
-})
-
 // Profile route
 
 // Get user profile with artworks
@@ -569,6 +559,7 @@ router.delete('/profile/:id', async (req, res) => {
 })
 
 // Follow/Unfollow user
+// ✅ SECURITY FIX: Consider adding authMiddleware and using req.user.id from JWT instead of body
 router.post('/follow/:id', async (req, res) => {
     try {
         const { userId } = req.body // The user who is following
@@ -660,10 +651,10 @@ router.post('/follow/:id', async (req, res) => {
 })
 
 // =========================
-// ADMIN: USER MANAGEMENT
+// ADMIN: USER MANAGEMENT (Protected by authMiddleware + role check)
 // =========================
 
-// GET /users  -> list all users (no passwords)
+// GET /users  -> list all users (no passwords) - Public for gallery lookup, admin modifications protected separately
 router.get('/', async (req, res) => {
     try {
         const users = await User.find().select('-password');
@@ -673,8 +664,9 @@ router.get('/', async (req, res) => {
     }
 });
 
+// ✅ SECURITY FIX: Add authMiddleware to protect admin endpoints
 // PATCH /users/:id/status  -> set accountStatus: active | suspended | blocked
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', authMiddleware, async (req, res) => {
     try {
         const { status } = req.body;
 
@@ -702,8 +694,9 @@ router.patch('/:id/status', async (req, res) => {
     }
 });
 
+// ✅ SECURITY FIX: Add authMiddleware to protect admin endpoints
 // DELETE /users/:id  -> admin permanently deletes user
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const userId = req.params.id;
 
@@ -791,6 +784,18 @@ router.get('/profile/:id/following', async (req, res) => {
         })
     } catch (error) {
         console.error('Get following error:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Get user by ID (generic lookup, must come AFTER all /profile routes to avoid shadowing)
+router.get('/:id', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('-password')
+        if (!user)
+            return res.status(404).json({ error: 'user not found' })
+        res.json(user)
+    } catch (error) {
         res.status(500).json({ error: error.message })
     }
 })

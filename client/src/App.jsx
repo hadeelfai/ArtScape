@@ -8,6 +8,7 @@ import EditProfilePage from './pages/EditProfilePage';
 import FollowerPage from './pages/FollowerPage';
 import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
+import SearchPage from './pages/SearchPage';
 import Layout from './components/Layout';
 import { Toaster } from 'sonner';
 import GalleryPage from './pages/GalleryPage';
@@ -38,6 +39,7 @@ const App = () => {
 
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/GalleryPage" element={<GalleryPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/orders" element={<OrdersPage />} />
@@ -56,6 +58,7 @@ const App = () => {
         <Route path="/news/:id" element={<ArticleDetailPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
         <Route path="/artwork/:id" element={<ArtworkDetailsPage />} />
+        <Route path="/artworks/:id" element={<ArtworkDetailsPage />} />
 
         {/* Profile Routes */}
         <Route path="/profile" element={<ProfilePage />} />
