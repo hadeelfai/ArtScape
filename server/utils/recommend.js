@@ -1,4 +1,6 @@
-// Compute cosine similarity between 2 vectors
+
+// Compute cosine similarity between 2 vectors to calc similar artwork
+
 export function cosineSimilarity(a, b) {
     const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
     const magA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
