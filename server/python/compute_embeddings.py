@@ -3,8 +3,8 @@ from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
 import requests
 from io import BytesIO
-# import json
-# import sys
+import json
+import sys
 
 # Load model and processor //OpenAI’s CLIP model
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
@@ -23,11 +23,11 @@ def get_embedding(image_url):
 
 # If run from command line with URL to test only
 
-# if __name__ == "__main__":
-#     if len(sys.argv) < 2:
-#         print("Usage: python compute_embeddings.py <image_url>")
-#         sys.exit(1)
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python compute_embeddings.py <image_url>")
+        sys.exit(1)
     
-#     url = sys.argv[1]
-#     embedding = get_embedding(url)
-#     print(json.dumps(embedding))
+    url = sys.argv[1]
+    embedding = get_embedding(url)
+    print(json.dumps(embedding))
