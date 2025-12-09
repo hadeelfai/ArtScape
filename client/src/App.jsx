@@ -22,7 +22,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import ArtworkDetailsPage from './pages/ArtworkDetailsPage';
 import CartPage from './pages/CartPage';
 import OrdersPage from './pages/OrdersPage';
-
+import AboutUs from './pages/AboutUs';
 
 const App = () => {
   return (
@@ -85,6 +85,7 @@ const App = () => {
         }
         />
 
+        <Route path="/about" element={<AboutUs />} />
 
       </Routes>
     </>

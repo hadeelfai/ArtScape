@@ -6,6 +6,8 @@ import Footer from '../components/Footer';
 import { Link } from 'react-router-dom';
 import HomeNewsSection from '../components/HomeNewsSection';
 import HomeArticlesSection from '../components/HomeArticlesSection';
+import { useGalleryData } from "../hooks/useGalleryData";
+import { useMemo } from 'react';
 
 
 const steps = [
@@ -44,6 +46,20 @@ const steps = [
 
 
 const HomePage = () => {
+  const { artworks, loading } = useGalleryData();
+
+  // Get latest marketplace pieces
+  const latestMarketplacePieces = useMemo(() => {
+    return artworks
+      .filter((art) => art.artworkType === "Marketplace")
+      .sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      })
+      .slice(0, 8); // Get top 8 latest pieces
+  }, [artworks]);
+
   return (
     <div>
       <Navbar />
@@ -62,7 +78,7 @@ const HomePage = () => {
           <h1 className='font-albert text-4xl lg:text-5xl pl-24 pt-20 pb-4'>Latest <span className='font-highcruiser'>Pieces</span></h1>
           <Link to={"/marketplace"}> <h1 className='font-albert text-lg md:text-xl lg:text-2xl underline underline-offset-4 pr-10 pt-20 pb-4'>See More</h1> </Link>
         </div>
-        <CardsList />
+        <CardsList artworks={latestMarketplacePieces} loading={loading} />
       </div>
 
 
@@ -73,10 +89,10 @@ const HomePage = () => {
       <div>
         <h2 className='font-albert text-center leading-loose pt-2 p-10 lg:pt-11 lg:p-40 lg:pb-10 lg:leading-loose lg:text-2xl'> ArtScape is a digital art gallery built to celebrate creativity in all its forms.
           We provide a space where artists can share their work, connect with other creators,
-          and showcase their talent to a global audience. Whether you’re a painter,
+          and showcase their talent to a global audience. Whether you're a painter,
           photographer, digital illustrator, or experimental artist, ArtScape offers
           you a platform to be seen, appreciated, and supported.</h2>
-        <p className='text-center pb-52'><a className='font-akshar text-2xl text-center underline decoration-2 underline-offset-8 cursor-pointer' href='/AboutUs'>
+        <p className='text-center pb-52'><a className='font-akshar text-2xl text-center underline decoration-2 underline-offset-8 cursor-pointer' href='/about'>
           Read more in <span className='font-highcruiser '>About Us</span></a></p>
       </div>
 
