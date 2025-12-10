@@ -7,13 +7,13 @@ import { useAuth } from "../context/AuthContext";
 const API_BASE = "http://localhost:5500";
 
 function AdminProfile() {
-  const { isAdmin, logout } = useAuth(); // ⬅️ get logout here
+  const { isAdmin, logout } = useAuth(); 
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
       await logout();
-      navigate("/"); // send admin back to home after logging out
+      navigate("/"); 
     } catch (error) {
       console.error("Logout failed:", error);
     }

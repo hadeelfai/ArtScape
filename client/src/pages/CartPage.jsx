@@ -43,7 +43,6 @@ export default function CartPage() {
               className="w-full bg-black text-white py-4 rounded font-medium text-lg hover:bg-gray-900" 
               onClick={() => {
                 toast.info('Checkout functionality coming soon!');
-                // Don't clear cart - keep items for now
               }}
             >
               Checkout

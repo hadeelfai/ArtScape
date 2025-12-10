@@ -50,9 +50,7 @@ const SearchBar = ({ variant = "icon" }) => {
     };
   }, [searchQuery, isSearchOpen]);
 
-  // Close on outside click (backdrop handled in your UI, but keep this if you want)
-  // (You already have a fixed backdrop div for bar variant, so optional)
-
+  
   // Click result -> navigate
   const onClickResult = (item) => {
     setIsSearchOpen(false);
@@ -130,7 +128,7 @@ const SearchBar = ({ variant = "icon" }) => {
                           <div className="border-t pt-4 mt-2">
                             <button
                               onClick={() => {
-                                // optional: go to full search page with query param
+                                // go to full search page with query param
                                 navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
                                 setIsSearchOpen(false);
                               }}

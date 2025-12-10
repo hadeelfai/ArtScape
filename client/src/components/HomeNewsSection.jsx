@@ -47,7 +47,6 @@ function HomeNewsSection() {
     <section className="py-16 px-6 md:px-20 max-w-[1120px] mx-auto">
       <h2 className="text-2xl font-semibold mb-6">Latest News</h2>
 
-      {/* Vertical News Card - Image on top, more engaging */}
       <article
         className="relative bg-white border border-gray-200 rounded-3xl overflow-hidden cursor-pointer transition hover:shadow-xl hover:-translate-y-1 w-full mx-auto"
         onClick={handleCardClick}
@@ -60,10 +59,8 @@ function HomeNewsSection() {
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
           
-          {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
           
-          {/* Badge on Image */}
           {newsItem.badge && (
             <div className="absolute top-6 left-6">
               <span className="inline-block px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full text-xs tracking-[0.12em] uppercase font-semibold text-gray-800 shadow-md">
