@@ -129,8 +129,6 @@ All backend routes are in `server/routes/`.
 
 ## 📂 Project Structure
 
-## Project Structure
-
 <pre>
 ArtScape/
 ├── client/
