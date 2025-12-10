@@ -578,25 +578,27 @@ export default function EditProfilePage() {
       <Navbar />
       <div className="min-h-screen bg-gray-50 pt-20">
         {/* Cover Image */}
-        <div className="relative h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
+        <div className="relative h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200 overflow-visible">
           <img
             src={getBannerImage(coverImage)}
             alt="Cover"
             className="w-full h-full object-cover"
           />
+          {/* Profile Image - Overlaid on banner */}
+          <div className="absolute bottom-0 left-6 lg:left-8 z-20" style={{ transform: 'translateY(50%)' }}>
+            <img
+              src={getProfileImage(profileImage)}
+              alt="Profile"
+              className="w-40 h-40 md:w-48 md:h-48 rounded-full border-8 border-white shadow-xl bg-white object-cover"
+            />
+          </div>
         </div>
 
         {/* Profile Section */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
-          <div className="flex items-end justify-between mb-8">
-            {/* Profile Image */}
-            <div className="relative">
-              <img
-                src={getProfileImage(profileImage)}
-                alt="Profile"
-                className="w-48 h-48 rounded-full border-8 border-white shadow-xl bg-white object-cover"
-              />
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex items-end justify-between mb-8" style={{ paddingTop: '100px', minHeight: '120px' }}>
+            {/* Spacer for profile image (since it's absolutely positioned) */}
+            <div className="w-40 md:w-48 flex-shrink-0"></div>
 
             {/* Upload Buttons */}
             <div className="flex gap-3 pb-4">

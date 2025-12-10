@@ -91,13 +91,13 @@ export const AuthProvider = ({ children }) => {
         email: data.user.email,
         username: data.user.username,
         role: (data.user.role || 'user').toLowerCase(),
-        profileImage: data.user.profileImage || data.user.profile_image || null,
+        profileImage: data.user.profileImage || data.user.profile_image || '/Profileimages/User.jpg',
         artisticSpecialization:
           data.user.artisticSpecialization || data.user.artistic_specialization || null,
         bio: data.user.bio || null,
         followers: data.user.followers || 0,
         following: data.user.following || 0,
-        bannerImage: data.user.bannerImage || data.user.banner_image || null,
+        bannerImage: data.user.bannerImage || data.user.banner_image || '/Profileimages/Cover.jpg',
         token: data.token
       };
 
@@ -161,13 +161,13 @@ export const AuthProvider = ({ children }) => {
         email: data.user.email,
         username: data.user.username,
         role: (data.user.role || 'user').toLowerCase(),
-        profileImage: data.user.profileImage || data.user.profile_image || null,
+        profileImage: data.user.profileImage || data.user.profile_image || '/Profileimages/User.jpg',
         artisticSpecialization:
           data.user.artisticSpecialization || data.user.artistic_specialization || null,
         bio: data.user.bio || null,
         followers: data.user.followers || 0,
         following: data.user.following || 0,
-        bannerImage: data.user.bannerImage || data.user.banner_image || null,
+        bannerImage: data.user.bannerImage || data.user.banner_image || '/Profileimages/Cover.jpg',
         token: data.token
       };
 

@@ -154,7 +154,9 @@ router.post('/register', async (req, res) => {
             followersArray: [], // Initialize empty arrays
             followingArray: [],
             followers: 0,
-            following: 0
+            following: 0,
+            profileImage: '/Profileimages/User.jpg', // Set default profile image
+            bannerImage: '/Profileimages/Cover.jpg' // Set default banner image
         };
         
         // Add optional fields if provided
@@ -163,6 +165,15 @@ router.post('/register', async (req, res) => {
         if (phoneNumber) userData.phoneNumber = phoneNumber;
         
         const user = new User(userData)
+        
+        // Ensure defaults are always set before saving
+        if (!user.profileImage || user.profileImage.trim() === '') {
+            user.profileImage = '/Profileimages/User.jpg'
+        }
+        if (!user.bannerImage || user.bannerImage.trim() === '') {
+            user.bannerImage = '/Profileimages/Cover.jpg'
+        }
+        
         await user.save()
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -180,8 +191,8 @@ router.post('/register', async (req, res) => {
                 email: user.email,
                 username: user.username,
                 role: user.role,  
-                profileImage: user.profileImage || null,
-                bannerImage: user.bannerImage || null,
+                profileImage: user.profileImage || '/Profileimages/User.jpg',
+                bannerImage: user.bannerImage || '/Profileimages/Cover.jpg',
                 bio: user.bio || null,
                 artisticSpecialization: user.artisticSpecialization || null,
                 followers: user.followers || 0,

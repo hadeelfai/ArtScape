@@ -918,29 +918,32 @@ if (authUser?.role === "admin") {
 
 
       {/* Hero Banner with Profile Image Overlaid */}
-      <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200">
+      <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200 overflow-visible">
         <img
           src={getBannerImage(profileData.bannerImage)}
           alt="Profile banner"
           className="w-full h-full object-cover"
         />
         {/* Profile Image - Overlaid on top of banner */}
-        <div className="absolute bottom-0 left-1/2 sm:left-6 lg:left-8 transform -translate-x-1/2 sm:translate-x-0 translate-y-1/2 flex-shrink-0 z-20">
+        <div className="absolute bottom-0 left-6 lg:left-8 flex-shrink-0 z-20" style={{ transform: 'translateY(50%)' }}>
           <img
             src={getProfileImage(profileData.profileImage)}
             alt={profileData.name}
-            className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full border-1 border-white shadow-xl bg-white"
+            className="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full border-8 border-white shadow-xl bg-white object-cover"
           />
         </div>
       </div>
 
       {/* Profile Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 sm:gap-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 sm:gap-0" style={{ paddingTop: '80px', minHeight: '120px' }}>
           {/* Profile Image and Info Container */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 w-full sm:w-auto">
-            {/* Profile Info - Always in white area below banner */}
-            <div className="pb-0 sm:pb-6 text-center sm:text-left w-full sm:w-auto pt-12 sm:pt-0 sm:ml-32 md:ml-40 lg:ml-48">
+          <div className="flex flex-row items-end gap-6 w-full sm:w-auto">
+            {/* Spacer for profile image (since it's absolutely positioned) */}
+            <div className="w-32 sm:w-36 md:w-40 lg:w-48 flex-shrink-0"></div>
+            
+            {/* Profile Info - To the right of profile picture */}
+            <div className="flex-1 pb-0 sm:pb-6 text-left">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{profileData.name}</h1>
               {profileData.username && (
                 <p className="text-sm sm:text-base text-gray-500 mt-1">
@@ -957,7 +960,7 @@ if (authUser?.role === "admin") {
                   {profileData.bio}
                 </p>
               )}
-              <div className="flex items-center justify-center sm:justify-start space-x-4 sm:space-x-6 mt-2 text-xs sm:text-sm mb-3 sm:mb-4">
+              <div className="flex items-center justify-start space-x-4 sm:space-x-6 mt-2 text-xs sm:text-sm mb-3 sm:mb-4">
                 <Link
                   to={`/profile/${resolvedProfileId}/followers`}
                   className="hover:underline cursor-pointer"
@@ -976,7 +979,7 @@ if (authUser?.role === "admin") {
           </div>
 
           {/* Action Button */}
-          <div className="pb-0 sm:pb-6 w-full sm:w-auto flex justify-center sm:justify-end mt-0 sm:mt-0">
+          <div className="pb-0 sm:pb-6 w-full sm:w-auto flex justify-center sm:justify-end">
             {isOwnProfile ? (
               <div className="flex items-center gap-2 sm:gap-3">
                 {/* Edit Profile Button */}
