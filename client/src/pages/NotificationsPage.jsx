@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+
 
 const NotificationsPage = () => {
   const { user } = useAuth();
@@ -99,15 +101,48 @@ const NotificationsPage = () => {
 
       <ul className="space-y-3">
         {notifications.map((n) => (
-          <li
-            key={n._id}
-            className="border border-gray-200 rounded-lg p-3 text-sm bg-white"
-          >
-            <p className="text-gray-900">{n.message}</p>
-            <p className="text-xs text-gray-400 mt-1">
-              {new Date(n.createdAt).toLocaleString()}
-            </p>
-          </li>
+          <ul className="space-y-3">
+          {notifications.map((n) => (
+            <li
+              key={n._id}
+              className="border border-gray-200 rounded-lg p-3 text-sm bg-white"
+            >
+              {/* Main notification message */}
+              <p className="text-gray-900">{n.message}</p>
+
+              {/*  Post preview  */}
+              {n.post && (
+                <div className="flex items-center gap-3 flex-row-reverse 
+                mt-2 group cursor-default">
+          
+            {/* Preview image */}
+            {n.post?.image && (
+              <img
+                src={n.post.image}
+                alt="Post preview"
+                className="w-16 h-16 object-cover rounded-md border"
+              />
+            )}
+
+            <div className="flex-1">
+              {/* Preview text */}
+              {n.post?.text && (
+                <p className="text-gray-600 text-xs line-clamp-2">
+                  {n.post.text}
+                </p>
+              )}
+
+            </div>
+        </div>
+              )}
+              {/* Timestamp */}
+              <p className="text-xs text-gray-400 mt-2">
+                {new Date(n.createdAt).toLocaleString()}
+              </p>
+            </li>
+          ))}
+        </ul>
+
         ))}
       </ul>
     </div>
