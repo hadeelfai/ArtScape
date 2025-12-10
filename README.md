@@ -129,101 +129,107 @@ All backend routes are in `server/routes/`.
 
 ## 📂 Project Structure
 
+## Project Structure
+
+<pre>
 ArtScape/
 ├── client/
-│ ├── .env
-│ ├── index.html
-│ ├── package.json
-│ ├── public/
-│ │ └── images, fonts, static assets...
-│ ├── src/
-│ │ ├── api/
-│ │ │ ├── comments.js
-│ │ │ ├── contact.js
-│ │ │ └── posts.js
-│ │ ├── components/
-│ │ │ ├── CardsList.jsx
-│ │ │ ├── CommentsSection.jsx
-│ │ │ ├── DropdownMenu.jsx
-│ │ │ ├── Footer.jsx
-│ │ │ ├── HomeArticlesSection.jsx
-│ │ │ ├── HomeNewsSection.jsx
-│ │ │ ├── ImageUploader.jsx
-│ │ │ ├── Layout.jsx
-│ │ │ ├── Navbar.jsx
-│ │ │ ├── Post.jsx
-│ │ │ ├── PostFeeds.jsx
-│ │ │ ├── ReportModal.jsx
-│ │ │ ├── ScrollVelocity.jsx
-│ │ │ └── SearchBar.jsx
-│ │ ├── context/
-│ │ │ ├── AuthContext.jsx
-│ │ │ ├── CartContext.jsx
-│ │ │ └── LikeSaveContext.jsx
-│ │ ├── hooks/
-│ │ │ └── useGalleryData.js
-│ │ ├── pages/
-│ │ │ ├── AboutUs.jsx
-│ │ │ ├── AdminProfile.jsx
-│ │ │ ├── ArticleDetailPage.jsx
-│ │ │ ├── ArtworkDetailsPage.jsx
-│ │ │ ├── CartPage.jsx
-│ │ │ ├── CommunityPage.jsx
-│ │ │ ├── ContactUs.jsx
-│ │ │ ├── EditProfilePage.jsx
-│ │ │ ├── ExplorePage.jsx
-│ │ │ ├── FollowerPage.jsx
-│ │ │ ├── ForgotPassword.jsx
-│ │ │ ├── GalleryPage.jsx
-│ │ │ ├── HomePage.jsx
-│ │ │ ├── MarketplacePage.jsx
-│ │ │ ├── News.jsx
-│ │ │ ├── NotificationsPage.jsx
-│ │ │ ├── OrdersPage.jsx
-│ │ │ ├── ProfilePage.jsx
-│ │ │ ├── ResetPassword.jsx
-│ │ │ ├── SearchPage.jsx
-│ │ │ ├── SignInPage.jsx
-│ │ │ └── SignUpPage.jsx
-│ │ ├── utils/
-│ │ │ ├── artworkFilters.js
-│ │ │ └── tagDefinitions.js
-│ │ ├── App.jsx
-│ │ ├── index.css
-│ │ └── main.jsx
-│ ├── tailwind.config.js
-│ ├── vite.config.js
-│ └── vitest.config.js
+│   ├── .env
+│   ├── index.html
+│   ├── package.json
+│   ├── public/
+│   │   └── images, fonts, static assets...
+│   ├── src/
+│   │   ├── api/
+│   │   │   ├── comments.js
+│   │   │   ├── contact.js
+│   │   │   └── posts.js
+│   │   ├── components/
+│   │   │   ├── CardsList.jsx
+│   │   │   ├── CommentsSection.jsx
+│   │   │   ├── DropdownMenu.jsx
+│   │   │   ├── Footer.jsx
+│   │   │   ├── HomeArticlesSection.jsx
+│   │   │   ├── HomeNewsSection.jsx
+│   │   │   ├── ImageUploader.jsx
+│   │   │   ├── Layout.jsx
+│   │   │   ├── Navbar.jsx
+│   │   │   ├── Post.jsx
+│   │   │   ├── PostFeeds.jsx
+│   │   │   ├── ReportModal.jsx
+│   │   │   ├── ScrollVelocity.jsx
+│   │   │   └── SearchBar.jsx
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx
+│   │   │   ├── CartContext.jsx
+│   │   │   └── LikeSaveContext.jsx
+│   │   ├── hooks/
+│   │   │   └── useGalleryData.js
+│   │   ├── pages/
+│   │   │   ├── AboutUs.jsx
+│   │   │   ├── AdminProfile.jsx
+│   │   │   ├── ArticleDetailPage.jsx
+│   │   │   ├── ArtworkDetailsPage.jsx
+│   │   │   ├── CartPage.jsx
+│   │   │   ├── CommunityPage.jsx
+│   │   │   ├── ContactUs.jsx
+│   │   │   ├── EditProfilePage.jsx
+│   │   │   ├── ExplorePage.jsx
+│   │   │   ├── FollowerPage.jsx
+│   │   │   ├── ForgotPassword.jsx
+│   │   │   ├── GalleryPage.jsx
+│   │   │   ├── HomePage.jsx
+│   │   │   ├── MarketplacePage.jsx
+│   │   │   ├── News.jsx
+│   │   │   ├── NotificationsPage.jsx
+│   │   │   ├── OrdersPage.jsx
+│   │   │   ├── ProfilePage.jsx
+│   │   │   ├── ResetPassword.jsx
+│   │   │   ├── SearchPage.jsx
+│   │   │   ├── SignInPage.jsx
+│   │   │   └── SignUpPage.jsx
+│   │   ├── utils/
+│   │   │   ├── artworkFilters.js
+│   │   │   └── tagDefinitions.js
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── tailwind.config.js
+│   ├── vite.config.js
+│   └── vitest.config.js
+│
 ├── server/
-│ ├── .env
-│ ├── server.js
-│ ├── controllers/
-│ │ └── artworkController.js
-│ ├── middleware/
-│ │ └── AuthMiddleware.js
-│ ├── models/
-│ │ ├── Artwork.js
-│ │ ├── Comments.js
-│ │ ├── News.js
-│ │ ├── Notification.js
-│ │ ├── Posts.js
-│ │ ├── Report.js
-│ │ └── User.js
-│ ├── routes/
-│ │ ├── Artworks.js
-│ │ ├── Comments.js
-│ │ ├── contact.js
-│ │ ├── News.js
-│ │ ├── Notification.js
-│ │ ├── Posts.js
-│ │ ├── search.js
-│ │ └── Users.js
-│ ├── utils/
-│ │ ├── cloudinary.js
-│ │ ├── embedQueue.js
-│ │ └── recommend.js
-│ └── python/
-│ └── compute_embeddings.py
+│   ├── .env
+│   ├── server.js
+│   ├── controllers/
+│   │   └── artworkController.js
+│   ├── middleware/
+│   │   └── AuthMiddleware.js
+│   ├── models/
+│   │   ├── Artwork.js
+│   │   ├── Comments.js
+│   │   ├── News.js
+│   │   ├── Notification.js
+│   │   ├── Posts.js
+│   │   ├── Report.js
+│   │   └── User.js
+│   ├── routes/
+│   │   ├── Artworks.js
+│   │   ├── Comments.js
+│   │   ├── contact.js
+│   │   ├── News.js
+│   │   ├── Notification.js
+│   │   ├── Posts.js
+│   │   ├── search.js
+│   │   └── Users.js
+│   ├── utils/
+│   │   ├── cloudinary.js
+│   │   ├── embedQueue.js
+│   │   └── recommend.js
+│   └── python/
+│       └── compute_embeddings.py
+│
 ├── package.json
 ├── package-lock.json
 └── README.md
+</pre>
