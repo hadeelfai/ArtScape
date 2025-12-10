@@ -62,7 +62,7 @@ describe('CommentsSection', () => {
       />
     );
     
-    expect(screen.getByPlaceholderText('share your thoughts...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Share and Describe Your Art...')).toBeInTheDocument();
   });
 
   it('does not render when showComments is false', () => {
@@ -75,7 +75,7 @@ describe('CommentsSection', () => {
       />
     );
     
-    expect(screen.queryByPlaceholderText('share your thoughts...')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Share and Describe Your Art...')).not.toBeInTheDocument();
   });
 });
 
