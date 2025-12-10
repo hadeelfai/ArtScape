@@ -3,6 +3,7 @@
 A community-driven digital art platform where artists and collectors can share, discover, and transact artwork. ArtScape provides an end-to-end experience including galleries, posts, comments, notifications, and a marketplace — powered by a modern React/Node/MongoDB stack.
 
 📌 Table of Contents
+
 Overview
 Features
 Tech Stack
@@ -14,6 +15,7 @@ Project Structure
 
 
 🚀 Overview
+
 ArtScape is designed to be a social and commercial hub for digital art.
 It enables users to:
 Showcase their artwork
@@ -23,7 +25,9 @@ Buy and sell artworks in a user-friendly marketplace
 Receive real-time notifications
 
 
+
 🎯 Project Goals
+
 Provide a smooth onboarding experience (email/username registration)
 Enable easy discovery through curated galleries and search
 Offer simple marketplace tools for collectors and artists
@@ -31,6 +35,7 @@ Support moderation and admin management for safe community interaction
 
 
 ✨ Features
+
 🔐 User Authentication (JWT + httpOnly cookies)
 🖼 Artwork Uploads (Cloudinary integration)
 📰 News & Articles (admin-managed)
@@ -41,6 +46,7 @@ Support moderation and admin management for safe community interaction
 
 
 🛠 Tech Stack
+
 Frontend
 React
 Vite
@@ -55,6 +61,7 @@ Nodemailer for email services
 
 
 📡 API Overview
+
 The server exposes REST endpoints under /server/routes.
 
 Auth Routes
@@ -63,6 +70,7 @@ POST /users/login — Authenticate & issue cookie
 POST /users/logout — Remove auth cookie
 
 Content Routes
+
 /posts — CRUD posts (protected for write operations)
 /comments — Add/read comments (protected write)
 /artworks — Upload artworks, fetch galleries, generate embeddings
@@ -73,12 +81,14 @@ Content Routes
 
 
 🔑 Authentication Logic
+
 Token accepted via Authorization: secure httpOnly cookie (token)
 authMiddleware validates JWT and attaches req.user
 Admin-only routes use dedicated RBAC middleware
 
 
 🔐 Security
+
 ArtScape follows modern security practices:
 Passwords hashed with bcrypt
 Auth token stored in httpOnly, secure cookies (production)
@@ -87,6 +97,7 @@ Validation/ sanitization for user input (registration, contact, content creation
 
 
 🧪 Testing & Linting
+
 Frontend Testing
 Uses Vitest
 Config: client/vitest.config.js
