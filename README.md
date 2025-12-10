@@ -1,4 +1,5 @@
 🎨 ArtScape
+
 A community-driven digital art platform where artists and collectors can share, discover, and transact artwork. ArtScape provides an end-to-end experience including galleries, posts, comments, notifications, and a marketplace — powered by a modern React/Node/MongoDB stack.
 
 📌 Table of Contents
