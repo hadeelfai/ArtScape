@@ -1,10 +1,11 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommentsSection from '../CommentsSection';
+import { getCommentByPost, addComment, addReply } from '../../api/comments';
 
 // Mock API functions
-vi.mock('../api/comments', () => ({
+vi.mock('../../api/comments', () => ({
   getCommentByPost: vi.fn(),
   addComment: vi.fn(),
   addReply: vi.fn()
@@ -41,7 +42,6 @@ describe('CommentsSection', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
     
     // Mock localStorage
     const localStorageMock = {
@@ -50,9 +50,14 @@ describe('CommentsSection', () => {
       removeItem: vi.fn()
     };
     global.localStorage = localStorageMock;
+
+    // Setup default mock implementations
+    getCommentByPost.mockResolvedValue([]);
+    addComment.mockResolvedValue({ _id: '1', text: 'Test comment' });
+    addReply.mockResolvedValue({ _id: '1', replies: [] });
   });
 
-  it('renders when showComments is true', () => {
+  it('renders when showComments is true', async () => {
     render(
       <CommentsSection 
         postId={postId} 
@@ -62,7 +67,12 @@ describe('CommentsSection', () => {
       />
     );
     
-    expect(screen.getByPlaceholderText('Share and Describe Your Art...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('share your thoughts...')).toBeInTheDocument();
+    
+    // Wait for async operations to complete
+    await waitFor(() => {
+      expect(getCommentByPost).toHaveBeenCalledWith(postId);
+    });
   });
 
   it('does not render when showComments is false', () => {
@@ -75,7 +85,7 @@ describe('CommentsSection', () => {
       />
     );
     
-    expect(screen.queryByPlaceholderText('Share and Describe Your Art...')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('share your thoughts...')).not.toBeInTheDocument();
   });
 });
 
