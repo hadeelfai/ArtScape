@@ -150,6 +150,7 @@ function AdminProfile() {
         res = await fetch(`${API_BASE}/news/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
+          credentials: 'include',
           body: JSON.stringify(payload),
         });
       } else {
@@ -157,6 +158,7 @@ function AdminProfile() {
         res = await fetch(`${API_BASE}/news`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: 'include',
           body: JSON.stringify(payload),
         });
       }
@@ -226,6 +228,7 @@ function AdminProfile() {
     try {
       const res = await fetch(`${API_BASE}/news/${id}`, {
         method: "DELETE",
+        credentials: 'include',
       });
       if (!res.ok) throw new Error("Failed to delete");
 
