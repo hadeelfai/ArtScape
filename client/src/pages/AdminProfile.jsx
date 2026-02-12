@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext";
 const API_BASE = "http://localhost:5500";
 
 function AdminProfile() {
-  const { isAdmin, logout } = useAuth(); 
+  const { user, isAdmin, logout } = useAuth(); 
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -268,6 +268,10 @@ function AdminProfile() {
     try {
       const res = await fetch(`${API_BASE}/artworks/${id}`, {
         method: "DELETE",
+        headers: {
+          ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+        },
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to delete artwork");
 

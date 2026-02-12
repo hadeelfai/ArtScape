@@ -85,7 +85,7 @@ return (
     <Navbar />
 
     {/* page background like other pages */}
-    <div className="min-h-screen bg-[#f8f3ff] overflow-x-hidden">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <main className="pt-28 pb-10 px-6 md:px-20 max-w-[1120px] mx-auto">
         {/* Tabs */}
         <div className="flex justify-center mb-10">
@@ -155,7 +155,7 @@ return (
                 className="relative flex bg-white border border-gray-200 rounded-2xl overflow-hidden cursor-pointer transition hover:shadow-md hover:-translate-y-[2px]"
                 onClick={() => handleCardClick(item._id)}
               >
-                <div className="w-40 md:w-56 h-40 md:h-44 flex-shrink-0">
+                <div className="w-40 md:w-56 flex-shrink-0">
                   <img
                     src={item.image}
                     alt={item.title}

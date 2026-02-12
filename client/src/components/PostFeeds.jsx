@@ -11,7 +11,7 @@ import { getCommentCount } from "../api/comments";
 import { format } from "timeago.js";
 import { Link } from "react-router-dom";
 
-function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
+function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
   // All posts currently shown in the feed
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -133,6 +133,15 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
   useEffect(() => {
     loadPosts();
   }, [loadPosts, refreshKey]);
+
+  // Scroll to focused post when loaded (e.g. from notification click)
+  useEffect(() => {
+    if (!focusPostId || !posts.length) return;
+    const el = document.getElementById(`post-${focusPostId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [focusPostId, posts]);
 
   // Toggle comment section for a post
   const toggleComments = (postId) => {
@@ -287,8 +296,9 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab }) {
         .filter((post) => post.user)
         .map((post) => (
           <article
+            id={`post-${post._id}`}
             key={post._id}
-            className="border-b border-gray-200 p-4 flex gap-3"
+            className={`border-b border-gray-200 p-4 flex gap-3 ${focusPostId === post._id ? "ring-2 ring-black ring-inset rounded-lg" : ""}`}
           >
             {/* Avatar */}
             <img

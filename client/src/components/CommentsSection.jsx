@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { addComment, addReply, getCommentByPost } from '../api/comments'
 import { toast } from 'sonner'
 import { MessageCircle, Send, Trash } from 'lucide-react'
@@ -193,15 +194,19 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                     <div key={comment?._id} className='bg-gray-50 p-3 rounded-lg'>
 
                                         <div className='flex gap-2'>{/**need a check for comment profile pic */}
-                                            <img className='h-8 w-8 rounded-full object-cover' 
-                                            src={comment?.user?.profileImage || '/avatar.png'}/>
+                                            <Link to={comment?.user?._id ? `/profile/${comment.user._id}` : '#'} className="shrink-0">
+                                                <img className='h-8 w-8 rounded-full object-cover' 
+                                                src={comment?.user?.profileImage || '/avatar.png'} alt="" />
+                                            </Link>
 
                                             <div className='flex-1'> 
                                                 <div className='flex items-center gap-2'>
-                                                    <span className='text-sm'>
-                                                        {comment?.user?.name }</span>
-                                                    <span className='text-sm text-gray-600'> {/**username in comments */}
-                                                        @{comment?.user?.username }</span>
+                                                    <Link to={comment?.user?._id ? `/profile/${comment.user._id}` : '#'} className="text-sm font-medium hover:underline text-gray-900">
+                                                        {comment?.user?.name }
+                                                    </Link>
+                                                    <Link to={comment?.user?._id ? `/profile/${comment.user._id}` : '#'} className='text-sm text-gray-600 hover:underline'>
+                                                        @{comment?.user?.username }
+                                                    </Link>
                                                     
                                                     <span className='text-gray-400 text-sm'>
                                                         {format(comment?.createdAt)}</span>
@@ -255,14 +260,16 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
                                                     {comment?.replies?.map((reply, idx)=> (
                                                         
                                                         <div key={idx} className='flex gap-2'>
-                                                        <img src={reply?.user?.profileImage || '/avatar.png'} 
-                                                        className='h-6 w-6 rounded-full object-cover'/>
+                                                        <Link to={reply?.user?._id ? `/profile/${reply.user._id}` : '#'} className="shrink-0">
+                                                            <img src={reply?.user?.profileImage || '/avatar.png'} 
+                                                            className='h-6 w-6 rounded-full object-cover' alt="" />
+                                                        </Link>
 
                                                         <div className='flex-1 bg-white p-2 rounded'> 
 
                                                             <div className='flex items-center gap-2'> 
-                                                                <span className='font-semibold text-xs'>{reply?.user?.name}</span>
-                                                                <span className='font-semibold text-xs text-gray-500'>@{reply?.user?.username}</span>
+                                                                <Link to={reply?.user?._id ? `/profile/${reply.user._id}` : '#'} className="font-semibold text-xs hover:underline text-gray-900">{reply?.user?.name}</Link>
+                                                                <Link to={reply?.user?._id ? `/profile/${reply.user._id}` : '#'} className="font-semibold text-xs text-gray-500 hover:underline">@{reply?.user?.username}</Link>
                                                       
                                                                 <span className='text-gray-400 text-sm'>
                                                                     {reply?format(reply.createdAt) : ""}

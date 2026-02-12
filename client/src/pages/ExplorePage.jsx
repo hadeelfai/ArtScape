@@ -135,12 +135,12 @@ const ExplorePage = () => {
                 <SearchBar variant="bar" />
 
                 <div className="px-6 md:px-12 lg:px-20 mt-6 space-y-6">
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-x-visible gap-3">
                         {CATEGORY_TABS.map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setCategory(tab)}
-                                className={`px-4 py-1.5 rounded-full font-medium border text-sm ${category === tab ? 'bg-black text-white' : 'border-gray-300 text-gray-700 hover:border-black hover:text-black'}`}
+                                className={`px-4 py-1.5 rounded-full font-medium border text-sm flex-shrink-0 md:flex-shrink ${category === tab ? 'bg-black text-white' : 'border-gray-300 text-gray-700 hover:border-black hover:text-black'}`}
                             >
                                 {tab}
                             </button>

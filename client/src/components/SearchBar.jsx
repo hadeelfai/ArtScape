@@ -121,7 +121,7 @@ const SearchBar = ({ variant = "icon" }) => {
                               className="cursor-pointer px-4 py-3 rounded-lg hover:bg-gray-50 transition"
                             >
                               <p className="font-medium text-gray-800">{item.title}</p>
-                              <p className="text-sm text-gray-500">{item.type}</p>
+                              <p className="text-sm text-gray-500">{item.subtitle || item.type}</p>
                             </div>
                           ))}
 
@@ -210,7 +210,7 @@ const SearchBar = ({ variant = "icon" }) => {
                         className="cursor-pointer px-4 py-3 rounded-lg hover:bg-gray-50 transition"
                       >
                         <p className="font-medium text-gray-800">{item.title}</p>
-                        <p className="text-sm text-gray-500">{item.type}</p>
+                        <p className="text-sm text-gray-500">{item.subtitle || item.type}</p>
                       </div>
                     ))}
                   </div>

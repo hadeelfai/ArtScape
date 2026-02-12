@@ -14,15 +14,15 @@ export default function Footer() {
         <div>
           <h3 className="text-lg lg:text-xl mb-3">Quick Links</h3>
           <ul className="space-y-2">
-            <li><a href="/about" className="hover:opacity-80 transition-opacityine inline-flex items-center">About Us</a></li>
-            <li><a href="/contact" className="hover:opacity-80 transition-opacityine inline-flex items-center">Contact us</a></li>
+            <li><a href="/about" className="hover:opacity-80 transition-opacity inline-flex items-center">About Us</a></li>
+            <li><a href="/contact" className="hover:opacity-80 transition-opacity inline-flex items-center">Contact us</a></li>
           </ul>
         </div>
 
         <div>
           <h3 className="text-lg lg:text-xl mb-3">Community</h3>
           <ul className="space-y-2">
-            <li><a href="/news" className="hover:opacity-80 transition-opacityine inline-flex items-center">Articles & News</a></li>
+            <li><a href="/news" className="hover:opacity-80 transition-opacity inline-flex items-center">Articles & News</a></li>
           </ul>
         </div>
 
@@ -45,7 +45,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-gray-700 mt-10 pt-6 text-center text-white text-sm">
-        <p>© 2025 ArtScape. All rights reserved.</p>
+        <p>© 2026 ArtScape. All rights reserved.</p>
       </div>
     </footer >
   );

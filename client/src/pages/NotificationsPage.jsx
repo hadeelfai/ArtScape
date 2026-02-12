@@ -1,90 +1,114 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
 const NotificationsPage = () => {
   const { user } = useAuth();
   const token = user?.token;
 
-  const [notifications, setNotifications] = useState([]); //list of notifications
-  const [loading, setLoading] = useState(false);//show loading spinner or message
-  const [err, setErr] = useState(''); //display error messages
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
 
-  useEffect(() => {
-    if (!token) return; // If user not logged in don’t fetch anything
+  const fetchNotifications = async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      setErr('');
+      const res = await fetch(`${API_BASE}/notifications`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
 
-    //function to fetch notifications from backend
-    const fetchNotifications = async () => {
+      let data = [];
       try {
-        setLoading(true);
-        setErr('');
-        //API request to get this user notifications
-        const res = await fetch('http://localhost:5500/notifications', {
-          method: 'GET',
+        data = await res.json();
+      } catch {
+        data = [];
+      }
+
+      if (!res.ok) {
+        setNotifications([]);
+        return;
+      }
+
+      setNotifications(Array.isArray(data) ? data : []);
+      setErr('');
+
+      try {
+        await fetch(`${API_BASE}/notifications/mark_read`, {
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, //Sending token for authentication
+            Authorization: `Bearer ${token}`,
           },
           credentials: 'include',
         });
-
-        //parsing response with JSON 
-        let data = [];
-        try {
-          data = await res.json();
-        } catch {
-          data = [];
-        }
-
-        //If response fail exist
-        if (!res.ok) {
-          console.error('Failed to load notifications, status:', res.status, data);
-          setNotifications([]);
-          return;
-        }
-        
-        //If response is valid then store notifications in state
-        setNotifications(Array.isArray(data) ? data : []);
-        setErr('');
-
-        // After successfully loading notifications, mark them as read in the backend
-        try {
-          await fetch('http://localhost:5500/notifications/mark_read', {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            credentials: 'include',
-          });
-
-          // Telling Navbar notification is read
-          window.dispatchEvent(new Event('notificationsRead'));
-        } catch (readMarkError) {
-          console.error('Failed to mark notifications as read:', readMarkError);
-        }
-
-
-      } catch (error) {
-        console.error('Error loading notifications:', error);
-        setErr('Failed to load notifications');
-        setNotifications([]);
-      } finally {
-        setLoading(false);
+        window.dispatchEvent(new Event('notificationsRead'));
+      } catch (readMarkError) {
+        console.error('Failed to mark notifications as read:', readMarkError);
       }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      setErr('Failed to load notifications');
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-
-    };
-
+  useEffect(() => {
     fetchNotifications();
-  }, [token]); //Rerun when token changes
+  }, [token]);
+
+  const handleDeleteNotification = async (e, notificationId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE}/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
+        toast.success('Notification removed');
+      } else {
+        toast.error('Failed to delete notification');
+      }
+    } catch (error) {
+      console.error('Delete notification error:', error);
+      toast.error('Failed to delete notification');
+    }
+  };
+
+  const getNotificationLink = (n) => {
+    const postId = n.post?._id || n.post;
+    const fromUserId = n.fromUser?._id || n.fromUser;
+    if (postId) {
+      return `/CommunityPage?post=${postId}`;
+    }
+    if (fromUserId) {
+      return `/profile/${fromUserId}`;
+    }
+    return '/CommunityPage';
+  };
 
   if (!token) {
     return <div className="p-4">Please sign in to see notifications.</div>;
   }
 
-  //Notification page Interface
   return (
     <div className="max-w-2xl mx-auto p-4">
       <h1 className="text-xl font-semibold mb-4">Notifications</h1>
@@ -101,48 +125,49 @@ const NotificationsPage = () => {
 
       <ul className="space-y-3">
         {notifications.map((n) => (
-          <ul className="space-y-3">
-          {notifications.map((n) => (
-            <li
-              key={n._id}
-              className="border border-gray-200 rounded-lg p-3 text-sm bg-white"
+          <li key={n._id} className="border border-gray-200 rounded-lg overflow-hidden bg-white group hover:border-gray-300 transition">
+            <Link
+              to={getNotificationLink(n)}
+              className="block p-3 text-sm hover:bg-gray-50 transition"
             >
-              {/* Main notification message */}
-              <p className="text-gray-900">{n.message}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-900">{n.message}</p>
 
-              {/*  Post preview  */}
-              {n.post && (
-                <div className="flex items-center gap-3 flex-row-reverse 
-                mt-2 group cursor-default">
-          
-            {/* Preview image */}
-            {n.post?.image && (
-              <img
-                src={n.post.image}
-                alt="Post preview"
-                className="w-16 h-16 object-cover rounded-md border"
-              />
-            )}
+                  {n.post && (
+                    <div className="flex items-center gap-3 flex-row-reverse mt-2">
+                      {n.post?.image && (
+                        <img
+                          src={n.post.image}
+                          alt="Post preview"
+                          className="w-16 h-16 object-cover rounded-md border shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        {n.post?.text && (
+                          <p className="text-gray-600 text-xs line-clamp-2">
+                            {n.post.text}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
-            <div className="flex-1">
-              {/* Preview text */}
-              {n.post?.text && (
-                <p className="text-gray-600 text-xs line-clamp-2">
-                  {n.post.text}
-                </p>
-              )}
+                  <p className="text-xs text-gray-400 mt-2">
+                    {new Date(n.createdAt).toLocaleString()}
+                  </p>
+                </div>
 
-            </div>
-        </div>
-              )}
-              {/* Timestamp */}
-              <p className="text-xs text-gray-400 mt-2">
-                {new Date(n.createdAt).toLocaleString()}
-              </p>
-            </li>
-          ))}
-        </ul>
-
+                <button
+                  onClick={(e) => handleDeleteNotification(e, n._id)}
+                  className="shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                  aria-label="Delete notification"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </Link>
+          </li>
         ))}
       </ul>
     </div>

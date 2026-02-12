@@ -578,7 +578,7 @@ export default function EditProfilePage() {
       <Navbar />
       <div className="min-h-screen bg-gray-50 pt-20">
         {/* Cover Image */}
-        <div className="relative h-64 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200 overflow-visible">
+        <div className="relative h-44 lg:h-72 bg-gradient-to-r from-blue-400 via-blue-300 to-yellow-200 overflow-visible">
           <img
             src={getBannerImage(coverImage)}
             alt="Cover"
@@ -589,7 +589,7 @@ export default function EditProfilePage() {
             <img
               src={getProfileImage(profileImage)}
               alt="Profile"
-              className="w-40 h-40 md:w-48 md:h-48 rounded-full border-8 border-white shadow-xl bg-white object-cover"
+              className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full bg-white object-cover"
             />
           </div>
         </div>
@@ -614,7 +614,7 @@ export default function EditProfilePage() {
                   type="button"
                   onClick={() => coverImageInputRef.current?.click()}
                   disabled={uploadingCover}
-                  className="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-black text-white px-4 py-3 lg:py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploadingCover ? 'Uploading...' : 'Upload Cover Photo'}
                 </button>
@@ -631,7 +631,7 @@ export default function EditProfilePage() {
                   type="button"
                   onClick={() => profileImageInputRef.current?.click()}
                   disabled={uploadingProfile}
-                  className="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-black text-white px-4 py-3 lg:py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploadingProfile ? 'Uploading...' : 'Upload New Profile Picture'}
                 </button>

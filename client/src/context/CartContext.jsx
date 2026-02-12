@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext.jsx';
 
 const CartContext = createContext();
@@ -7,85 +7,141 @@ export function useCart() {
   return useContext(CartContext);
 }
 
-const CART_KEY = 'artscape-cart';
-
-// Helper to load cart from localStorage
-const loadCartFromStorage = () => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const data = localStorage.getItem(CART_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (error) {
-    console.error('Error loading cart from localStorage:', error);
-    return [];
-  }
-};
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
 export function CartProvider({ children }) {
-  const { isAuthenticated } = useAuth();
-  // Initialize state directly from localStorage
-  const [cartItems, setCartItems] = useState(() => loadCartFromStorage());
+  const { user, isAuthenticated } = useAuth();
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Also load on mount to ensure we have the latest data
-  useEffect(() => {
-    const stored = loadCartFromStorage();
-    if (stored.length > 0) {
-      setCartItems(stored);
-    }
-  }, []);
-
-  // Clear cart when user logs out
-  useEffect(() => {
-    if (!isAuthenticated) {
+  const fetchCart = useCallback(async () => {
+    if (!user?.id || !user?.token) {
       setCartItems([]);
-      // Clear localStorage when user logs out
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.removeItem(CART_KEY);
-        } catch (error) {
-          console.error('Error clearing cart from localStorage:', error);
-        }
-      }
+      return;
     }
-  }, [isAuthenticated]);
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/cart`, {
+        credentials: 'include',
+        headers: {
+          ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCartItems(data.items || []);
+      } else {
+        setCartItems([]);
+      }
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+      setCartItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, user?.token]);
 
-  // Persist to localStorage on change (only if authenticated)
   useEffect(() => {
-    if (typeof window !== 'undefined' && isAuthenticated) {
-      try {
-        localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
-      } catch (error) {
-        console.error('Error saving cart to localStorage:', error);
-      }
+    if (isAuthenticated && user?.id) {
+      fetchCart();
+    } else {
+      setCartItems([]);
     }
-  }, [cartItems, isAuthenticated]);
+  }, [isAuthenticated, user?.id, fetchCart]);
 
-  function addToCart(artwork, onError) {
-    if (!isAuthenticated) {
-      if (onError) {
-        onError('Please sign in to add items to cart');
-      }
+  async function addToCart(artwork, onError) {
+    if (!isAuthenticated || !user?.id) {
+      if (onError) onError('Please sign in to add items to cart');
       return false;
     }
-
-    setCartItems(prev =>
-      prev.some(item => item.id === (artwork._id || artwork.id))
-        ? prev
-        : [...prev, { ...artwork, id: artwork._id || artwork.id }]
-    );
-    return true;
+    const artworkId = artwork._id || artwork.id;
+    if (!artworkId) {
+      if (onError) onError('Invalid artwork');
+      return false;
+    }
+    if (cartItems.some((item) => item.id === artworkId)) {
+      return true;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/cart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ artworkId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setCartItems(data.items || []);
+        return true;
+      }
+      if (onError) onError(data.error || 'Failed to add to cart');
+      return false;
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      if (onError) onError('Failed to add to cart');
+      return false;
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function removeFromCart(id) {
-    setCartItems(prev => prev.filter(item => item.id !== id));
+  async function removeFromCart(id) {
+    if (!user?.id) return;
+    setLoading(true);
+    const prev = [...cartItems];
+    setCartItems((p) => p.filter((item) => item.id !== id));
+    try {
+      const res = await fetch(`${API_BASE}/cart/${id}`, {
+        method: 'DELETE',
+        headers: {
+          ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+        },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setCartItems(prev);
+        console.error(data.error || 'Failed to remove from cart');
+      }
+    } catch (error) {
+      console.error('Remove from cart error:', error);
+      setCartItems(prev);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function clearCart() {
+  async function clearCart() {
+    if (!user?.id) return;
+    setLoading(true);
+    const prev = [...cartItems];
     setCartItems([]);
+    try {
+      const res = await fetch(`${API_BASE}/cart`, {
+        method: 'DELETE',
+        headers: {
+          ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+        },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        setCartItems(prev);
+        console.error('Failed to clear cart');
+      }
+    } catch (error) {
+      console.error('Clear cart error:', error);
+      setCartItems(prev);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, clearCart }}>
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, clearCart, loading }}>
       {children}
     </CartContext.Provider>
   );

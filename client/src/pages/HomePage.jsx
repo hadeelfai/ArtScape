@@ -65,9 +65,9 @@ const HomePage = () => {
       <Navbar />
 
       <div className="relative">
-        <img src='d.gif' className='w-full' />
+        <img src='d.gif' className='w-full pt-20' />
         <h1 className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-3xl md:text-5xl lg:text-7xl font-highcruiser text-center'>ArtScape</h1>
-        <h2 className="absolute top-2/4 pt-20 md:pt-36 lg:pt-48 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-3xl md:text-5xl lg:text-7xl font-highcruiser text-center">
+        <h2 className="absolute top-2/4 pt-20 md:pt-36 lg:pt-48 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-xl md:text-5xl lg:text-7xl font-highcruiser text-center">
           everyone is an Artist
         </h2>
       </div>
@@ -75,7 +75,7 @@ const HomePage = () => {
       {/* Latest pieces section */}
       <div>
         <div className='flex justify-between'>
-          <h1 className='font-albert text-4xl lg:text-5xl pl-24 pt-20 pb-4'>Latest <span className='font-highcruiser'>Pieces</span></h1>
+          <h1 className='font-albert text-3xl text-start lg:text-5xl pl-10 pt-20 pb-4'>Latest <span className='font-highcruiser'>Pieces</span></h1>
           <Link to={"/marketplace"}> <h1 className='font-albert text-lg md:text-xl lg:text-2xl underline underline-offset-4 pr-10 pt-20 pb-4'>See More</h1> </Link>
         </div>
         <CardsList artworks={latestMarketplacePieces} loading={loading} />
@@ -92,7 +92,7 @@ const HomePage = () => {
           and showcase their talent to a global audience. Whether you're a painter,
           photographer, digital illustrator, or experimental artist, ArtScape offers
           you a platform to be seen, appreciated, and supported.</h2>
-        <p className='text-center pb-52'><a className='font-akshar text-2xl text-center underline decoration-2 underline-offset-8 cursor-pointer' href='/about'>
+        <p className='text-center pb-28'><a className='font-akshar text-2xl text-center underline decoration-2 underline-offset-8 cursor-pointer' href='/about'>
           Read more in <span className='font-highcruiser '>About Us</span></a></p>
       </div>
 
@@ -105,14 +105,14 @@ const HomePage = () => {
 
       <div className='bg-black text-white font-akshar'>
 
-        <div className='lg:flex lg:flex-col-2 lg:items-center'>
+        <div className='lg:flex lg:flex-col-2 items-start lg:items-center'>
 
-          <h1 className='text-6xl p-28 pb-11 pt-16'>
+          <h1 className='text-4xl text-left p-12 pb-11 pt-16'>
             How to Use <span className='font-highcruiser'>ArtScape</span>?
           </h1>
 
 
-          <div className="px-28 pb-20 space-y-10 lg:pt-20 lg:px-12 lg:w-full">
+          <div className="px-20 pb-20 space-y-10 lg:pt-20 lg:px-12 lg:w-full">
             {steps.map((step, i) => (
               <motion.div
                 key={step.id}

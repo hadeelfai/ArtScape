@@ -49,7 +49,7 @@ function ArticleDetailPage() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen bg-[#f8f3ff]">
+        <div className="min-h-screen bg-white">
           <main className="pt-28 pb-10 px-6 md:px-20 max-w-[800px] mx-auto">
             <p>Loading...</p>
           </main>
@@ -63,7 +63,7 @@ function ArticleDetailPage() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen bg-[#f8f3ff]">
+        <div className="min-h-screen bg-white">
           <main className="pt-28 pb-10 px-6 md:px-20 max-w-[800px] mx-auto">
             <p>{error || "Article not found."}</p>
           </main>
@@ -77,7 +77,7 @@ function ArticleDetailPage() {
     <>
       <Navbar />
 
-      <div className="min-h-screen bg-[#f8f3ff]">
+      <div className="min-h-screen bg-white">
         <main className="pt-28 pb-16 px-6 md:px-20 max-w-[800px] mx-auto">
           {/* back button */}
           <button

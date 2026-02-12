@@ -1,145 +1,148 @@
-import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
-import ScrollVelocity from '../components/ScrollVelocity'
 import Footer from '../components/Footer'
+import { motion } from 'framer-motion'
+
+
+
 
 const AboutUs = () => {
-    const [currentSlide, setCurrentSlide] = useState(0)
 
-    const slides = [
-        {
-            image: '../Hero-carousel/photography.jpg',
-            title: 'Photography',
-            type: 'Capturing Moments'
-        },
-        {
-            image: '../Hero-carousel/sculpture.jpg',
-            title: 'Sculpture',
-            type: 'Shaping Dimensions'
-        },
-        {
-            image: '../Hero-carousel/paintings.jpg',
-            title: 'Paintings',
-            type: 'Expressing Colors'
-        }
-    ]
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % slides.length)
-        }, 4000) 
-
-        return () => clearInterval(timer)
-    }, [])
-
-    const goToSlide = (index) => {
-        setCurrentSlide(index)
-    }
-
-    const nextSlide = () => {
-        setCurrentSlide((prev) => (prev + 1) % slides.length)
-    }
-
-    const prevSlide = () => {
-        setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
-    }
 
     return (
         <div>
             <Navbar />
             <div >
 
+                <p className='pt-32 leading-relaxed text-start lg:leading-loose pl-10 pr-10 lg:pl-64 lg:pr-64 text-lg lg:text-2xl font-albert font-light'>
+                    ArtScape means a broad, immersive landscape or scene of art,
+                    evoking a place where various forms of art
+                    (like paintings, photography, and sculptures) come together to create a vast,
+                    diverse artistic environment.
+                </p>
 
-                {/* Carousel */}
-                <div className='max-w-full mx-auto px-6 relative pt-28'>
-                    <div className='relative overflow-hidden rounded-lg'>
-                        {/* Slides */}
-                        <div className='relative h-[400px] lg:h-[800px]'>
-                            {slides.map((slide, index) => (
-                                <div
-                                    key={index}
-                                    className={`absolute top-0 left-0 w-full h-full transition-opacity duration-700 ${currentSlide === index ? 'opacity-100' : 'opacity-0'
-                                        }`}
-                                >
-                                    <img
-                                        src={slide.image}
-                                        alt={slide.title}
-                                        className='w-full h-full object-cover'
-                                    />
-                                    {/* Text Overlay */}
-                                    <div className='absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center'>
-                                        <h2 className='font-highcruiser text-5xl lg:text-7xl text-white mb-2'>
-                                            {slide.title}
-                                        </h2>
-                                        <p className='font-albert text-xl lg:text-2xl text-white/90'>
-                                            {slide.type}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
 
-                        {/* Navigation Arrows */}
-                        <button
-                            onClick={prevSlide}
-                            className='absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all'
-                        >
-                            <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' />
-                            </svg>
-                        </button>
-                        <button
-                            onClick={nextSlide}
-                            className='absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all'
-                        >
-                            <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 5l7 7-7 7' />
-                            </svg>
-                        </button>
+                <div className='grid gap-2 grid-cols-3 pt-11 lg:pt-16 pb-16 lg:pl-20 lg:pr-20'>
+                    <div className='flex flex-col items-center justify-center'>
+                        <img
+                            src='Hero-carousel/rug.jpg'
+                            alt='rug'
+                            className='w-full max-w-[500px] h-56 md:h-96 lg:h-[550px] object-cover'
+                        />
+                    </div>
 
-                        {/* Dots Indicator */}
-                        <div className='absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2'>
-                            {slides.map((_, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => goToSlide(index)}
-                                    className={`w-3 h-3 rounded-full transition-all ${currentSlide === index
-                                        ? 'bg-gray-500 w-8'
-                                        : 'bg-white/50 hover:bg-white/80'
-                                        }`}
-                                />
-                            ))}
-                        </div>
+                    <div className='flex flex-col items-center justify-center'>
+                        <img
+                            src='Hero-carousel/coffee.jpg'
+                            alt='coffee'
+                            className='w-full max-w-[600px] lg:h-[650px] object-cover'
+                        />
+                    </div>
+
+                    <div className='flex flex-col items-center justify-center'>
+                        <img
+                            src='Hero-carousel/pom.jpg'
+                            alt='pomegranate'
+                            className='w-full max-w-[500px] h-56 md:h-96 lg:h-[550px] object-cover'
+                        />
                     </div>
                 </div>
 
-                <ScrollVelocity
-                    texts={[' Everyone Is An Artist ✦']}
-                    className="custom-scroll-text pt-2 pb-11"
-                />
-
-                <h1 className='pt-11 pb-10 text-center font-highcruiser text-4xl lg:text-6xl'>About Us</h1>
-                <p className='pb-10 leading-loose text-start lg:leading-loose pl-10 pr-10 lg:pl-44 lg:pr-44 text-xl lg:text-3xl font-albert'>
-                    We're senior students from Jeddah University
-                    developing an art platform for our graduation
-                    project.
-                    If you have artworks to share (or know someone
-                    who does) we'd love your help connecting with
-                    them!
-                </p>
 
 
+                <div className='bg-black text-white font-albert pt-8 pb-12'>
 
-                <p className='leading-loose lg:leading-loose text-start pl-10 pr-10 pt-5 lg:pl-44 lg:pr-44 text-xl lg:text-3xl font-albert'>
-                    ArtScape is a space for people to share and promote their art,
-                    engage with the art community, and stay inspired by the art world.
-                    We support all forms of art, photography, sculptures, paintings.
-                    Basically all kinds of art!!
-                </p>
+                    <div className='grid grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr] p-8 lg:p-20 lg:pt-10'>
+
+                        <h1 className='font-normal text-md lg:text-xl'>About ArtScape</h1>
+                        <p className='font-light text-sm lg:text-lg leading-relaxed'>ArtScape is a digital art gallery platform founded in 2024 in Jeddah
+                            with the purpose of creating a centralized platform for art lovers and artists.
+                            The platform aims to showcase and sell various forms of art, including paintings,
+                            sculptures, and photography, while also connecting users with local galleries and art exhibitions.
+                            ArtScape seeks to support artists, promote cultural awareness,
+                            and make discovering and engaging with art more accessible to the community.</p>
+
+                        <h1 className='pt-24 font-normal text-md lg:text-xl'>Meet the founders</h1>
+
+                    </div>
+
+                    <motion.div 
+                      className='flex flex-col items-center'
+                      initial={{ opacity: 0, y: 40 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0 }}
+                      viewport={{ once: true, amount: 0.2 }}
+                    >
+                        <img className='w-40 lg:w-60' src='founder.png' alt='founder1' />
+                        <h1 className='text-center pt-4 lg:text-2xl'>Hadeel Alharthi</h1>
+                        <p className='pt-2 p-16 text-center font-light text-sm lg:text-base'>An extraordinary designer and programmer with a love for art and music,
+                            I like to add that extra spark to everything I make.</p>
+                    </motion.div>
+
+
+                    <motion.div 
+                      className='flex flex-col items-center'
+                      initial={{ opacity: 0, y: 40 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                      viewport={{ once: true, amount: 0.2 }}
+                    >
+                        <img className='w-40 lg:w-60' src='founder.png' alt='founder1' />
+                        <h1 className='text-center pt-4 lg:text-2xl'>Bayan Alsahafi</h1>
+                        <p className='pt-2 p-16 text-center font-light text-sm lg:text-base'>A passionate computer science student who enjoys turning ideas
+                            into functional and meaningful innovative systems. I'm driven by curiosity,<br></br>
+                            creative thinking, and continuously learning new technologies.</p>
+                    </motion.div>
+
+
+                    <motion.div 
+                      className='flex flex-col items-center'
+                      initial={{ opacity: 0, y: 40 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      viewport={{ once: true, amount: 0.2 }}
+                    >
+                        <img className='w-40 lg:w-60' src='founder.png' alt='founder1' />
+                        <h1 className='text-center pt-4 lg:text-2xl'>Riyam Alawaji</h1>
+                        <p className='pt-2 p-16 text-center font-light text-sm lg:text-base'>A passionate developer with a strong interest in creating clean
+                            and meaningful web experiences. She focuses on building effective <br></br> and
+                            well-structured web solutions with attention to detail and user experience.</p>
+                    </motion.div>
 
 
 
-                <div className='pt-36'>
+                    <motion.div 
+                      className='flex flex-col items-center'
+                      initial={{ opacity: 0, y: 40 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.6 }}
+                      viewport={{ once: true, amount: 0.2 }}
+                    >
+                        <img className='w-40 lg:w-60' src='founder.png' alt='founder1' />
+                        <h1 className='text-center pt-4 lg:text-2xl'>Rahaf Alajlani</h1>
+                        <p className='pt-2 p-16 text-center font-light text-sm lg:text-base'>Inspired by art and design, blending UI creativity
+                            and technical thinking to create meaningful experiences.</p>
+                    </motion.div>
+
+
+                    <motion.div 
+                      className='flex flex-col items-center'
+                      initial={{ opacity: 0, y: 40 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.8 }}
+                      viewport={{ once: true, amount: 0.2 }}
+                    >
+                        <img className='w-40 lg:w-60' src='founder.png' alt='founder1' />
+                        <h1 className='text-center pt-4 lg:text-2xl'>Dana Aljuaid</h1>
+                        <p className='pt-2 p-16 text-center font-light text-sm lg:text-base'>An ambitious and evolving individual driven
+                            by curiosity and a love for learning. She thrives on challenges and enjoys turning <br></br>ideas into
+                            creative and meaningful solutions.</p>
+                    </motion.div>
+
+
+                </div>
+
+
+                <div className='pt-0 border-t border-gray-700 text-center text-sm'>
                     <Footer />
                 </div>
 

@@ -1,8 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-
-
 export const authMiddleware = async (req, res, next) => {
   try {
     const headerToken = req.headers.authorization?.replace("Bearer ", "");
@@ -15,7 +13,7 @@ export const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // ✅ SECURITY FIX: Load role field from DB for authorization checks
+    // SECURITY: Load role field from DB for authorization checks
     const user = await User.findById(decoded.id).select("name email avatar role accountStatus");
     if (!user) {
       return res.status(401).json({ error: "User not found" });
@@ -42,7 +40,7 @@ export const authMiddleware = async (req, res, next) => {
   }
 };
 
-// ✅ NEW: Optional admin-only middleware for protected endpoints
+// admin-only middleware for protected endpoints
 export const adminMiddleware = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required" });

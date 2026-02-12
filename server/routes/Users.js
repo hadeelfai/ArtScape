@@ -1,10 +1,10 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
-import crypto from 'crypto' // ✅ NEW: Added for password reset token generation
+import crypto from 'crypto' // Added for password reset token generation
 import User from '../models/User.js'
 import Artwork from '../models/Artwork.js'
-import { authMiddleware } from '../middleware/AuthMiddleware.js' // ✅ SECURITY FIX: Add auth import
+import { authMiddleware } from '../middleware/AuthMiddleware.js' 
 
 const router = express.Router()
 
@@ -387,7 +387,7 @@ router.post('/reset-password/:token', async (req, res) => {
 });
 
 // ========================================
-// ✅ NEW: FORGOT PASSWORD ROUTES END
+// FORGOT PASSWORD ROUTES END
 // ========================================
 
 // Profile route
@@ -570,7 +570,7 @@ router.delete('/profile/:id', async (req, res) => {
 })
 
 // Follow/Unfollow user
-// ✅ SECURITY FIX: Consider adding authMiddleware and using req.user.id from JWT instead of body
+// SECURITY:  adding authMiddleware and using req.user.id from JWT instead of body
 router.post('/follow/:id', async (req, res) => {
     try {
         const { userId } = req.body // The user who is following

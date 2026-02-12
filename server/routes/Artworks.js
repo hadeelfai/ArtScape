@@ -54,10 +54,10 @@ router.get('/user/:userId', async (req, res) => {
     }
 })
 
-// Create new artwork
-router.post('/', async (req, res) => {
+// Create new artwork (requires auth + active account)
+router.post('/', authMiddleware, async (req, res) => {
     try {
-        const { title, image, price, artist, description, tags, artworkType, dimensions, year } = req.body
+        const { title, image, price, description, tags, artworkType, dimensions, year } = req.body
         const normalizedTags = normalizeTagsInput(tags)
 
         if (normalizedTags.length < 3) {
@@ -68,13 +68,13 @@ router.post('/', async (req, res) => {
             title, 
             image, 
             price, 
-            artist, 
+            artist: req.user.id,
             description,
             tags: normalizedTags,
             dimensions,
             year,
             artworkType: artworkType || 'Explore',
-            embedding: null,//store empty then compute in background
+            embedding: null,
         })
         await artwork.save()
         // Trigger background embedding computation *no waiting
@@ -86,14 +86,18 @@ router.post('/', async (req, res) => {
     }
 })
 
-// Update artwork
-router.put('/:id', async (req, res) => {
+// Update artwork (requires auth + must be owner)
+router.put('/:id', authMiddleware, async (req, res) => {
     try {
         const { title, image, price, description, tags, artworkType, dimensions, year } = req.body
         const artwork = await Artwork.findById(req.params.id)
         
         if (!artwork) {
             return res.status(404).json({ error: 'Artwork not found' })
+        }
+
+        if (artwork.artist.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'Not authorized to update this artwork' })
         }
 
         // Update fields
@@ -123,18 +127,10 @@ router.put('/:id', async (req, res) => {
     }
 })
 
-// Like/Unlike artwork
-router.post('/:id/like', async (req, res) => {
+// Like/Unlike artwork (requires auth + active account)
+router.post('/:id/like', authMiddleware, async (req, res) => {
     try {
-        const { userId } = req.body
-        
-        // Convert userId string to ObjectId for proper comparison
-        let userIdObj
-        try {
-            userIdObj = new mongoose.Types.ObjectId(userId)
-        } catch (e) {
-            return res.status(400).json({ error: 'Invalid userId format' })
-        }
+        const userIdObj = new mongoose.Types.ObjectId(req.user.id)
 
         // Get current artwork to check if liked
         const artwork = await Artwork.findById(req.params.id)
@@ -145,7 +141,7 @@ router.post('/:id/like', async (req, res) => {
             try {
                 return id.equals(userIdObj)
             } catch {
-                return id.toString() === userId
+                return id.toString() === req.user.id
             }
         })
 
@@ -169,18 +165,10 @@ router.post('/:id/like', async (req, res) => {
     }
 })
 
-// Save/Unsave artwork
-router.post('/:id/save', async (req, res) => {
+// Save/Unsave artwork (requires auth + active account)
+router.post('/:id/save', authMiddleware, async (req, res) => {
     try {
-        const { userId } = req.body
-        
-        // Convert userId string to ObjectId for proper comparison
-        let userIdObj
-        try {
-            userIdObj = new mongoose.Types.ObjectId(userId)
-        } catch (e) {
-            return res.status(400).json({ error: 'Invalid userId format' })
-        }
+        const userIdObj = new mongoose.Types.ObjectId(req.user.id)
 
         // Get current artwork to check if saved
         const artwork = await Artwork.findById(req.params.id)
@@ -191,7 +179,7 @@ router.post('/:id/save', async (req, res) => {
             try {
                 return id.equals(userIdObj)
             } catch {
-                return id.toString() === userId
+                return id.toString() === req.user.id
             }
         })
 
@@ -279,13 +267,19 @@ router.post('/:id/report', authMiddleware, async (req, res) => {
   }
 });
 
-//deleting an artwork by id (for the admin page)
-router.delete('/:id', async (req, res) => {
+// Delete artwork (requires auth + must be owner or admin)
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const artwork = await Artwork.findByIdAndDelete(req.params.id)
+    const artwork = await Artwork.findById(req.params.id)
     if (!artwork) {
       return res.status(404).json({ error: 'Artwork not found' })
     }
+    const isOwner = artwork.artist.toString() === req.user.id
+    const isAdmin = req.user.role === 'admin'
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Not authorized to delete this artwork' })
+    }
+    await Artwork.findByIdAndDelete(req.params.id)
     res.json({ message: 'Artwork deleted successfully' })
   } catch (error) {
     res.status(500).json({ error: error.message })

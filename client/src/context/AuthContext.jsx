@@ -10,12 +10,31 @@ const AuthContext = createContext({
   logout: () => {}
 });
 
-// Read user from localStorage
+// Check if JWT token is expired (exp is in seconds)
+const isTokenExpired = (token) => {
+  if (!token || typeof token !== 'string') return true;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const exp = payload.exp;
+    if (!exp) return false;
+    return Date.now() / 1000 > exp;
+  } catch {
+    return true;
+  }
+};
+
+// Read user from localStorage (return null if token expired)
 const getStoredUser = () => {
   if (typeof window === 'undefined') return null;
   try {
     const raw = window.localStorage.getItem('artscape:user');
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    if (!user?.token || isTokenExpired(user.token)) {
+      window.localStorage.removeItem('artscape:user');
+      return null;
+    }
+    return user;
   } catch {
     return null;
   }
@@ -54,6 +73,20 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     persistUser(user);
   }, [user]);
+
+  // Sign out when token expires (e.g. after 7 days) - check periodically
+  useEffect(() => {
+    if (!user?.token) return;
+    const checkExpiry = () => {
+      if (isTokenExpired(user.token)) {
+        setUser(null);
+        persistUser(null);
+      }
+    };
+    checkExpiry();
+    const interval = setInterval(checkExpiry, 60 * 1000); // check every minute
+    return () => clearInterval(interval);
+  }, [user?.token]);
 
   /**
    * Login with email OR username + password

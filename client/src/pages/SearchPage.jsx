@@ -67,7 +67,7 @@ const SearchPage = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search artworks, news, and more..."
+              placeholder="Search users, artworks, news, and more..."
               className="w-full px-6 py-4 text-lg bg-white border-2 border-gray-300 rounded-lg outline-none focus:border-gray-900 transition"
             />
             <Search className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 w-6 h-6" />
@@ -105,13 +105,13 @@ const SearchPage = () => {
               </p>
 
               {/* Group results by type */}
-              {['Artwork', 'Article', 'News'].map((type) => {
+              {['User', 'Artwork', 'Article', 'News'].map((type) => {
                 const typeResults = results.filter(r => r.type === type);
                 if (typeResults.length === 0) return null;
 
                 return (
                   <div key={type} className="mb-10">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">{type}s</h2>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4">{type === 'User' ? 'People' : `${type}s`}</h2>
                     <div className="grid grid-cols-1 gap-4">
                       {typeResults.map((item) => (
                         <div
@@ -124,7 +124,7 @@ const SearchPage = () => {
                               <h3 className="text-lg font-semibold text-gray-900 hover:text-gray-700 transition">
                                 {item.title}
                               </h3>
-                              <p className="text-sm text-gray-500 mt-1">{item.type}</p>
+                              <p className="text-sm text-gray-500 mt-1">{item.subtitle || item.type}</p>
                             </div>
                             <span className="ml-4 px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
                               {item.type}

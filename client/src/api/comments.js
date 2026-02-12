@@ -1,4 +1,3 @@
-import { useAuth } from '../context/AuthContext';
 
 const comments = "http://localhost:5500/comments"
 

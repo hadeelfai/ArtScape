@@ -29,6 +29,25 @@ router.get('/', async (req, res) => {
 });
 
 
+// DELETE a single notification (owner only)
+router.delete('/:id', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const notification = await Notification.findOne({
+      _id: req.params.id,
+      user: userId,
+    });
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+    await Notification.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Notification deleted' });
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 //Mark all unread notifications as read 
 router.patch('/mark_read',async(req, res) =>{
 try{
