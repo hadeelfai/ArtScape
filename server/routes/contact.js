@@ -1,5 +1,11 @@
 import express from "express";
 import nodemailer from "nodemailer";
+import multer from "multer";
+
+const upload = multer({    //for file uploads in the form
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
 
 const router = express.Router();
 
@@ -20,7 +26,7 @@ function validateContactForm(name, email, message) {
 
 //contact form route
 // ✅ SECURITY FIX: Added input validation and basic rate limiting setup
-router.post("/", async (req, res) => {
+router.post("/", upload.single("file"),async (req, res) => {
   try {
     const { name, email, message } = req.body;
 
@@ -52,7 +58,14 @@ router.post("/", async (req, res) => {
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Message:</strong><br>${message}</p>
-      `,
+      `,attachments: req.file
+    ? [
+        {
+          filename: req.file.originalname,
+          content: req.file.buffer,
+        },
+      ]
+    : [],
     };
 
     await transporter.sendMail(mailOptions);

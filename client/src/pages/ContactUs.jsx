@@ -91,41 +91,46 @@ function ContactUs() {
   }
 
   async function handleSubmit(e) {
-    e.preventDefault();
+  e.preventDefault();
 
-    // Exception flow: missing required fields
-    if (!validateForm()) {
-      toast.error("Please complete all required fields");
-      return;
+  if (!validateForm()) {
+    toast.error("Please complete all required fields");
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+
+    formData.append("name", form.name);
+    formData.append("email", form.email);
+    formData.append(
+      "message",
+      `Subject: ${form.subject}\n\n${form.message}`
+    );
+
+    if (attachment) {
+      formData.append("file", attachment); // sends the file
     }
 
-    try {
-      // We keep the same backend API and prepend the subject to the message
-      const payload = {
-        ...form,
-        message: `Subject: ${form.subject}\n\n${form.message}`,
-      };
+    await sendContactMessage(formData); 
 
-      await sendContactMessage(payload);
-      toast.success("Message sent successfully!");
+    toast.success("Message sent successfully!");
 
-      // Clear only subject + message + attachment, keep name/email from user
-      setForm((prev) => ({
-        ...prev,
-        subject: "",
-        message: "",
-      }));
-      setAttachment(null);
-      setAttachmentStatus("");
-      setErrors({ subject: "", message: "" });
-      if (fileInputRef.current) {
-  fileInputRef.current.value = "";
+    setForm((prev) => ({
+      ...prev,
+      subject: "",
+      message: "",
+    }));
+
+    setAttachment(null);
+    setAttachmentStatus("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+  } catch {
+    toast.error("Failed to send message");
+  }
 }
 
-    } catch {
-      toast.error("Failed to send message");
-    }
-  }
 
   return (
     <>
