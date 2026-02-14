@@ -1,0 +1,9 @@
+node_modules/
+*.log
+.env
+.git/
+public/
+coverage/
+dist/
+build/
+.DS_Store

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 function Post({ onPostCreated, editingPost, onEditCompleted }) {
   const [uploadedImage, setUploadedImage] = useState(null)
   const [text, setText] = useState("")
+  const loggedInUser = JSON.parse(localStorage.getItem("artscape:user"))
 
   // Populate fields when editing
   useEffect(() => {
@@ -77,7 +78,7 @@ function Post({ onPostCreated, editingPost, onEditCompleted }) {
   return (
     <div id="upload-section" className='flex flex-col p-3 border border-b-gray-200'>
       <div className='flex items-center gap-4'>
-        <img className='w-10 h-10 rounded-full object-cover' src='/avatar.png'/>
+        <img className='w-10 h-10 rounded-full object-cover' src={loggedInUser?.profileImage || '/assets/images/profilepicture.jpg'}/>
         <input
           placeholder='Share and Describe Your Art..'
           value={text}

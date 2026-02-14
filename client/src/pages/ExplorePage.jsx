@@ -4,9 +4,12 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 import { useGalleryData } from '../hooks/useGalleryData';
+import { useAuth } from '../context/AuthContext';
 import { CATEGORY_TABS, matchesArtType, matchesCategory, matchesColor, matchesSize } from '../utils/artworkFilters';
 import DropdownMenu from '../components/DropdownMenu';
 import { Link } from 'react-router-dom';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
 const SIZE_FILTERS = [
     { value: 'any', label: 'All sizes' },
@@ -33,12 +36,14 @@ const ART_TYPE_FILTERS = [
 ];
 
 const SORT_OPTIONS = [
+    { value: 'recommended', label: 'Recommended For You' },
+    { value: 'mostLiked', label: 'Most liked' },
     { value: 'mostRecent', label: 'Most recent' },
-    { value: 'oldest', label: 'Oldest first' },
-    { value: 'mostLiked', label: 'Most liked' }
+    { value: 'oldest', label: 'Most oldest' }
 ];
 
 const ExplorePage = () => {
+    const { user } = useAuth();
     const { users, artworks, loading } = useGalleryData();
     const [filters, setFilters] = useState({
         size: 'any',
@@ -46,7 +51,9 @@ const ExplorePage = () => {
         artType: 'any'
     });
     const [category, setCategory] = useState('For You');
-    const [sortOption, setSortOption] = useState('mostRecent');
+    const [sortOption, setSortOption] = useState('recommended');
+    const [recommendations, setRecommendations] = useState([]);
+    const [recommendationsLoading, setRecommendationsLoading] = useState(false);
     const [limit, setLimit] = useState(12);
     const sentinelRef = useRef(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -54,20 +61,97 @@ const ExplorePage = () => {
     const filterBtnRef = useRef(null);
     const sortBtnRef = useRef(null);
 
+    // Track Explore tab visit for recommendations
+    useEffect(() => {
+        if (!user?.token) return;
+        fetch(`${API_BASE}/api/tracking/browse`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
+            body: JSON.stringify({ type: 'explore' })
+        }).catch(() => {});
+    }, [user?.token]);
+
+    // Fetch recommendations from the recommendation service
+    useEffect(() => {
+        const fetchRecommendations = async () => {
+            const token = user?.token;
+            if (!token) {
+                setRecommendations([]);
+                return;
+            }
+            setRecommendationsLoading(true);
+            try {
+                const response = await fetch(`${API_BASE}/api/recommendations/personalized?topK=100`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    credentials: 'include',
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Handle the recommendation service response format
+                    if (data.recommendations && Array.isArray(data.recommendations)) {
+                        // Map recommendation format to artwork format
+                        const recommendedArtworks = data.recommendations.map(rec => ({
+                            _id: rec.artwork_id,
+                            id: rec.artwork_id,
+                            title: rec.title,
+                            artist: rec.artist_id,
+                            image: rec.image,
+                            price: rec.price,
+                            artworkType: 'Explore'
+                        }));
+                        setRecommendations(recommendedArtworks);
+                    }
+                } else {
+                    setRecommendations([]);
+                }
+            } catch (error) {
+                console.error('Error fetching recommendations:', error);
+                setRecommendations([]);
+            } finally {
+                setRecommendationsLoading(false);
+            }
+        };
+
+        fetchRecommendations();
+    }, [user?.token]);
+
     const filteredArtworks = useMemo(() => {
-        return artworks
+        let artworksToSort = artworks
             .filter(art => art.artworkType === 'Explore')
             .filter(art => matchesCategory(art, category))
             .filter(art => matchesSize(art, filters.size))
             .filter(art => matchesColor(art, filters.color))
-            .filter(art => matchesArtType(art, filters.artType))
-            .sort((a, b) => {
-                if (sortOption === 'mostRecent') return new Date(b.createdAt) - new Date(a.createdAt);
-                if (sortOption === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
-                if (sortOption === 'mostLiked') return (b.likes?.length || 0) - (a.likes?.length || 0);
-                return 0;
-            });
-    }, [artworks, category, filters, sortOption]);
+            .filter(art => matchesArtType(art, filters.artType));
+
+        return artworksToSort.sort((a, b) => {
+            if (sortOption === 'recommended') {
+                // If we have recommendations, prioritize them
+                if (recommendations.length > 0) {
+                    const aIndex = recommendations.findIndex(
+                        (rec) => rec._id === a._id || rec.id === a._id
+                    );
+                    const bIndex = recommendations.findIndex(
+                        (rec) => rec._id === b._id || rec.id === b._id
+                    );
+                    
+                    // Items in recommendations come first
+                    if (aIndex !== -1 && bIndex === -1) return -1;
+                    if (aIndex === -1 && bIndex !== -1) return 1;
+                    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+                }
+                // Fallback to most recent if no recommendations
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            }
+            if (sortOption === 'mostRecent') return new Date(b.createdAt) - new Date(a.createdAt);
+            if (sortOption === 'mostLiked') return (b.likes?.length || 0) - (a.likes?.length || 0);
+            if (sortOption === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+            return 0;
+        });
+    }, [artworks, category, filters, sortOption, recommendations]);
 
     useEffect(() => {
         setLimit(12);

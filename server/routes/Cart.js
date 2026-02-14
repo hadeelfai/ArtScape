@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Cart from '../models/Cart.js';
 import Artwork from '../models/Artwork.js';
+import User from '../models/User.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
 
 const router = express.Router();
@@ -56,6 +57,10 @@ router.post('/', async (req, res) => {
     }
     cart.items.push(artworkObj);
     await cart.save();
+    // Log cart addition for recommendations (User.cartAdditions)
+    await User.findByIdAndUpdate(req.user.id, {
+      $addToSet: { cartAdditions: artworkObj }
+    }).catch(() => {});
     const populated = await Cart.findById(cart._id).populate('items');
     const items = (populated.items || []).map((a) => ({
       id: a._id.toString(),

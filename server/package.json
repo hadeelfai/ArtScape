@@ -8,6 +8,12 @@
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
+  "nodemonConfig": {
+    "ignore": ["node_modules/", "*.log", ".env", ".git/", "public/", "coverage/", "dist/", "build/"],
+    "watch": ["server.js", "routes", "models", "middleware", "utils", "controllers"],
+    "ext": "js",
+    "delay": 500
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

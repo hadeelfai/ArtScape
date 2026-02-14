@@ -52,10 +52,10 @@ const userSchema = new mongoose.Schema(
     // ---- PROFILE FIELDS ----
     username: {
       type: String,
-      required: true,    
-      unique: true,     
-      lowercase: true,    
-      trim: true,         
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
     },
 
     firstName: String,
@@ -121,6 +121,34 @@ const userSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    likedArtworks: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Artwork'
+    }],
+    savedArtworks: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Artwork'
+    }],
+    purchasedArtworks: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Artwork'
+    }],
+    // Recommendation data: view history (artworkId, duration in seconds, timestamp)
+    viewedArtworks: [{
+      artwork: { type: mongoose.Schema.Types.ObjectId, ref: 'Artwork' },
+      durationSeconds: Number,
+      viewedAt: { type: Date, default: Date.now }
+    }],
+    // Cart additions (purchase intent) - artwork IDs user added to cart
+    cartAdditions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artwork' }],
+    // Search queries for explicit preference
+    searchHistory: [{ query: String, searchedAt: { type: Date, default: Date.now } }],
+    // Category/tab clicks (Explore, Marketplace, filters)
+    browsingPreferences: {
+      exploreClicks: { type: Number, default: 0 },
+      marketplaceClicks: { type: Number, default: 0 },
+      filterUsage: mongoose.Schema.Types.Mixed // e.g. { size: 3, color: 2, artType: 5 }
+    }
   },
   { timestamps: true }
 );

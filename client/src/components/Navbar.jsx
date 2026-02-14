@@ -388,7 +388,14 @@ const Navbar = () => {
                   to="/cart"
                   className={`p-2 ${isOpen ? "text-white" : "text-black"}`}
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <div className="relative">
+                    <ShoppingCart className="w-5 h-5" />
+                    {cartItems.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                        {cartItems.length}
+                      </span>
+                    )}
+                  </div>
                 </Link>
 
                 <Link

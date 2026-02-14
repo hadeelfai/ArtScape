@@ -3,6 +3,7 @@ import express from "express";
 import Artwork from "../models/Artwork.js";
 import News from "../models/News.js";
 import User from "../models/User.js";
+import { optionalAuthMiddleware } from "../middleware/AuthMiddleware.js";
 
 const router = express.Router();
 
@@ -41,7 +42,7 @@ router.get("/all", async (req, res) => {
 
 // GET /api/search?q=query
 // Advanced search with query parameter
-router.get("/", async (req, res) => {
+router.get("/", optionalAuthMiddleware, async (req, res) => {
   try {
     const { q } = req.query;
     
@@ -49,7 +50,19 @@ router.get("/", async (req, res) => {
       return res.json([]);
     }
 
-    const escaped = q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const query = q.trim();
+    if (req.user?.id) {
+      await User.findByIdAndUpdate(req.user.id, {
+        $push: {
+          searchHistory: {
+            $each: [{ query, searchedAt: new Date() }],
+            $slice: -50
+          }
+        }
+      }).catch(() => {});
+    }
+
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const searchRegex = new RegExp(escaped, "i");
 
     const [artworks, news, users] = await Promise.all([

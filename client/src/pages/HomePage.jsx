@@ -7,7 +7,10 @@ import { Link } from 'react-router-dom';
 import HomeNewsSection from '../components/HomeNewsSection';
 import HomeArticlesSection from '../components/HomeArticlesSection';
 import { useGalleryData } from "../hooks/useGalleryData";
-import { useMemo } from 'react';
+import { useAuth } from "../context/AuthContext";
+import { useMemo, useState, useEffect } from 'react';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
 
 const steps = [
@@ -46,9 +49,12 @@ const steps = [
 
 
 const HomePage = () => {
+  const { user } = useAuth();
   const { artworks, loading } = useGalleryData();
+  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
 
-  // Get latest marketplace pieces
+  // Get latest marketplace pieces as fallback
   const latestMarketplacePieces = useMemo(() => {
     return artworks
       .filter((art) => art.artworkType === "Marketplace")
@@ -59,6 +65,72 @@ const HomePage = () => {
       })
       .slice(0, 8); // Get top 8 latest pieces
   }, [artworks]);
+
+  // Fetch recommendations from the recommendation service
+  useEffect(() => {
+    const token = user?.token;
+    const fetchRecommendations = async () => {
+      if (!token) {
+        setRecommendations(latestMarketplacePieces);
+        return;
+      }
+      setRecommendationsLoading(true);
+      try {
+        const response = await fetch(`${API_BASE}/api/recommendations/personalized?topK=8`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+        });
+
+        console.log('Recommendation response status:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Recommendations received:', data);
+          
+          // Handle the recommendation service response format
+          let recommendedArtworks = [];
+          
+          if (data.recommendations && Array.isArray(data.recommendations)) {
+            // Map recommendation format to artwork format
+            recommendedArtworks = data.recommendations.map(rec => ({
+              _id: rec.artwork_id,
+              id: rec.artwork_id,
+              title: rec.title,
+              artist: rec.artist_id,
+              image: rec.image,
+              price: rec.price,
+              artworkType: 'Marketplace'
+            }));
+          } else if (Array.isArray(data)) {
+            recommendedArtworks = data;
+          }
+          
+          if (recommendedArtworks.length > 0) {
+            console.log('Setting recommendations:', recommendedArtworks);
+            setRecommendations(recommendedArtworks);
+          } else {
+            console.log('No recommendations found, using latest pieces');
+            setRecommendations(latestMarketplacePieces);
+          }
+        } else {
+          const errorData = await response.text();
+          console.error('Recommendation API error:', response.status, errorData);
+          // Fallback to latest pieces if recommendations fail
+          setRecommendations(latestMarketplacePieces);
+        }
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
+        // Fallback to latest pieces on error
+        setRecommendations(latestMarketplacePieces);
+      } finally {
+        setRecommendationsLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, [user?.token, latestMarketplacePieces]);
 
   return (
     <div>
@@ -72,13 +144,13 @@ const HomePage = () => {
         </h2>
       </div>
 
-      {/* Latest pieces section */}
+      {/* Recommended pieces section */}
       <div>
         <div className='flex justify-between'>
-          <h1 className='font-albert text-3xl text-start lg:text-5xl pl-10 pt-20 pb-4'>Latest <span className='font-highcruiser'>Pieces</span></h1>
+          <h1 className='font-albert text-xl text-start md:text-3xl lg:text-5xl pl-10 pt-20 pb-4'>Recommended <span className='font-highcruiser'>For You</span></h1>
           <Link to={"/marketplace"}> <h1 className='font-albert text-lg md:text-xl lg:text-2xl underline underline-offset-4 pr-10 pt-20 pb-4'>See More</h1> </Link>
         </div>
-        <CardsList artworks={latestMarketplacePieces} loading={loading} />
+        <CardsList artworks={recommendations} loading={recommendationsLoading || loading} />
       </div>
 
 

@@ -569,35 +569,47 @@ export default function ArtScapeProfile({
         if (allArtworksRes.ok) {
           const allArtworks = await allArtworksRes.json();
 
-          // Filter for liked artworks
-          const likedItems = allArtworks.filter(art =>
-            liked.includes(art._id || art.id)
-          ).map(art => ({
-            id: art._id || art.id,
-            title: art.title || '',
-            description: art.description || '',
-            tags: normalizeTagList(art.tags),
-            dimensions: art.dimensions || '',
-            year: art.year || '',
-            artworkType: art.artworkType || 'Explore',
-            price: art.price || null,
-            image: art.image || art.imageUrl
-          }));
+          // Filter for liked artworks and sort by order in liked array (most recent first)
+          const likedItems = allArtworks
+            .filter(art => liked.includes(art._id || art.id))
+            .map(art => ({
+              id: art._id || art.id,
+              title: art.title || '',
+              description: art.description || '',
+              tags: normalizeTagList(art.tags),
+              dimensions: art.dimensions || '',
+              year: art.year || '',
+              artworkType: art.artworkType || 'Explore',
+              price: art.price || null,
+              image: art.image || art.imageUrl
+            }))
+            .sort((a, b) => {
+              // Sort by position in liked array (most recent first)
+              const aIndex = liked.indexOf(a.id);
+              const bIndex = liked.indexOf(b.id);
+              return bIndex - aIndex; // Reverse order (most recent first)
+            });
 
-          // Filter for saved artworks
-          const savedItems = allArtworks.filter(art =>
-            saved.includes(art._id || art.id)
-          ).map(art => ({
-            id: art._id || art.id,
-            title: art.title || '',
-            description: art.description || '',
-            tags: normalizeTagList(art.tags),
-            dimensions: art.dimensions || '',
-            year: art.year || '',
-            artworkType: art.artworkType || 'Explore',
-            price: art.price || null,
-            image: art.image || art.imageUrl
-          }));
+          // Filter for saved artworks and sort by order in saved array (most recent first)
+          const savedItems = allArtworks
+            .filter(art => saved.includes(art._id || art.id))
+            .map(art => ({
+              id: art._id || art.id,
+              title: art.title || '',
+              description: art.description || '',
+              tags: normalizeTagList(art.tags),
+              dimensions: art.dimensions || '',
+              year: art.year || '',
+              artworkType: art.artworkType || 'Explore',
+              price: art.price || null,
+              image: art.image || art.imageUrl
+            }))
+            .sort((a, b) => {
+              // Sort by position in saved array (most recent first)
+              const aIndex = saved.indexOf(a.id);
+              const bIndex = saved.indexOf(b.id);
+              return bIndex - aIndex; // Reverse order (most recent first)
+            });
 
           setLikedArtworks(likedItems);
           setSavedArtworks(savedItems);
@@ -1006,7 +1018,7 @@ export default function ArtScapeProfile({
               ) : (
                 <button
                   onClick={handleFollowClick}
-                  className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-full transition-colors font-medium text-sm sm:text-base ${isFollowing
+                  className={`mb-6 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-full transition-colors font-medium text-sm sm:text-base ${isFollowing
                     ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
                     : 'bg-black text-white hover:bg-gray-800'
                     }`}

@@ -14,8 +14,13 @@ import NotificationsRoutes from './routes/Notification.js';
 import ContactRoutes from './routes/contact.js';
 import CartRoutes from './routes/Cart.js';
 import searchRouter from './routes/search.js';
+import recommendationRoutes from './routes/recommendationRoutes.js';
+import trackingRouter from './routes/tracking.js';
+
 // Middleware
 import { authMiddleware } from './middleware/AuthMiddleware.js';
+
+
 
 dotenv.config();
 
@@ -39,6 +44,8 @@ app.use('/notifications', NotificationsRoutes);
 app.use('/contact', ContactRoutes);
 app.use('/cart', CartRoutes);
 app.use("/api/search", searchRouter);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/tracking', trackingRouter);
 
 // ----- MongoDB Connection and Server Start -----
 const PORT = process.env.PORT || 5500;

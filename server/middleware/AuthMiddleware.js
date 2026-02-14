@@ -40,6 +40,29 @@ export const authMiddleware = async (req, res, next) => {
   }
 };
 
+// Optional auth: populates req.user when token is valid, does not fail when missing
+export const optionalAuthMiddleware = async (req, res, next) => {
+  try {
+    const headerToken = req.headers.authorization?.replace("Bearer ", "");
+    const cookieToken = req.cookies?.token;
+    const token = headerToken || cookieToken;
+    if (!token) return next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("name email avatar role accountStatus");
+    if (!user || user.accountStatus !== 'active') return next();
+    req.user = {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+      role: user.role,
+    };
+    next();
+  } catch {
+    next();
+  }
+};
+
 // admin-only middleware for protected endpoints
 export const adminMiddleware = (req, res, next) => {
   if (!req.user) {

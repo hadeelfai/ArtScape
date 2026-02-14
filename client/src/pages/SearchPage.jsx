@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, ArrowLeft } from 'lucide-react';
 import Layout from '../components/Layout';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const query = searchParams.get('q') || '';
   
   const [searchQuery, setSearchQuery] = useState(query);
@@ -25,7 +27,9 @@ const SearchPage = () => {
       setIsLoading(true);
       setHasSearched(true);
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+        const headers = {};
+        if (user?.token) headers['Authorization'] = `Bearer ${user.token}`;
+        const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, { headers });
         if (!response.ok) throw new Error('Search failed');
         const data = await response.json();
         setResults(data || []);
@@ -39,7 +43,7 @@ const SearchPage = () => {
 
     const debounceTimer = setTimeout(performSearch, 300);
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
+  }, [searchQuery, user?.token]);
 
   const handleResultClick = (item) => {
     navigate(item.path);

@@ -62,10 +62,6 @@ const artworkSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
-    embedding: 
-    { type: [Number], // store embedding in db
-        default: [] 
-    }, 
 }, {timestamps: true})
 
 export default mongoose.model('Artwork', artworkSchema)

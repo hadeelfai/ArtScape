@@ -17,3 +17,8 @@ client/node_modules/
 # OS files
 .DS_Store
 Thumbs.db
+
+server/recommendation-service/models/
+server/recommendation-service/venv/
+server/recommendation-service/env/
+

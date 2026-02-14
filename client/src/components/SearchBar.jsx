@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const SearchBar = ({ variant = "icon" }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -9,6 +10,7 @@ const SearchBar = ({ variant = "icon" }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
   const debounceTimerRef = useRef(null);
 
   // Perform real-time search as user types
@@ -31,7 +33,9 @@ const SearchBar = ({ variant = "icon" }) => {
     setIsLoading(true);
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+        const headers = {};
+        if (user?.token) headers['Authorization'] = `Bearer ${user.token}`;
+        const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, { headers });
         if (!res.ok) throw new Error("Search failed");
         const data = await res.json();
         setSearchResults(data || []);
@@ -48,7 +52,7 @@ const SearchBar = ({ variant = "icon" }) => {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [searchQuery, isSearchOpen]);
+  }, [searchQuery, isSearchOpen, user?.token]);
 
   
   // Click result -> navigate
