@@ -258,10 +258,10 @@ const MarketplacePage = () => {
           {art.price !== undefined && (
             <div className="flex items-center justify-between mt-2">
               <span className="text-sm font-medium text-gray-900">{art.price} SAR</span>
-              <button title="Add to cart" className="ml-1 p-1 hover:bg-gray-100 rounded" onClick={e => { 
+              <button title="Add to cart" className="ml-1 p-1 hover:bg-gray-100 rounded" onClick={async e => { 
                 e.preventDefault(); 
                 e.stopPropagation(); 
-                const success = addToCart(art, (error) => {
+                const success = await addToCart(art, (error) => {
                   toast.error(error);
                 });
                 if (success) {

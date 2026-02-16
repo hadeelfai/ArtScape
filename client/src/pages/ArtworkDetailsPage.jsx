@@ -327,8 +327,8 @@ const ArtworkDetailsPage = () => {
                 {artwork.price && <span className="text-xl text-gray-600">SAR</span>}
               </div>
               {artwork.artworkType === 'Marketplace' && (
-                <button className="w-full bg-black text-white py-4 rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mt-2" onClick={() => { 
-                  const success = addToCart(artwork, (error) => {
+                <button className="w-full bg-black text-white py-4 rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mt-2" onClick={async () => { 
+                  const success = await addToCart(artwork, (error) => {
                     toast.error(error);
                   });
                   if (success) {
