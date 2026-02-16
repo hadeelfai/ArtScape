@@ -40,7 +40,15 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// ----- Static Files -----
+app.use(express.static('public'));
+
 // ----- Routes -----
+// API Health Check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'API is working' });
+});
+
 app.use('/users', UserRoutes);
 app.use('/posts', PostRoutes);
 app.use('/comments', authMiddleware, CommentRoutes);
