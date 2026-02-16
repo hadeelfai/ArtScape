@@ -17,29 +17,44 @@ export const useGalleryData = () => {
           fetch(`${API_BASE_URL}/artworks`)
         ]);
         
-        // ✅ FIX: Handle HTTP errors properly
+        // Handle HTTP errors properly
         if (!usersRes.ok) {
           console.error('Failed to fetch users:', usersRes.status);
           setUsers([]);
         } else {
-          const usersData = await usersRes.json();
-          // Ensure usersData is an array
-          setUsers(Array.isArray(usersData) ? usersData : []);
+          try {
+            const usersData = await usersRes.json();
+            console.log('Users data received:', usersData); // Debug log
+            setUsers(Array.isArray(usersData) ? usersData : []);
+          } catch (jsonError) {
+            console.error('Failed to parse users response as JSON:', jsonError);
+            console.error('Response status:', usersRes.status);
+            console.error('Response headers:', Object.fromEntries(usersRes.headers.entries()));
+            setUsers([]);
+          }
         }
 
         if (!artworksRes.ok) {
           console.error('Failed to fetch artworks:', artworksRes.status);
           setArtworks([]);
         } else {
-          const artworksData = await artworksRes.json();
-          // Ensure artworksData is an array
-          if (Array.isArray(artworksData)) {
-            const normalizedArtworks = artworksData.map(artwork => ({
-              ...artwork,
-              tags: normalizeTagList(artwork.tags)
-            }));
-            setArtworks(normalizedArtworks);
-          } else {
+          try {
+            const artworksData = await artworksRes.json();
+            console.log('Artworks data received:', artworksData); // Debug log
+            // Ensure artworksData is an array
+            if (Array.isArray(artworksData)) {
+              const normalizedArtworks = artworksData.map(artwork => ({
+                ...artwork,
+                tags: normalizeTagList(artwork.tags)
+              }));
+              setArtworks(normalizedArtworks);
+            } else {
+              setArtworks([]);
+            }
+          } catch (jsonError) {
+            console.error('Failed to parse artworks response as JSON:', jsonError);
+            console.error('Response status:', artworksRes.status);
+            console.error('Response headers:', Object.fromEntries(artworksRes.headers.entries()));
             setArtworks([]);
           }
         }
