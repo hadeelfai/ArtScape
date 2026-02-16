@@ -41,8 +41,9 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
       const user = stored ? JSON.parse(stored) : null;
       if (!user) return;
 
+      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
       const res = await fetch(
-        `http://localhost:5500/users/${user._id || user.id}`
+        `${API_BASE}/users/${user._id || user.id}`
       );
       if (!res.ok) throw new Error("Failed to fetch user data");
       const fullUser = await res.json();
@@ -68,7 +69,8 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
       setLoading(true);
       setErr("");
 
-      const res = await fetch("http://localhost:5500/posts", {
+      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+      const res = await fetch(`${API_BASE}/posts`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -160,7 +162,8 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
     }
 
     try {
-      const res = await fetch(`http://localhost:5500/posts/like/${postId}`, {
+      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+      const res = await fetch(`${API_BASE}/posts/like/${postId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -202,7 +205,8 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
     }
 
     try {
-      const res = await fetch(`http://localhost:5500/posts/${postId}`, {
+      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+      const res = await fetch(`${API_BASE}/posts/${postId}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -229,8 +233,9 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
     }
 
     try {
+      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
       const res = await fetch(
-        `http://localhost:5500/posts/${postId}/report`,
+        `${API_BASE}/posts/${postId}/report`,
         {
           method: "POST",
           headers: {

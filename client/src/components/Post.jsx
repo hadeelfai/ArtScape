@@ -34,7 +34,8 @@ function Post({ onPostCreated, editingPost, onEditCompleted }) {
         const user = JSON.parse(localStorage.getItem("artscape:user"))
         const token = user?.token
         
-        const res = await fetch(`http://localhost:5500/posts/${editingPost._id}`, {
+        const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+        const res = await fetch(`${API_BASE}/posts/${editingPost._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" ,
             Authorization: `Bearer ${token}`
@@ -52,7 +53,8 @@ function Post({ onPostCreated, editingPost, onEditCompleted }) {
 
         const user = JSON.parse(localStorage.getItem("artscape:user"))
         const token = user?.token
-        const res = await fetch('http://localhost:5500/posts', {
+        const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+        const res = await fetch(`${API_BASE}/posts`, {
           method: "POST",
           headers: { "Content-Type": "application/json" 
             ,Authorization: `Bearer ${token}`

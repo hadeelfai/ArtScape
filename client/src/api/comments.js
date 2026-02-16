@@ -1,5 +1,5 @@
 
-const comments = "http://localhost:5500/comments"
+const comments = import.meta.env.VITE_API_URL || "http://localhost:5500/comments"
 
 // Get all comments
 export async function getCommentByPost(postId){

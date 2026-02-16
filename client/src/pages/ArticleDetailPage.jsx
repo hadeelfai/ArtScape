@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const API_BASE = "http://localhost:5500";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
 
 function ArticleDetailPage() {
   const { id } = useParams();

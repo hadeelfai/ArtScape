@@ -73,7 +73,8 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
     const user = JSON.parse(localStorage.getItem("artscape:user"))
     const token = user?.token;
 
-    const res = await fetch(`http://localhost:5500/comments/${commentId}`, {
+    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+    const res = await fetch(`${API_BASE}/comments/${commentId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`
@@ -128,7 +129,8 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
     const user = JSON.parse(localStorage.getItem("artscape:user"))
     const token = user?.token
 
-    const res = await fetch(`http://localhost:5500/comments/reply/${commentId}/${replyId}`, {
+    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+    const res = await fetch(`${API_BASE}/comments/reply/${commentId}/${replyId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`

@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 
-const API_BASE = "http://localhost:5500";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
 
 function AdminProfile() {
   const { user, isAdmin, logout } = useAuth(); 

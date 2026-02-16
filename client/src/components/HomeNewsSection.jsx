@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = "http://localhost:5500";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
 
 function HomeNewsSection() {
   const [newsItem, setNewsItem] = useState(null);

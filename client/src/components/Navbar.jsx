@@ -32,7 +32,8 @@ const Navbar = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:5500/notifications", {
+      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+      const res = await fetch(`${API_BASE}/notifications`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

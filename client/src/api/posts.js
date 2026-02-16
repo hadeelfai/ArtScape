@@ -1,4 +1,4 @@
-const POSTS = "http://localhost:5500/posts";
+const POSTS = import.meta.env.VITE_API_URL || "http://localhost:5500/posts";
 
 
 export async function toggleLike(postId){
