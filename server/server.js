@@ -40,9 +40,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// ----- Static Files -----
-app.use(express.static('public'));
-
 // ----- Routes -----
 // API Health Check
 app.get('/api/health', (req, res) => {
@@ -60,6 +57,9 @@ app.use('/cart', CartRoutes);
 app.use("/api/search", searchRouter);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/tracking', trackingRouter);
+
+// ----- Static Files -----
+app.use(express.static('public'));
 
 // ----- MongoDB Connection and Server Start -----
 const PORT = process.env.PORT || 5500;
