@@ -786,6 +786,20 @@ def batch_generate_embeddings():
 
 
 # ============================================================================
+# INITIALIZATION (runs on import for gunicorn/Railway)
+# ============================================================================
+
+# Initialize services when the module is imported (required for Railway/gunicorn)
+try:
+    logger.info("Initializing services...")
+    initialize_model()
+    initialize_database()
+    logger.info("✓ Services initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize services: {str(e)}")
+    # Don't raise here - let the service start but show errors in health checks
+
+# ============================================================================
 # SERVER STARTUP
 # ============================================================================
 

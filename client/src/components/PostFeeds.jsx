@@ -303,7 +303,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
           >
             {/* Avatar */}
             <img
-              src={post?.user?.profileImage || "/assets/images/profilepicture.jpg"}
+              src={post?.user?.profileImage || "/avatar.png"}
               alt={`${post?.user?.name}'s profile`}
               className="h-10 w-10 rounded-full object-cover"
               onError={(e) => {
@@ -311,7 +311,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
                   const separator = e.target.src.includes('?') ? '&' : '?';
                   e.target.src = `${e.target.src}${separator}_v=${Date.now()}`;
                 } else {
-                  e.target.src = '/assets/images/profilepicture.jpg';
+                  e.target.src = '/avatar.png';
                 }
               }}
             />

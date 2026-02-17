@@ -79,7 +79,7 @@ function Post({ onPostCreated, editingPost, onEditCompleted }) {
   return (
     <div id="upload-section" className='flex flex-col p-3 border border-b-gray-200'>
       <div className='flex items-center gap-4'>
-        <img className='w-10 h-10 rounded-full object-cover' src={loggedInUser?.profileImage || '/assets/images/profilepicture.jpg'}/>
+        <img className='w-10 h-10 rounded-full object-cover' src={loggedInUser?.profileImage || '/avatar.png'}/>
         <input
           placeholder='Share and Describe Your Art..'
           value={text}
