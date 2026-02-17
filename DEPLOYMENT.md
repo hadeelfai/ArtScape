@@ -8,17 +8,18 @@ This error occurs when the client receives **HTML instead of JSON** from API cal
 
 ## 1. Set Environment Variables
 
-### Client service (Railway)
+### Client service (Railway) – CRITICAL
 
-Set `VITE_API_URL` to your **backend** URL. The app uses this at **runtime** (written to `config.json` on container start):
+Set `VITE_API_URL` to your **backend** (server) Railway URL. **Not** your client URL.
 
 | Variable       | Value                              | Required |
 |----------------|------------------------------------|----------|
 | `VITE_API_URL` | Your **backend** Railway URL       | Yes      |
 
-Example: `VITE_API_URL=https://artscape-server-production.up.railway.app`
+- ✅ Correct: `VITE_API_URL=https://artscape-server-production.up.railway.app` (backend service)
+- ❌ Wrong: `VITE_API_URL=https://artscape-client-production.up.railway.app` (client service – will return HTML)
 
-The `npm run start` script writes this to `dist/config.json` before serving, so no rebuild is needed when you change it.
+The start script writes this to `dist/config.json` when the container starts. If you see "API URL not configured" or HTML instead of JSON, set this variable and redeploy.
 
 ### Server service (Railway)
 
