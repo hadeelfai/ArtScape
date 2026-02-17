@@ -36,7 +36,7 @@ const ArtworkDetailsPage = () => {
         const res = await fetch(`${getApiBaseUrl()}/api/recommendations/similar?artworkId=${artworkId}&topK=8`);
         if (res.ok) {
           const data = await res.json();
-          const items = (data.recommendations || []).map(rec => ({
+          const items = ((data && data.recommendations) || []).map(rec => ({
             _id: rec.artwork_id,
             id: rec.artwork_id,
             title: rec.title,

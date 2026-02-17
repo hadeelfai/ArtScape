@@ -15,9 +15,11 @@ const router = express.Router()
 router.get('/health', async (req, res) => {
     try {
         const health = await checkRecommendationServiceHealth()
+        console.log('[Health] Recommendation service health check:', health)
         res.json(health)
     } catch (error) {
-        res.status(500).json({ error: error.message })
+        console.error('[Health] Error checking recommendation service:', error.message)
+        res.status(500).json({ error: error.message, status: 'error' })
     }
 })
 
@@ -32,7 +34,7 @@ router.get('/similar', async (req, res) => {
             return res.status(400).json({ error: 'artworkId is required' })
         }
         const recommendations = await getRecommendations(artworkId, parseInt(topK) || 20)
-        res.json(recommendations)
+        res.json(recommendations || { recommendations: [] })
     } catch (error) {
         res.status(500).json({ error: error.message })
     }
@@ -49,7 +51,7 @@ router.post('/search', async (req, res) => {
             return res.status(400).json({ error: 'query is required' })
         }
         const results = await searchByText(query, topK || 20)
-        res.json(results)
+        res.json(results || { recommendations: [] })
     } catch (error) {
         res.status(500).json({ error: error.message })
     }
@@ -63,7 +65,7 @@ router.get('/personalized', authMiddleware, async (req, res) => {
     try {
         const { topK } = req.query
         const recommendations = await getPersonalizedRecommendations(req.user.id, parseInt(topK) || 20)
-        res.json(recommendations)
+        res.json(recommendations || { recommendations: [] })
     } catch (error) {
         res.status(500).json({ error: error.message })
     }

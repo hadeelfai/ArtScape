@@ -3,7 +3,7 @@
  * Handles asynchronous embedding generation and recommendation operations
  */
 
-const RECOMMENDATION_SERVICE_URL = process.env.RECOMMENDATION_SERVICE_URL || 'http://localhost:5001'
+const RECOMMENDATION_SERVICE_URL = process.env.RECOMMENDATION_SERVICE_URL || 'https://joyful-cooperation-production-cdb6.up.railway.app'
 
 /**
  * Generate embedding asynchronously (doesn't block response)
@@ -71,6 +71,7 @@ export const batchGenerateEmbeddings = async () => {
  */
 export const getRecommendations = async (artworkId, topK = 20) => {
     try {
+        console.log(`[Recommendations] Fetching for artwork ${artworkId} from ${RECOMMENDATION_SERVICE_URL}`)
         const response = await fetch(`${RECOMMENDATION_SERVICE_URL}/recommend/similar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -86,9 +87,12 @@ export const getRecommendations = async (artworkId, topK = 20) => {
             return null
         }
         
-        return await response.json()
+        const result = await response.json()
+        console.log(`[Recommendations] Success for ${artworkId}:`, result?.recommendations?.length || 0, 'items')
+        return result
     } catch (error) {
-        console.error(`[Recommendations] Error:`, error.message)
+        console.error(`[Recommendations] Error connecting to service:`, error.message)
+        console.error(`[Recommendations] Service URL: ${RECOMMENDATION_SERVICE_URL}`)
         return null
     }
 }
