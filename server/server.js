@@ -27,14 +27,17 @@ dotenv.config();
 const app = express();
 
 // ----- Middleware -----
+// CORS: allow client origin (set FRONTEND_URL, or we allow common Railway client URLs)
+const corsOrigins = [
+  'http://127.0.0.1:5173',
+  'http://localhost:5173',
+  'http://127.0.0.1:5500',
+  'http://localhost:5500',
+  process.env.FRONTEND_URL,
+  'https://artscape-sa.up.railway.app'
+].filter(Boolean);
 app.use(cors({
-  origin: [
-    'http://127.0.0.1:5173', 
-    'http://localhost:5173', 
-    'http://127.0.0.1:5500', 
-    'http://localhost:5500',
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
+  origin: corsOrigins,
   credentials: true
 }));
 app.use(express.json());
