@@ -23,7 +23,9 @@ export const useGalleryData = () => {
           setUsers([]);
         } else {
           try {
-            const usersData = await usersRes.json();
+            const responseText = await usersRes.text();
+            console.log('Raw users response:', responseText); // Debug raw response
+            const usersData = JSON.parse(responseText);
             console.log('Users data received:', usersData); // Debug log
             setUsers(Array.isArray(usersData) ? usersData : []);
           } catch (jsonError) {
@@ -39,8 +41,10 @@ export const useGalleryData = () => {
           setArtworks([]);
         } else {
           try {
-            const artworksData = await artworksRes.json();
-            console.log('Artworks data received:', artworksData); // Debug log
+            const responseText = await artworksRes.text();
+            console.log('Raw artworks response:', responseText); // Debug raw response
+            const artworksData = JSON.parse(responseText);
+            console.log('Artworks data received:', artworksData);
             // Ensure artworksData is an array
             if (Array.isArray(artworksData)) {
               const normalizedArtworks = artworksData.map(artwork => ({

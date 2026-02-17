@@ -27,9 +27,10 @@ const SearchPage = () => {
       setIsLoading(true);
       setHasSearched(true);
       try {
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5500';
         const headers = {};
         if (user?.token) headers['Authorization'] = `Bearer ${user.token}`;
-        const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, { headers });
+        const response = await fetch(`${apiBase}/api/search?q=${encodeURIComponent(searchQuery)}`, { headers });
         if (!response.ok) throw new Error('Search failed');
         const data = await response.json();
         setResults(data || []);

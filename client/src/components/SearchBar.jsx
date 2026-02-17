@@ -33,9 +33,10 @@ const SearchBar = ({ variant = "icon" }) => {
     setIsLoading(true);
     debounceTimerRef.current = setTimeout(async () => {
       try {
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5500';
         const headers = {};
         if (user?.token) headers['Authorization'] = `Bearer ${user.token}`;
-        const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, { headers });
+        const res = await fetch(`${apiBase}/api/search?q=${encodeURIComponent(searchQuery)}`, { headers });
         if (!res.ok) throw new Error("Search failed");
         const data = await res.json();
         setSearchResults(data || []);
