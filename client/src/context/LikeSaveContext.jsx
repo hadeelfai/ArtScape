@@ -9,7 +9,7 @@ export function useLikeSave() {
 
 const KEY = (user, type) => `artscape-${user?.id || ''}-${type}`;
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 export function LikeSaveProvider({ children }) {
   const { user } = useAuth();
@@ -28,7 +28,7 @@ export function LikeSaveProvider({ children }) {
     async function fetchLikesSaves() {
       setLoading(true);
       try {
-        const response = await fetch(`${API_BASE}/artworks/user/${user.id}/likes-saves`, {
+        const response = await fetch(`${getApiBaseUrl()}/artworks/user/${user.id}/likes-saves`, {
           credentials: 'include'
         });
         
@@ -86,7 +86,7 @@ export function LikeSaveProvider({ children }) {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/artworks/${id}/like`, {
+      const response = await fetch(`${getApiBaseUrl()}/artworks/${id}/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ export function LikeSaveProvider({ children }) {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/artworks/${id}/like`, {
+      const response = await fetch(`${getApiBaseUrl()}/artworks/${id}/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -158,7 +158,7 @@ export function LikeSaveProvider({ children }) {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/artworks/${id}/save`, {
+      const response = await fetch(`${getApiBaseUrl()}/artworks/${id}/save`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ export function LikeSaveProvider({ children }) {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/artworks/${id}/save`, {
+      const response = await fetch(`${getApiBaseUrl()}/artworks/${id}/save`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

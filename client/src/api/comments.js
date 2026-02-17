@@ -1,5 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
-const comments = `${API_BASE}/comments`;
+import { getApiBaseUrl } from '../config.js';
 
 // Get all comments
 export async function getCommentByPost(postId){
@@ -8,7 +7,7 @@ export async function getCommentByPost(postId){
     ? JSON.parse(localStorage.getItem("artscape:user")).token 
         : null;
 
-    const res = await fetch(`${comments}/${postId}`, {
+    const res = await fetch(`${getApiBaseUrl()}/comments/${postId}`, {
         credentials : "include",
         headers: {
             "Content-Type": "application/json",Authorization: token ? `Bearer ${token}` : ""
@@ -25,7 +24,7 @@ export async function getCommentCount(postId){
     ? JSON.parse(localStorage.getItem("artscape:user")).token 
         : null;
 
-    const res = await fetch(`${comments}/count/${postId}`, {
+    const res = await fetch(`${getApiBaseUrl()}/comments/count/${postId}`, {
         credentials : "include",
         headers: {
             "Content-Type": "application/json" ,
@@ -43,7 +42,7 @@ export async function addComment(postId , text ){
     ? JSON.parse(localStorage.getItem("artscape:user")).token 
         : null;
 
-    const res = await fetch(`${comments}/${postId}`, {
+    const res = await fetch(`${getApiBaseUrl()}/comments/${postId}`, {
         method:"POST",
         credentials : "include",
         headers: {
@@ -62,7 +61,7 @@ export async function addReply(commentId , text){
     ? JSON.parse(localStorage.getItem("artscape:user")).token 
         : null;
 
-    const res = await fetch(`${comments}/reply/${commentId}`, {
+    const res = await fetch(`${getApiBaseUrl()}/comments/reply/${commentId}`, {
         method:"POST",
         credentials : "include",
         headers: {

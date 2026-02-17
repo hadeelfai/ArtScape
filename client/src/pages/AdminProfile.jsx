@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+import { getApiBaseUrl } from '../config.js';
 
 function AdminProfile() {
   const { user, isAdmin, logout } = useAuth(); 
@@ -67,7 +67,7 @@ function AdminProfile() {
       setLoadingContent(true);
       setContentError("");
 
-      const res = await fetch(`${API_BASE}/news/type/${type}`);
+      const res = await fetch(`${getApiBaseUrl()}/news/type/${type}`);
       if (!res.ok) throw new Error("Failed to load news");
 
       const data = await res.json();
@@ -147,7 +147,7 @@ function AdminProfile() {
       let res;
       if (editingId) {
         // Update existing item
-        res = await fetch(`${API_BASE}/news/${editingId}`, {
+        res = await fetch(`${getApiBaseUrl()}/news/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           credentials: 'include',
@@ -155,7 +155,7 @@ function AdminProfile() {
         });
       } else {
         // Create new item
-        res = await fetch(`${API_BASE}/news`, {
+        res = await fetch(`${getApiBaseUrl()}/news`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: 'include',
@@ -226,7 +226,7 @@ function AdminProfile() {
     if (!ok) return;
 
     try {
-      const res = await fetch(`${API_BASE}/news/${id}`, {
+      const res = await fetch(`${getApiBaseUrl()}/news/${id}`, {
         method: "DELETE",
         credentials: 'include',
       });
@@ -248,7 +248,7 @@ function AdminProfile() {
       setArtworksLoading(true);
       setArtworksError("");
 
-      const res = await fetch(`${API_BASE}/artworks`);
+      const res = await fetch(`${getApiBaseUrl()}/artworks`);
       if (!res.ok) throw new Error("Failed to fetch artworks");
 
       const data = await res.json();
@@ -266,7 +266,7 @@ function AdminProfile() {
     if (!ok) return;
 
     try {
-      const res = await fetch(`${API_BASE}/artworks/${id}`, {
+      const res = await fetch(`${getApiBaseUrl()}/artworks/${id}`, {
         method: "DELETE",
         headers: {
           ...(user?.token && { Authorization: `Bearer ${user.token}` }),
@@ -287,7 +287,7 @@ function AdminProfile() {
       setUsersLoading(true);
       setUsersError("");
 
-      const res = await fetch(`${API_BASE}/users`);
+      const res = await fetch(`${getApiBaseUrl()}/users`);
       if (!res.ok) throw new Error("Failed to fetch users");
 
       const data = await res.json();
@@ -312,7 +312,7 @@ function AdminProfile() {
     if (!ok) return;
 
     try {
-      const res = await fetch(`${API_BASE}/users/${id}/status`, {
+      const res = await fetch(`${getApiBaseUrl()}/users/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -340,7 +340,7 @@ function AdminProfile() {
     if (!ok) return;
 
     try {
-      const res = await fetch(`${API_BASE}/users/${id}`, {
+      const res = await fetch(`${getApiBaseUrl()}/users/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete user");

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 export default function ReportModal({ onClose, artworkId }) {
   const [reportReason, setReportReason] = useState('');
@@ -19,7 +19,7 @@ export default function ReportModal({ onClose, artworkId }) {
     try {
       // For now, we'll use a similar endpoint structure
       // You may need to create /artworks/:id/report endpoint on backend
-      const response = await fetch(`${API_BASE}/artworks/${artworkId}/report`, {
+      const response = await fetch(`${getApiBaseUrl()}/artworks/${artworkId}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

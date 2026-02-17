@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+import { getApiBaseUrl } from '../config.js';
 
 function HomeArticlesSection() {
   const [articles, setArticles] = useState([]);
@@ -12,7 +12,7 @@ function HomeArticlesSection() {
     async function loadArticles() {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE}/news/type/article`);
+        const res = await fetch(`${getApiBaseUrl()}/news/type/article`);
         
         if (!res.ok) {
           throw new Error("Failed to load articles");

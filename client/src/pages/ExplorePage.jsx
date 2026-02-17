@@ -9,7 +9,7 @@ import { CATEGORY_TABS, matchesArtType, matchesCategory, matchesColor, matchesSi
 import DropdownMenu from '../components/DropdownMenu';
 import { Link } from 'react-router-dom';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 const SIZE_FILTERS = [
     { value: 'any', label: 'All sizes' },
@@ -64,7 +64,7 @@ const ExplorePage = () => {
     // Track Explore tab visit for recommendations
     useEffect(() => {
         if (!user?.token) return;
-        fetch(`${API_BASE}/api/tracking/browse`, {
+        fetch(`${getApiBaseUrl()}/api/tracking/browse`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
             body: JSON.stringify({ type: 'explore' })
@@ -81,7 +81,7 @@ const ExplorePage = () => {
             }
             setRecommendationsLoading(true);
             try {
-                const response = await fetch(`${API_BASE}/api/recommendations/personalized?topK=100`, {
+                const response = await fetch(`${getApiBaseUrl()}/api/recommendations/personalized?topK=100`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },

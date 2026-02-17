@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/users/forgot-password`, {
+      const res = await fetch(`${getApiBaseUrl()}/users/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

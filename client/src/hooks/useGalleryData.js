@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { normalizeTagList } from '../utils/tagDefinitions';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 export const useGalleryData = () => {
   const [users, setUsers] = useState([]);
@@ -12,9 +11,10 @@ export const useGalleryData = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        const apiBase = getApiBaseUrl();
         const [usersRes, artworksRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/users`),
-          fetch(`${API_BASE_URL}/artworks`)
+          fetch(`${apiBase}/users`),
+          fetch(`${apiBase}/artworks`)
         ]);
         
         // Handle HTTP errors properly

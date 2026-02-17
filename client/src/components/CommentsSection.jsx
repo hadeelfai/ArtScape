@@ -4,6 +4,7 @@ import { addComment, addReply, getCommentByPost } from '../api/comments'
 import { toast } from 'sonner'
 import { MessageCircle, Send, Trash } from 'lucide-react'
 import { format } from "timeago.js";
+import { getApiBaseUrl } from '../config.js';
 
 function CommentsSection({postId , showComments , commentsCount , onCountChange}){
 
@@ -73,8 +74,7 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
     const user = JSON.parse(localStorage.getItem("artscape:user"))
     const token = user?.token;
 
-    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
-    const res = await fetch(`${API_BASE}/comments/${commentId}`, {
+    const res = await fetch(`${getApiBaseUrl()}/comments/${commentId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`
@@ -129,8 +129,7 @@ function CommentsSection({postId , showComments , commentsCount , onCountChange}
     const user = JSON.parse(localStorage.getItem("artscape:user"))
     const token = user?.token
 
-    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
-    const res = await fetch(`${API_BASE}/comments/reply/${commentId}/${replyId}`, {
+    const res = await fetch(`${getApiBaseUrl()}/comments/reply/${commentId}/${replyId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`

@@ -1,13 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext.jsx';
+import { getApiBaseUrl } from '../config.js';
 
 const CartContext = createContext();
 
 export function useCart() {
   return useContext(CartContext);
 }
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
 
 export function CartProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
@@ -21,7 +20,7 @@ export function CartProvider({ children }) {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/cart`, {
+      const res = await fetch(`${getApiBaseUrl()}/cart`, {
         credentials: 'include',
         headers: {
           ...(user?.token && { Authorization: `Bearer ${user.token}` }),
@@ -64,7 +63,7 @@ export function CartProvider({ children }) {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/cart`, {
+      const res = await fetch(`${getApiBaseUrl()}/cart`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,7 +94,7 @@ export function CartProvider({ children }) {
     const prev = [...cartItems];
     setCartItems((p) => p.filter((item) => item.id !== id));
     try {
-      const res = await fetch(`${API_BASE}/cart/${id}`, {
+      const res = await fetch(`${getApiBaseUrl()}/cart/${id}`, {
         method: 'DELETE',
         headers: {
           ...(user?.token && { Authorization: `Bearer ${user.token}` }),
@@ -121,7 +120,7 @@ export function CartProvider({ children }) {
     const prev = [...cartItems];
     setCartItems([]);
     try {
-      const res = await fetch(`${API_BASE}/cart`, {
+      const res = await fetch(`${getApiBaseUrl()}/cart`, {
         method: 'DELETE',
         headers: {
           ...(user?.token && { Authorization: `Bearer ${user.token}` }),

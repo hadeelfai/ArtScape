@@ -1,9 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
-const POSTS = `${API_BASE}/posts`;
+import { getApiBaseUrl } from '../config.js';
 
 
 export async function toggleLike(postId){
-    const res = await fetch(`${POSTS}/like/${postId}`,{
+    const res = await fetch(`${getApiBaseUrl()}/posts/like/${postId}`,{
         method:'POST',
         credentials: "include",
         headers: {'Content-Type': 'application/json',  

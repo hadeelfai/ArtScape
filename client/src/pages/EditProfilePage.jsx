@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 export default function EditProfilePage() {
   const navigate = useNavigate();
@@ -98,7 +98,7 @@ export default function EditProfilePage() {
 
       try {
         setIsLoading(true);
-        const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}`, {
+        const response = await fetch(`${getApiBaseUrl()}/users/profile/${authUser.id}`, {
           credentials: 'include'
         });
 
@@ -241,7 +241,7 @@ export default function EditProfilePage() {
     setPasswordError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}/password`, {
+      const response = await fetch(`${getApiBaseUrl()}/users/profile/${authUser.id}/password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -310,7 +310,7 @@ export default function EditProfilePage() {
       const updatePayload = imageType === 'profile' 
         ? { profileImage: imageUrl }
         : { bannerImage: imageUrl };
-      const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}`, {
+      const response = await fetch(`${getApiBaseUrl()}/users/profile/${authUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -432,7 +432,7 @@ export default function EditProfilePage() {
         bannerImage: coverImage
       };
 
-      const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}`, {
+      const response = await fetch(`${getApiBaseUrl()}/users/profile/${authUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -497,7 +497,7 @@ export default function EditProfilePage() {
     setDeleteError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}`, {
+      const response = await fetch(`${getApiBaseUrl()}/users/profile/${authUser.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

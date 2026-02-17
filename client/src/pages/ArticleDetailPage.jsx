@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+import { getApiBaseUrl } from '../config.js';
 
 function ArticleDetailPage() {
   const { id } = useParams();
@@ -25,7 +25,7 @@ function ArticleDetailPage() {
         setError("");
 
         // all content (news + articles) comes from /news/:id
-        const endpoint = `${API_BASE}/news/${id}`;
+        const endpoint = `${getApiBaseUrl()}/news/${id}`;
 
         const res = await fetch(endpoint);
         if (!res.ok) {

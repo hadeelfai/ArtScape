@@ -1,6 +1,7 @@
+import { getApiBaseUrl } from '../config.js';
+
 export async function sendContactMessage(formData) {
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5500";
-  const res = await fetch(`${API_URL}/contact`, {
+  const res = await fetch(`${getApiBaseUrl()}/contact`, {
     method: "POST",
     body: formData, //send FormData directly
   });

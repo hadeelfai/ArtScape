@@ -5,6 +5,7 @@ import { ShoppingCart, Bell, LogOut, User, Package, Palette, ChevronDown } from 
 import SearchBar from './SearchBar';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext.jsx';
+import { getApiBaseUrl } from '../config.js';
 
 const Navbar = () => {
   const location = useLocation();
@@ -32,8 +33,7 @@ const Navbar = () => {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
-      const res = await fetch(`${API_BASE}/notifications`, {
+      const res = await fetch(`${getApiBaseUrl()}/notifications`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

@@ -10,7 +10,7 @@ import { useLikeSave } from '../context/LikeSaveContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { normalizeTagList } from '../utils/tagDefinitions';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 const ArtworkDetailsPage = () => {
   const { id } = useParams();
@@ -33,7 +33,7 @@ const ArtworkDetailsPage = () => {
     if (!artworkId) return;
     const fetchSimilar = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/recommendations/similar?artworkId=${artworkId}&topK=8`);
+        const res = await fetch(`${getApiBaseUrl()}/api/recommendations/similar?artworkId=${artworkId}&topK=8`);
         if (res.ok) {
           const data = await res.json();
           const items = (data.recommendations || []).map(rec => ({
@@ -65,7 +65,7 @@ const ArtworkDetailsPage = () => {
 
     const handleUnload = () => {
       const duration = (Date.now() - startTime) / 1000; // seconds
-      fetch(`${API_BASE}/artworks/${artwork._id}/view`, {
+      fetch(`${getApiBaseUrl()}/artworks/${artwork._id}/view`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ const ArtworkDetailsPage = () => {
       setLoading(true);
       setError("");
       try {
-        const artworkRes = await fetch(`${API_BASE}/artworks/${id}`);
+        const artworkRes = await fetch(`${getApiBaseUrl()}/artworks/${id}`);
         if (!artworkRes.ok) throw new Error('Artwork not found');
         const artworkData = await artworkRes.json();
         const normalizedArtwork = {
@@ -100,7 +100,7 @@ const ArtworkDetailsPage = () => {
         // Fetch artist
         const userId = artworkData.artist;
         if (userId) {
-          const artistRes = await fetch(`${API_BASE}/users/profile/${userId}`);
+          const artistRes = await fetch(`${getApiBaseUrl()}/users/profile/${userId}`);
           if (artistRes.ok) {
             const artistData = await artistRes.json();
             setArtist(artistData.user || artistData);
@@ -110,7 +110,7 @@ const ArtworkDetailsPage = () => {
             const artistUserId = artistData.user?._id || artistData.user?.id || userId;
             if (currentUserId && String(currentUserId) !== String(artistUserId)) {
               try {
-                const followCheckRes = await fetch(`${API_BASE}/users/profile/${currentUserId}/following`, {
+                const followCheckRes = await fetch(`${getApiBaseUrl()}/users/profile/${currentUserId}/following`, {
                   credentials: 'include'
                 });
                 if (followCheckRes.ok) {
@@ -162,7 +162,7 @@ const ArtworkDetailsPage = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/users/follow/${artistId}`, {
+      const response = await fetch(`${getApiBaseUrl()}/users/follow/${artistId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -292,7 +292,7 @@ const ArtworkDetailsPage = () => {
                   }
                   // Refetch artwork to get updated likes count
                   try {
-                    const artworkRes = await fetch(`${API_BASE}/artworks/${artworkId}`);
+                    const artworkRes = await fetch(`${getApiBaseUrl()}/artworks/${artworkId}`);
                     if (artworkRes.ok) {
                       const artworkData = await artworkRes.json();
                       setLikes(Array.isArray(artworkData.likes) ? artworkData.likes.length : (artworkData.likes || 0));

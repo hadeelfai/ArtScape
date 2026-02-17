@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 export default function ResetPasswordPage() {
   const { token } = useParams();
@@ -37,7 +37,7 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/users/reset-password/${token}`, {
+      const res = await fetch(`${getApiBaseUrl()}/users/reset-password/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),

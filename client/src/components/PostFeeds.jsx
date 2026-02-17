@@ -10,6 +10,7 @@ import CommentsSection from "./CommentsSection";
 import { getCommentCount } from "../api/comments";
 import { format } from "timeago.js";
 import { Link } from "react-router-dom";
+import { getApiBaseUrl } from '../config.js';
 
 function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
   // All posts currently shown in the feed
@@ -41,9 +42,8 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
       const user = stored ? JSON.parse(stored) : null;
       if (!user) return;
 
-      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
       const res = await fetch(
-        `${API_BASE}/users/${user._id || user.id}`
+        `${getApiBaseUrl()}/users/${user._id || user.id}`
       );
       if (!res.ok) throw new Error("Failed to fetch user data");
       const fullUser = await res.json();
@@ -69,8 +69,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
       setLoading(true);
       setErr("");
 
-      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
-      const res = await fetch(`${API_BASE}/posts`, {
+      const res = await fetch(`${getApiBaseUrl()}/posts`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -161,9 +160,8 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
       return;
     }
 
-    try {
-      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
-      const res = await fetch(`${API_BASE}/posts/like/${postId}`, {
+      try {
+        const res = await fetch(`${getApiBaseUrl()}/posts/like/${postId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -204,9 +202,8 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
       return;
     }
 
-    try {
-      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
-      const res = await fetch(`${API_BASE}/posts/${postId}`, {
+      try {
+        const res = await fetch(`${getApiBaseUrl()}/posts/${postId}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -233,9 +230,8 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
       const res = await fetch(
-        `${API_BASE}/posts/${postId}/report`,
+        `${getApiBaseUrl()}/posts/${postId}/report`,
         {
           method: "POST",
           headers: {

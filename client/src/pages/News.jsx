@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
+import { getApiBaseUrl } from '../config.js';
 
 function News() {
   const [newsCards, setNewsCards] = useState([]);
@@ -25,8 +25,8 @@ function News() {
         setError("");
 
         const [newsRes, articleRes] = await Promise.all([
-          fetch(`${API_BASE}/news/type/news`),
-          fetch(`${API_BASE}/news/type/article`),
+          fetch(`${getApiBaseUrl()}/news/type/news`),
+          fetch(`${getApiBaseUrl()}/news/type/article`),
         ]);
 
         if (!newsRes.ok || !articleRes.ok) {

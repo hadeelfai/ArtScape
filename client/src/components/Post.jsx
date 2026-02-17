@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import ImageUploader from './ImageUploader'
 import { toast } from 'sonner'
+import { getApiBaseUrl } from '../config.js'
 
 function Post({ onPostCreated, editingPost, onEditCompleted }) {
   const [uploadedImage, setUploadedImage] = useState(null)
@@ -34,8 +35,7 @@ function Post({ onPostCreated, editingPost, onEditCompleted }) {
         const user = JSON.parse(localStorage.getItem("artscape:user"))
         const token = user?.token
         
-        const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
-        const res = await fetch(`${API_BASE}/posts/${editingPost._id}`, {
+        const res = await fetch(`${getApiBaseUrl()}/posts/${editingPost._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" ,
             Authorization: `Bearer ${token}`
@@ -53,8 +53,7 @@ function Post({ onPostCreated, editingPost, onEditCompleted }) {
 
         const user = JSON.parse(localStorage.getItem("artscape:user"))
         const token = user?.token
-        const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5500";
-        const res = await fetch(`${API_BASE}/posts`, {
+        const res = await fetch(`${getApiBaseUrl()}/posts`, {
           method: "POST",
           headers: { "Content-Type": "application/json" 
             ,Authorization: `Bearer ${token}`

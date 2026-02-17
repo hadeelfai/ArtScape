@@ -54,17 +54,7 @@ const persistUser = (user) => {
   }
 };
 
-const getApiUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  if (import.meta.env.DEV) {
-    return 'http://localhost:5500';
-  }
-  return '/api';
-};
-
-const API_BASE_URL = getApiUrl();
+import { getApiBaseUrl } from '../config.js';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => getStoredUser());
@@ -97,7 +87,7 @@ export const AuthProvider = ({ children }) => {
       if (email) payload.email = email;
       if (username) payload.username = username;
 
-      const response = await fetch(`${API_BASE_URL}/users/login`, {
+      const response = await fetch(`${getApiBaseUrl()}/users/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -167,7 +157,7 @@ export const AuthProvider = ({ children }) => {
       if (lastName !== null && lastName !== undefined) payload.lastName = lastName;
       if (phoneNumber && phoneNumber.trim() !== '') payload.phoneNumber = phoneNumber;
 
-      const response = await fetch(`${API_BASE_URL}/users/register`, {
+      const response = await fetch(`${getApiBaseUrl()}/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -223,7 +213,7 @@ export const AuthProvider = ({ children }) => {
    */
   const logout = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/users/logout`, {
+      const response = await fetch(`${getApiBaseUrl()}/users/logout`, {
         method: 'POST',
         credentials: 'include',
       });

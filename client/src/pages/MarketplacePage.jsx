@@ -7,7 +7,7 @@ import { useGalleryData } from "../hooks/useGalleryData";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 
 import {
@@ -79,7 +79,7 @@ const MarketplacePage = () => {
   // Track Marketplace tab visit for recommendations
   useEffect(() => {
     if (!user?.token) return;
-    fetch(`${API_BASE}/api/tracking/browse`, {
+    fetch(`${getApiBaseUrl()}/api/tracking/browse`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
       body: JSON.stringify({ type: 'marketplace' })
@@ -96,7 +96,7 @@ const MarketplacePage = () => {
     const fetchRecommendations = async () => {
       setRecommendationsLoading(true);
       try {
-        const response = await fetch(`${API_BASE}/api/recommendations/personalized?topK=100`, {
+        const response = await fetch(`${getApiBaseUrl()}/api/recommendations/personalized?topK=100`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

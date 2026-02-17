@@ -25,7 +25,7 @@ export const getBannerImage = (image) => {
   return image.trim();
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 const createEmptyArtworkState = () => ({
   title: '',
@@ -76,7 +76,7 @@ export default function ArtScapeProfile({
 
       try {
         setIsLoading(true);
-        const response = await fetch(`${API_BASE_URL}/users/profile/${targetUserId}`, {
+        const response = await fetch(`${getApiBaseUrl()}/users/profile/${targetUserId}`, {
           credentials: 'include'
         });
 
@@ -125,7 +125,7 @@ export default function ArtScapeProfile({
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/users/profile/${authUser.id}/following`, {
+        const response = await fetch(`${getApiBaseUrl()}/users/profile/${authUser.id}/following`, {
           credentials: 'include'
         });
 
@@ -248,7 +248,7 @@ export default function ArtScapeProfile({
     if (!targetUserId || userDataProp) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/profile/${targetUserId}`, {
+      const response = await fetch(`${getApiBaseUrl()}/users/profile/${targetUserId}`, {
         credentials: 'include'
       });
 
@@ -275,7 +275,7 @@ export default function ArtScapeProfile({
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/follow/${resolvedProfileId}`, {
+      const response = await fetch(`${getApiBaseUrl()}/users/follow/${resolvedProfileId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -391,7 +391,7 @@ export default function ArtScapeProfile({
       let response;
       if (editingArtwork) {
         // Update existing artwork
-        response = await fetch(`${API_BASE_URL}/artworks/${editingArtwork.id}`, {
+        response = await fetch(`${getApiBaseUrl()}/artworks/${editingArtwork.id}`, {
           method: 'PUT',
           headers: authHeaders,
           credentials: 'include',
@@ -399,7 +399,7 @@ export default function ArtScapeProfile({
         });
       } else {
         // Create new artwork (artist set server-side from auth)
-        response = await fetch(`${API_BASE_URL}/artworks`, {
+        response = await fetch(`${getApiBaseUrl()}/artworks`, {
           method: 'POST',
           headers: authHeaders,
           credentials: 'include',
@@ -510,7 +510,7 @@ export default function ArtScapeProfile({
     setShowDeleteConfirm(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/artworks/${artworkIdToDelete}`, {
+      const response = await fetch(`${getApiBaseUrl()}/artworks/${artworkIdToDelete}`, {
         method: 'DELETE',
         headers: {
           ...(authUser?.token && { Authorization: `Bearer ${authUser.token}` }),
@@ -562,7 +562,7 @@ export default function ArtScapeProfile({
 
       try {
         // Fetch all artworks first
-        const allArtworksRes = await fetch(`${API_BASE_URL}/artworks`, {
+        const allArtworksRes = await fetch(`${getApiBaseUrl()}/artworks`, {
           credentials: 'include'
         });
 

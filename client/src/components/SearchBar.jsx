@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { getApiBaseUrl } from '../config.js';
 
 const SearchBar = ({ variant = "icon" }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -33,7 +34,7 @@ const SearchBar = ({ variant = "icon" }) => {
     setIsLoading(true);
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+        const apiBase = getApiBaseUrl();
         const headers = {};
         if (user?.token) headers['Authorization'] = `Bearer ${user.token}`;
         const res = await fetch(`${apiBase}/api/search?q=${encodeURIComponent(searchQuery)}`, { headers });

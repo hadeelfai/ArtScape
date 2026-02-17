@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, ArrowLeft } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext.jsx';
+import { getApiBaseUrl } from '../config.js';
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
@@ -27,7 +28,7 @@ const SearchPage = () => {
       setIsLoading(true);
       setHasSearched(true);
       try {
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+        const apiBase = getApiBaseUrl();
         const headers = {};
         if (user?.token) headers['Authorization'] = `Bearer ${user.token}`;
         const response = await fetch(`${apiBase}/api/search?q=${encodeURIComponent(searchQuery)}`, { headers });

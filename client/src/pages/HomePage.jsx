@@ -10,7 +10,7 @@ import { useGalleryData } from "../hooks/useGalleryData";
 import { useAuth } from "../context/AuthContext";
 import { useMemo, useState, useEffect } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 
 const steps = [
@@ -76,7 +76,7 @@ const HomePage = () => {
       }
       setRecommendationsLoading(true);
       try {
-        const response = await fetch(`${API_BASE}/api/recommendations/personalized?topK=8`, {
+        const response = await fetch(`${getApiBaseUrl()}/api/recommendations/personalized?topK=8`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

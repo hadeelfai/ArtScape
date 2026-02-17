@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5500';
+import { getApiBaseUrl } from '../config.js';
 
 const NotificationsPage = () => {
   const { user } = useAuth();
@@ -19,7 +19,7 @@ const NotificationsPage = () => {
     try {
       setLoading(true);
       setErr('');
-      const res = await fetch(`${API_BASE}/notifications`, {
+      const res = await fetch(`${getApiBaseUrl()}/notifications`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ const NotificationsPage = () => {
       setErr('');
 
       try {
-        await fetch(`${API_BASE}/notifications/mark_read`, {
+        await fetch(`${getApiBaseUrl()}/notifications/mark_read`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ const NotificationsPage = () => {
     e.stopPropagation();
     if (!token) return;
     try {
-      const res = await fetch(`${API_BASE}/notifications/${notificationId}`, {
+      const res = await fetch(`${getApiBaseUrl()}/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
