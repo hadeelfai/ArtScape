@@ -277,6 +277,15 @@ def cosine_similarity(embedding1, embedding2):
 # API ENDPOINTS
 # ============================================================================
 
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint to verify service is running"""
+    return jsonify({
+        'service': 'artscape-recommendation-service',
+        'status': 'running',
+        'endpoints': ['/health', '/recommend/similar', '/recommend/text', '/recommend/personalized']
+    })
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """
@@ -789,15 +798,24 @@ def batch_generate_embeddings():
 # INITIALIZATION (runs on import for gunicorn/Railway)
 # ============================================================================
 
-# Initialize services when the module is imported (required for Railway/gunicorn)
-try:
-    logger.info("Initializing services...")
-    initialize_model()
-    initialize_database()
-    logger.info("✓ Services initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize services: {str(e)}")
-    # Don't raise here - let the service start but show errors in health checks
+# Initialize services asynchronously to avoid blocking startup
+import threading
+import time
+
+def async_initialize():
+    """Initialize services in background thread"""
+    try:
+        logger.info("Starting async initialization...")
+        time.sleep(2)  # Give server time to start
+        initialize_model()
+        initialize_database()
+        logger.info("✓ Services initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize services: {str(e)}")
+
+# Start initialization in background
+init_thread = threading.Thread(target=async_initialize, daemon=True)
+init_thread.start()
 
 # ============================================================================
 # SERVER STARTUP
