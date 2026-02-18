@@ -302,6 +302,8 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
             className={`border-b border-gray-200 p-4 flex gap-3 ${focusPostId === post._id ? "ring-2 ring-black ring-inset rounded-lg" : ""}`}
           >
             {/* Avatar */}
+            
+            <Link to={`/profile/${post?.user?._id}`}>
             <img
               src={post?.user?.profileImage || "/avatar.png"}
               alt={`${post?.user?.name}'s profile`}
@@ -315,6 +317,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
                 }
               }}
             />
+            </Link>
 
             <div className="flex-1">
               {/* User name + username + time */}
@@ -326,9 +329,14 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
                   {post?.user?.name}
                 </Link>
                 {post?.user?.username && (
+                  <Link
+                  to={`/profile/${post?.user?._id}`}
+                  className="font-medium hover:underline"
+                >
                   <p className="text-sm text-gray-500 mt-1">
                     @{post.user.username}
                   </p>
+                  </Link>
                 )}
                 <span className="text-gray-400 text-sm">
                   {format(post?.createdAt)}

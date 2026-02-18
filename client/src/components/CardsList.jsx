@@ -36,7 +36,7 @@ const CardsList = ({ artworks, loading }) => {
         const avatarUrl = user.avatar || user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
 
         return (
-            <div key={art._id || art.id} className="w-72 lg:w-96 md:w-96 flex-shrink-0">
+            <div key={art._id || art.id} className="w-52 lg:w-96 md:w-96 flex-shrink-0">
                 <Link to={`/artwork/${art._id || art.id}`} className="flex flex-col items-start gap-2 bg-white">
                     <div className="aspect-[1/1] w-full overflow-hidden bg-gray-100 flex items-center justify-center">
                         <img

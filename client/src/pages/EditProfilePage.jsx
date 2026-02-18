@@ -614,7 +614,7 @@ export default function EditProfilePage() {
                   type="button"
                   onClick={() => coverImageInputRef.current?.click()}
                   disabled={uploadingCover}
-                  className="bg-black text-white px-4 py-3 lg:py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-black text-white px-4 py-1 lg:py-2.5 rounded-full hover:bg-gray-800 transition-colors font-normal text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploadingCover ? 'Uploading...' : 'Upload Cover Photo'}
                 </button>
@@ -631,7 +631,7 @@ export default function EditProfilePage() {
                   type="button"
                   onClick={() => profileImageInputRef.current?.click()}
                   disabled={uploadingProfile}
-                  className="bg-black text-white px-4 py-3 lg:py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-black text-white px-4 py-1 lg:py-2.5 rounded-full hover:bg-gray-800 transition-colors font-normal text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploadingProfile ? 'Uploading...' : 'Upload New Profile Picture'}
                 </button>
@@ -1033,7 +1033,7 @@ export default function EditProfilePage() {
               <button
                 onClick={handleSaveChanges}
                 disabled={isSaving}
-                className="bg-black text-white px-12 py-3 rounded-full hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-black text-white px-4 py-2 lg:px-12 lg:py-3 rounded-full hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -1041,7 +1041,7 @@ export default function EditProfilePage() {
               <button
                 onClick={handleDeleteAccountClick}
                 disabled={isDeleting}
-                className="bg-red-900 text-white px-12 py-3 rounded-full hover:bg-red-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-red-900 text-white px-4 py-2 lg:px-12 lg:py-3 rounded-full hover:bg-red-800 transition-colors font-normal disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isDeleting ? 'Deleting...' : 'Delete Account'}
               </button>
