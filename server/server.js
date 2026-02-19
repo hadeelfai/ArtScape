@@ -16,7 +16,8 @@ import CartRoutes from './routes/Cart.js';
 import searchRouter from './routes/search.js';
 import recommendationRoutes from './routes/recommendationRoutes.js';
 import trackingRouter from './routes/tracking.js';
-
+import paymentRoutes from './routes/payment.js';
+import ordersRoutes from './routes/orders.js';
 // Middleware
 import { authMiddleware } from './middleware/AuthMiddleware.js';
 
@@ -60,6 +61,8 @@ app.use('/cart', CartRoutes);
 app.use("/api/search", searchRouter);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/tracking', trackingRouter);
+app.use('/payment', paymentRoutes);
+app.use('/orders', ordersRoutes);
 
 // ----- Static Files -----
 app.use(express.static('public'));

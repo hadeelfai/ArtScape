@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Package, Palette } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getApiBaseUrl } from '../config.js';
 
 export default function OrdersPage() {
   const navigate = useNavigate();
@@ -14,24 +15,37 @@ export default function OrdersPage() {
   const [sales, setSales] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Tab based on URL
   useEffect(() => {
     setActiveTab(location.pathname === '/sales' ? 'sales' : 'orders');
   }, [location.pathname]);
 
+  // Redirect if not signed in
   useEffect(() => {
-    if (!isAuthenticated || !user) {
-      navigate('/signin');
-    }
+    if (!isAuthenticated || !user) navigate('/signin');
   }, [isAuthenticated, user, navigate]);
 
+  // Fetch orders & sales
   useEffect(() => {
     const fetchOrders = async () => {
-      if (!user?.id) return;
-
+      if (!user?.token) return;
       setIsLoading(true);
       try {
-        setOrders([]);
-        setSales([]);
+        // Orders (as buyer)
+        const resOrders = await fetch(`${getApiBaseUrl()}/orders`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+          credentials: 'include',
+        });
+        const dataOrders = await resOrders.json();
+        setOrders(dataOrders.orders || []);
+
+        // Sales (as artist)
+        const resSales = await fetch(`${getApiBaseUrl()}/orders/sales`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+          credentials: 'include',
+        });
+        const dataSales = await resSales.json();
+        setSales(dataSales.sales || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
       } finally {
@@ -39,9 +53,7 @@ export default function OrdersPage() {
       }
     };
 
-    if (isAuthenticated && user) {
-      fetchOrders();
-    }
+    if (isAuthenticated && user) fetchOrders();
   }, [user, isAuthenticated]);
 
   const handleTabChange = (tab) => {
@@ -49,17 +61,42 @@ export default function OrdersPage() {
     navigate(`/${tab}`, { replace: true });
   };
 
-  const formatDate = (date) => {
-    if (!date) return '';
-    return date instanceof Date ? date.toLocaleDateString() : new Date(date).toLocaleDateString();
-  };
+  const formatDate = (date) =>
+    date ? new Date(date).toLocaleDateString() : '';
 
-  const getOrderId = (order) => order.id || order._id || '';
-  const getOrderNumber = (order) => order.orderNumber || order.id || '';
+  const getOrderId = (order) => order._id || order.id || '';
+  const getOrderNumber = (order) => order.orderNumber || order._id || '';
 
-  if (!isAuthenticated || !user) {
-    return null;
-  }
+  if (!isAuthenticated || !user) return null;
+
+  const renderItems = (items) =>
+    items.map((item, idx) => (
+      <div key={idx} className="flex items-center gap-4 border-b border-gray-100 pb-2 mb-2">
+        {item.artwork?.image && (
+          <img
+            src={item.artwork.image}
+            alt={item.artwork.title}
+            className="w-20 h-20 object-cover rounded-lg"
+          />
+        )}
+        <div>
+          <p className="font-medium">{item.artwork?.title || 'Artwork'}</p>
+          <p className="text-sm text-gray-500">Price: {item.price} SAR</p>
+          <p className="text-sm text-gray-500">Artist: {item.artist?.name || 'Unknown'}</p>
+        </div>
+      </div>
+    ));
+//order details card
+  const renderOrderCard = (order) => (
+    <div key={getOrderId(order)} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+      <h3 className="font-semibold text-gray-900 mb-2">Order #{getOrderNumber(order)}</h3>
+      <p className="text-sm text-gray-500 mb-2">Date: {formatDate(order.createdAt)}</p>
+      <p className="text-sm text-gray-600 mb-4">Status: {order.status}</p>
+      <div className="space-y-2">{renderItems(order.items)}</div>
+      <p className="text-lg font-bold mt-4">Total: {order.totalAmount} SAR</p>
+      <p className="text-sm text-gray-500">Payment: {order.paymentMethod}</p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -98,37 +135,9 @@ export default function OrdersPage() {
           {activeTab === 'orders' && (
             <div className="p-6">
               {isLoading ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-600">Loading orders...</p>
-                </div>
+                <p className="text-center text-gray-600 py-12">Loading orders...</p>
               ) : orders.length > 0 ? (
-                <div className="space-y-4">
-                  {orders.map((order) => (
-                    <div
-                      key={getOrderId(order)}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold text-gray-900">
-                            Order #{getOrderNumber(order)}
-                          </h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {formatDate(order.date || order.createdAt)}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-2">
-                            Status: <span className="font-medium">{order.status || 'Pending'}</span>
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-gray-900">
-                            {order.total || 0} SAR
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <div className="space-y-4">{orders.map(renderOrderCard)}</div>
               ) : (
                 <div className="text-center py-12">
                   <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
@@ -141,51 +150,9 @@ export default function OrdersPage() {
           {activeTab === 'sales' && (
             <div className="p-6">
               {isLoading ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-600">Loading sales...</p>
-                </div>
+                <p className="text-center text-gray-600 py-12">Loading sales...</p>
               ) : sales.length > 0 ? (
-                <div className="space-y-4">
-                  {sales.map((order) => (
-                    <div
-                      key={getOrderId(order)}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-start gap-4">
-                        {order.artwork?.image && (
-                          <img
-                            src={order.artwork.image}
-                            alt={order.artwork.title || 'Artwork'}
-                            className="w-24 h-24 object-cover rounded-lg"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = '/Profileimages/User.jpg';
-                            }}
-                          />
-                        )}
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">
-                            {order.artwork?.title || 'Artwork'}
-                          </h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Order #{getOrderNumber(order)}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-2">
-                            Status: <span className="font-medium">{order.status || 'Pending'}</span>
-                          </p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {formatDate(order.date || order.createdAt)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-gray-900">
-                            {order.total || order.artwork?.price || 0} SAR
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <div className="space-y-4">{sales.map(renderOrderCard)}</div>
               ) : (
                 <div className="text-center py-12">
                   <Palette className="w-16 h-16 mx-auto text-gray-300 mb-4" />
