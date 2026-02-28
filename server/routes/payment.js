@@ -27,6 +27,38 @@ async function createOrderNotifications(order, buyerId) {
   if (notifications.length > 0) await Notification.insertMany(notifications);
 }
 
+/** Build shipping + top-level recipient/phone/addressDetails for Order.create from request shippingData. */
+function buildShippingData(shippingData) {
+  if (!shippingData || typeof shippingData !== 'object') return {};
+  const s = shippingData;
+  const shipping = {
+    recipientName: s.recipientName,
+    phone: s.phone,
+    streetName: s.streetName,
+    additionalDetails: s.additionalDetails,
+    district: s.district,
+    city: s.city,
+    state: s.state,
+    zipCode: s.zipCode,
+    country: s.country,
+  };
+  const addressDetails = {
+    streetName: s.streetName,
+    additionalDetails: s.additionalDetails,
+    district: s.district,
+    city: s.city,
+    state: s.state,
+    zipCode: s.zipCode,
+    country: s.country,
+  };
+  return {
+    recipientName: s.recipientName,
+    phone: s.phone,
+    addressDetails,
+    shipping,
+  };
+}
+
 const router = express.Router();
 router.use(authMiddleware);
 
@@ -37,6 +69,9 @@ router.post('/paypal/create', async (req, res) => {
     return res.status(400).json({ error: 'Cart is empty' });
 
   const total = cart.items.reduce((sum, i) => sum + Number(i.price), 0);
+  if (total <= 0)
+    return res.status(400).json({ error: 'Order total must be greater than 0 to use PayPal.' });
+
   const token = await getPayPalAccessToken();
 
   const response = await axios.post(
@@ -60,7 +95,7 @@ router.post('/paypal/create', async (req, res) => {
 
 // CAPTURE PAYPAL ORDER
 router.post('/paypal/capture', async (req, res) => {
-  const { orderID } = req.body;
+  const { orderID, shipping: shippingData, giftMessage } = req.body;
   const token = await getPayPalAccessToken();
 
   const capture = await axios.post(
@@ -70,6 +105,8 @@ router.post('/paypal/capture', async (req, res) => {
   );
 
   const cart = await Cart.findOne({ user: req.user.id }).populate('items');
+
+  const shippingFields = buildShippingData(shippingData);
 
   const order = await Order.create({
     user: req.user.id,
@@ -82,6 +119,8 @@ router.post('/paypal/capture', async (req, res) => {
     paymentMethod: 'PAYPAL',
     status: 'PAID',
     paypalOrderId: orderID,
+    ...shippingFields,
+    giftMessage: typeof giftMessage === 'string' ? giftMessage : undefined,
   });
 
   await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
@@ -97,6 +136,8 @@ router.post('/cod', authMiddleware,async (req, res) => {
     return res.status(400).json({ error: 'Cart is empty' });
 
   const total = cart.items.reduce((sum, i) => sum + Number(i.price), 0);
+  const { shipping: shippingData, giftMessage } = req.body;
+  const shippingFields = buildShippingData(shippingData);
 
   const order = await Order.create({
     user: req.user.id,
@@ -108,6 +149,8 @@ router.post('/cod', authMiddleware,async (req, res) => {
     totalAmount: total,
     paymentMethod: 'COD',
     status: 'PENDING',
+    ...shippingFields,
+    giftMessage: typeof giftMessage === 'string' ? giftMessage : undefined,
   });
 
   await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });

@@ -43,6 +43,9 @@ export default function EditProfilePage() {
     phoneNumber: '+966',
     email: '',
     address: '',
+    district: '',
+    streetName: '',
+    additionalDetails: '',
     state: '',
     country: '',
     city: '',
@@ -122,6 +125,9 @@ export default function EditProfilePage() {
               phoneNumber: user.phoneNumber || '',
               email: user.email || '',
               address: user.address || '',
+              district: user.district || '',
+              streetName: user.streetName || '',
+              additionalDetails: user.additionalDetails || '',
               state: user.state || '',
               country: user.country || '',
               city: user.city || '',
@@ -414,7 +420,10 @@ export default function EditProfilePage() {
         lastName: formData.lastName,
         phoneNumber: formData.phoneNumber,
         email: formData.email,
-        address: formData.address,
+        address: [formData.streetName, formData.additionalDetails, formData.district, formData.city, formData.state, formData.zipCode, formData.country].filter(Boolean).join(', '),
+        district: formData.district,
+        streetName: formData.streetName,
+        additionalDetails: formData.additionalDetails,
         state: formData.state,
         country: formData.country,
         city: formData.city,
@@ -643,9 +652,10 @@ export default function EditProfilePage() {
           <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-8">Edit Profile</h2>
 
-            {/* Form Fields Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Username */}
+            {/* 1. Account Information */}
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Account Information</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* Row 1: Username (50%) | Password (50%) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Username <span className="text-red-500">*</span></label>
                 <input
@@ -666,35 +676,6 @@ export default function EditProfilePage() {
                   <div className="text-red-500 text-sm mt-1">A valid username is required (letters, numbers, underscores, 3-30 chars)</div>
                 )}
               </div>
-
-              {/* First Name  */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  onFocus={handleFieldFocus}
-                  placeholder="Sara"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                />
-              </div>
-
-              {/* Last Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  onFocus={handleFieldFocus}
-                  placeholder="Alshareef"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                />
-              </div>
-              {/* Password - Click to Change */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
                 <div
@@ -704,88 +685,68 @@ export default function EditProfilePage() {
                   <span className="text-gray-600">
                     {showPasswordForm ? 'Hide password form' : 'Change password'}
                   </span>
-                  {showPasswordForm ? (
-                    <ChevronUp className="w-5 h-5 text-gray-600" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-600" />
-                  )}
+                  {showPasswordForm ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
                 </div>
               </div>
 
-              {/* Password Change Form */}
+              {/* Password Change Form - directly below Password row */}
               {showPasswordForm && (
-                <div className="col-span-1 md:col-span-2 bg-white rounded-lg p-6 space-y-4 border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
-
-                  {/* Current Password */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-                    <input
-                      type="password"
-                      name="currentPassword"
-                      value={passwordFormData.currentPassword}
-                      onChange={handlePasswordFormChange}
-                      placeholder="Enter your current password"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                    />
-                  </div>
-
-                  {/* New Password */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-                    <div className="relative">
+                <div className="md:col-span-2 p-6 space-y-4 border border-gray-200 rounded-lg bg-gray-50/50">
+                  <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
                       <input
                         type="password"
-                        name="newPassword"
-                        value={passwordFormData.newPassword}
+                        name="currentPassword"
+                        value={passwordFormData.currentPassword}
                         onChange={handlePasswordFormChange}
-                        placeholder="Enter your new password"
-                        className="w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                        placeholder="Enter your current password"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
                       />
-                      {/* Password Strength Checkmark */}
-                      {passwordFormData.newPassword && passwordStrength.score === 5 && (
-                        <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-500" />
-                      )}
                     </div>
-                  </div>
-
-                  {/* Confirm New Password */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
-                    <div className="relative">
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={passwordFormData.confirmPassword}
-                        onChange={handlePasswordFormChange}
-                        placeholder="Confirm your new password"
-                        className={`w-full px-4 py-2.5 pr-10 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black ${passwordFormData.confirmPassword &&
-                            passwordFormData.newPassword !== passwordFormData.confirmPassword
-                            ? 'border-red-300'
-                            : 'border-gray-300'
-                          }`}
-                      />
-                      {/* Match Checkmark */}
-                      {passwordFormData.confirmPassword &&
-                        passwordFormData.newPassword === passwordFormData.confirmPassword &&
-                        passwordFormData.newPassword && (
+                    <div />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                      <div className="relative">
+                        <input
+                          type="password"
+                          name="newPassword"
+                          value={passwordFormData.newPassword}
+                          onChange={handlePasswordFormChange}
+                          placeholder="Enter your new password"
+                          className="w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                        />
+                        {passwordFormData.newPassword && passwordStrength.score === 5 && (
                           <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-500" />
                         )}
+                      </div>
                     </div>
-                    {passwordFormData.confirmPassword &&
-                      passwordFormData.newPassword !== passwordFormData.confirmPassword && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                      <div className="relative">
+                        <input
+                          type="password"
+                          name="confirmPassword"
+                          value={passwordFormData.confirmPassword}
+                          onChange={handlePasswordFormChange}
+                          placeholder="Confirm your new password"
+                          className={`w-full px-4 py-2.5 pr-10 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black ${passwordFormData.confirmPassword && passwordFormData.newPassword !== passwordFormData.confirmPassword ? 'border-red-300' : 'border-gray-300'}`}
+                        />
+                        {passwordFormData.confirmPassword && passwordFormData.newPassword === passwordFormData.confirmPassword && passwordFormData.newPassword && (
+                          <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-500" />
+                        )}
+                      </div>
+                      {passwordFormData.confirmPassword && passwordFormData.newPassword !== passwordFormData.confirmPassword && (
                         <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
                       )}
+                    </div>
                   </div>
-
-                  {/* Password Error Message */}
                   {passwordError && (
                     <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                       <p className="text-red-600 text-sm">{passwordError}</p>
                     </div>
                   )}
-
-                  {/* Update Password Button */}
                   <div className="flex justify-end gap-3">
                     <button
                       type="button"
@@ -811,7 +772,45 @@ export default function EditProfilePage() {
                 </div>
               )}
 
-              {/* Phone Number  */}
+              {/* Row 2: First Name (50%) | Last Name (50%) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  onFocus={handleFieldFocus}
+                  placeholder="Sara"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  onFocus={handleFieldFocus}
+                  placeholder="Alshareef"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                />
+              </div>
+
+              {/* Row 3: Email Address (50%) | Phone Number (50%) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  onFocus={handleFieldFocus}
+                  placeholder="Sara.Alshareef1@Gmail.com"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                 <input
@@ -825,21 +824,159 @@ export default function EditProfilePage() {
                 />
               </div>
 
-              {/* Email Address  */}
+              {/* Row 4: Date of Birth (50%) | Gender (50%) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  onFocus={handleFieldFocus}
-                  placeholder="Sara.Alshareef1@Gmail.com"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <select
+                    name="dateOfBirthMonth"
+                    value={formData.dateOfBirthMonth}
+                    onChange={handleInputChange}
+                    className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  >
+                    {months.map(month => (<option key={month} value={month}>{month}</option>))}
+                  </select>
+                  <select
+                    name="dateOfBirthDay"
+                    value={formData.dateOfBirthDay}
+                    onChange={handleInputChange}
+                    className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  >
+                    {days.map(day => (<option key={day} value={day}>{day}</option>))}
+                  </select>
+                  <select
+                    name="dateOfBirthYear"
+                    value={formData.dateOfBirthYear}
+                    onChange={handleInputChange}
+                    className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  >
+                    {years.map(year => (<option key={year} value={year}>{year}</option>))}
+                  </select>
+                </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                >
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+            </div>
 
-              {/* Artistic Specialization */}
+            {/* 2. Shipping & Address Details */}
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Shipping & Address Details</p>
+            <div className="space-y-6 mb-8">
+              {/* Row 1: Street Name (50%) | Building / Apartment (50%) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Street Name</label>
+                  <input
+                    type="text"
+                    name="streetName"
+                    value={formData.streetName}
+                    onChange={handleInputChange}
+                    onFocus={handleFieldFocus}
+                    placeholder="e.g. King Sattam St"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Building / Apartment</label>
+                  <input
+                    type="text"
+                    name="additionalDetails"
+                    value={formData.additionalDetails}
+                    onChange={handleInputChange}
+                    onFocus={handleFieldFocus}
+                    placeholder="e.g. Building 5, Apt 12"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  />
+                </div>
+              </div>
+              {/* Row 2: District (50%) | City (50%) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
+                  <input
+                    type="text"
+                    name="district"
+                    value={formData.district}
+                    onChange={handleInputChange}
+                    onFocus={handleFieldFocus}
+                    placeholder="e.g. Al-Rabwah"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    onFocus={handleFieldFocus}
+                    placeholder="Jeddah"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  />
+                </div>
+              </div>
+              {/* Row 3: State / Province (50%) | Zip Code (50%) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">State / Province</label>
+                  <select
+                    name="state"
+                    value={formData.state}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  >
+                    <option value="">Select</option>
+                    <option value="Makkah Province">Makkah Province</option>
+                    <option value="Riyadh Province">Riyadh Province</option>
+                    <option value="Eastern Province">Eastern Province</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Zip Code</label>
+                  <input
+                    type="text"
+                    name="zipCode"
+                    value={formData.zipCode}
+                    onChange={handleInputChange}
+                    onFocus={handleFieldFocus}
+                    placeholder="23433"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  />
+                </div>
+              </div>
+              {/* Row 4: Country (100%) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                <select
+                  name="country"
+                  value={formData.country}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                >
+                  <option value="">Select</option>
+                  <option value="Saudi Arabia">Saudi Arabia</option>
+                  <option value="United States">United States</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Canada">Canada</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 3. Professional & Social Profile */}
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Professional & Social Profile</p>
+            <div className="space-y-6 mb-8">
+              {/* Row 1: Artistic Specialization (100%) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Artistic Specialization</label>
                 <input
@@ -852,173 +989,46 @@ export default function EditProfilePage() {
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
                 />
               </div>
-
-              {/* Address  */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  onFocus={handleFieldFocus}
-                  placeholder="King Sattam St, Al-Rabwah, Jeddah 23433, Saudi Arabia"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                />
-              </div>
-
-              {/* Country  */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                <select
-                  name="country"
-                  value={formData.country}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                >
-                  <option value="Saudi Arabia">Saudi Arabia</option>
-                  <option value="United States">United States</option>
-                  <option value="United Kingdom">United Kingdom</option>
-                  <option value="Canada">Canada</option>
-                </select>
-              </div>
-
-              {/* State  */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                <select
-                  name="state"
-                  value={formData.state}
-                  onChange={handleInputChange}
-
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                >
-                  <option value="Makkah Province">Makkah Province</option>
-                  <option value="Riyadh Province">Riyadh Province</option>
-                  <option value="Eastern Province">Eastern Province</option>
-                </select>
-              </div>
-
-              {/* City */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  onFocus={handleFieldFocus}
-                  placeholder="Jeddah"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                />
-              </div>
-
-              {/* Zip Code */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Zip Code</label>
-                <input
-                  type="text"
-                  name="zipCode"
-                  value={formData.zipCode}
-                  onChange={handleInputChange}
-                  onFocus={handleFieldFocus}
-                  placeholder="23433"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                />
-              </div>
-
-              {/* Date of Birth */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date Of Birth</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <select
-                    name="dateOfBirthMonth"
-                    value={formData.dateOfBirthMonth}
+              {/* Row 2: Instagram URL (50%) | Twitter (X) URL (50%) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Instagram URL</label>
+                  <input
+                    type="url"
+                    name="instagram"
+                    value={formData.instagram}
                     onChange={handleInputChange}
-                    className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                  >
-                    {months.map(month => (
-                      <option key={month} value={month}>{month}</option>
-                    ))}
-                  </select>
-                  <select
-                    name="dateOfBirthDay"
-                    value={formData.dateOfBirthDay}
+                    onFocus={handleFieldFocus}
+                    placeholder="https://www.instagram.com/username"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Twitter (X) URL</label>
+                  <input
+                    type="url"
+                    name="twitter"
+                    value={formData.twitter}
                     onChange={handleInputChange}
-                    className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                  >
-                    {days.map(day => (
-                      <option key={day} value={day}>{day}</option>
-                    ))}
-                  </select>
-                  <select
-                    name="dateOfBirthYear"
-                    value={formData.dateOfBirthYear}
-                    onChange={handleInputChange}
-                    className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                  >
-                    {years.map(year => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
+                    onFocus={handleFieldFocus}
+                    placeholder="https://twitter.com/username"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
+                  />
                 </div>
               </div>
-
-              {/* Gender */}
+              {/* Row 3: Bio (Full Width - Large Text Area) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-black"
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-
-              {/* Social Media */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Social Media</label>
-                <input
-                  type="url"
-                  name="instagram"
-                  value={formData.instagram}
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                <textarea
+                  name="bio"
+                  value={formData.bio}
                   onChange={handleInputChange}
                   onFocus={handleFieldFocus}
-                  placeholder="https://www.instagram.com/Username_Name_art"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
+                  placeholder="Add Bio Here..."
+                  rows={5}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-none text-black"
                 />
               </div>
-
-              {/* Social Media */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Social Media</label>
-                <input
-                  type="url"
-                  name="twitter"
-                  value={formData.twitter}
-                  onChange={handleInputChange}
-                  onFocus={handleFieldFocus}
-                  placeholder="https://twitter.com/Username@art"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-gray-500"
-                />
-              </div>
-            </div>
-
-            {/* Bio */}
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-              <textarea
-                name="bio"
-                value={formData.bio}
-                onChange={handleInputChange}
-                onFocus={handleFieldFocus}
-                placeholder="Add Bio Here..."
-                rows={4}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-none text-black"
-              />
             </div>
 
             {/* Error Message */}
@@ -1028,20 +1038,19 @@ export default function EditProfilePage() {
               </div>
             )}
 
-            {/* Save and Delete Buttons */}
-            <div className="mt-8 flex items-center gap-4">
+            {/* Action Buttons - Save (Primary) & Delete Account (Danger) */}
+            <div className="mt-10 pt-8 border-t border-gray-200 flex flex-wrap items-center gap-4">
               <button
                 onClick={handleSaveChanges}
                 disabled={isSaving}
-                className="bg-black text-white px-4 py-2 lg:px-12 lg:py-3 rounded-full hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-black text-white px-6 py-2.5 lg:px-12 lg:py-3 rounded-full hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
-              
               <button
                 onClick={handleDeleteAccountClick}
                 disabled={isDeleting}
-                className="bg-red-900 text-white px-4 py-2 lg:px-12 lg:py-3 rounded-full hover:bg-red-800 transition-colors font-normal disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-red-900 text-white px-6 py-2.5 lg:px-12 lg:py-3 rounded-full hover:bg-red-800 transition-colors font-normal disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isDeleting ? 'Deleting...' : 'Delete Account'}
               </button>

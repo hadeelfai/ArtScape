@@ -49,7 +49,7 @@ router.patch('/:id/status', async (req, res) => {
     if (!isSeller) return res.status(403).json({ error: 'Only the seller can update this order status' });
 
     const raw = (req.body.status || '').toString().trim().toUpperCase();
-    const allowed = ['PENDING', 'ACCEPTED', 'SHIPPED', 'DELIVERED'];
+    const allowed = ['PENDING', 'ACCEPTED', 'SHIPPED', 'DELIVERED', 'PAYMENT_RECEIVED'];
     const status = allowed.includes(raw) ? raw : order.status;
 
     const updated = await Order.findByIdAndUpdate(
@@ -69,6 +69,7 @@ router.patch('/:id/status', async (req, res) => {
         ACCEPTED: `Your order #${orderNum} has been accepted.`,
         SHIPPED: `Your order #${orderNum} has been shipped.`,
         DELIVERED: `Your order #${orderNum} has been delivered.`,
+        PAYMENT_RECEIVED: `Payment received for order #${orderNum}.`,
       };
       const message = messages[status];
       if (message) {
