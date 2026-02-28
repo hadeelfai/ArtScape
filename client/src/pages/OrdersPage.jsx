@@ -1,10 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Package, Palette } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { getApiBaseUrl } from '../config.js';
+
+const STATUS_DISPLAY = [
+  { value: 'PENDING', label: 'Pending', emoji: '🟡' },
+  { value: 'PAID', label: 'Pending', emoji: '🟡' },
+  { value: 'ACCEPTED', label: 'Order Accepted', emoji: '✓' },
+  { value: 'SHIPPED', label: 'Shipped', emoji: '🚚' },
+  { value: 'DELIVERED', label: 'Delivered', emoji: '✅' },
+];
+
+const SELLER_ACTIONS = [
+  { status: 'ACCEPTED', label: 'Accept Order' },
+  { status: 'SHIPPED', label: 'Mark as Shipped' },
+  { status: 'DELIVERED', label: 'Mark as Delivered' },
+];
+
+function formatOrderDate(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  const day = d.getDate();
+  const month = d.getMonth() + 1;
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function statusDisplay(status) {
+  const s = (status || 'PENDING').toUpperCase();
+  const opt = STATUS_DISPLAY.find((o) => o.value === s) || STATUS_DISPLAY[0];
+  return `${opt.emoji} ${opt.label}`;
+}
 
 export default function OrdersPage() {
   const navigate = useNavigate();
@@ -61,42 +91,114 @@ export default function OrdersPage() {
     navigate(`/${tab}`, { replace: true });
   };
 
-  const formatDate = (date) =>
-    date ? new Date(date).toLocaleDateString() : '';
-
+  const formatDate = (date) => formatOrderDate(date);
   const getOrderId = (order) => order._id || order.id || '';
-  const getOrderNumber = (order) => order.orderNumber || order._id || '';
+  const getOrderNumber = (order) => order._id || order.id || order.orderNumber || '';
+
+  const updateSaleStatus = async (orderId, newStatus) => {
+    if (!user?.token) return;
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to update status');
+        return;
+      }
+      setSales((prev) =>
+        prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o))
+      );
+      toast.success('Status updated');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to update status');
+    }
+  };
 
   if (!isAuthenticated || !user) return null;
 
   const renderItems = (items) =>
     items.map((item, idx) => (
-      <div key={idx} className="flex items-center gap-4 border-b border-gray-100 pb-2 mb-2">
+      <div key={idx} className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-b-0">
         {item.artwork?.image && (
           <img
             src={item.artwork.image}
             alt={item.artwork.title}
-            className="w-20 h-20 object-cover rounded-lg"
+            className="w-24 h-24 object-cover rounded-lg shrink-0"
           />
         )}
-        <div>
-          <p className="font-medium">{item.artwork?.title || 'Artwork'}</p>
-          <p className="text-sm text-gray-500">Price: {item.price} SAR</p>
+        <div className="min-w-0">
+          <p className="font-medium text-gray-900">{item.artwork?.title || 'Artwork'}</p>
           <p className="text-sm text-gray-500">Artist: {item.artist?.name || 'Unknown'}</p>
+          <p className="text-sm text-gray-600">Price: {item.price} SAR</p>
         </div>
       </div>
     ));
-//order details card
+
   const renderOrderCard = (order) => (
-    <div key={getOrderId(order)} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-      <h3 className="font-semibold text-gray-900 mb-2">Order #{getOrderNumber(order)}</h3>
-      <p className="text-sm text-gray-500 mb-2">Date: {formatDate(order.createdAt)}</p>
-      <p className="text-sm text-gray-600 mb-4">Status: {order.status}</p>
-      <div className="space-y-2">{renderItems(order.items)}</div>
-      <p className="text-lg font-bold mt-4">Total: {order.totalAmount} SAR</p>
-      <p className="text-sm text-gray-500">Payment: {order.paymentMethod}</p>
+    <div key={getOrderId(order)} className="border border-gray-200 rounded-lg p-5">
+      <p className="font-semibold text-gray-900">Order #{getOrderNumber(order)}</p>
+      <p className="text-sm text-gray-500 mt-1">Date: {formatOrderDate(order.createdAt)}</p>
+      <p className="text-sm text-gray-600 mt-1">Status: {statusDisplay(order.status)}</p>
+      <p className="text-sm text-gray-500 mt-3">Payment Method: {order.paymentMethod}</p>
+      <div className="mt-4 space-y-2">{renderItems(order.items)}</div>
+      <p className="text-lg font-bold mt-4 text-gray-900">Total: {order.totalAmount} SAR</p>
     </div>
   );
+
+  const renderSalesCard = (order) => {
+    const buyer = order.user;
+    const buyerId = buyer?._id || buyer?.id;
+    const rawName = buyer?.username || buyer?.name || 'Buyer';
+    const displayName = String(rawName).replace(/^@/, '');
+    const current = (order.status || 'PENDING').toUpperCase();
+    return (
+      <div key={getOrderId(order)} className="border border-gray-200 rounded-lg p-5">
+        <p className="font-semibold text-gray-900">Order #{getOrderNumber(order)}</p>
+        <p className="text-sm text-gray-500 mt-1">Date: {formatOrderDate(order.createdAt)}</p>
+        <p className="text-sm text-gray-600 mt-1">Status: {statusDisplay(order.status)}</p>
+        {buyerId && (
+          <p className="text-sm text-gray-600 mt-1">
+            Buyer:{' '}
+            <Link to={`/profile/${buyerId}`} className="text-black font-medium hover:underline">
+              @{displayName}
+            </Link>
+          </p>
+        )}
+        <p className="text-sm text-gray-500 mt-3">Payment Method: {order.paymentMethod}</p>
+        <div className="mt-4 space-y-2">{renderItems(order.items)}</div>
+        <p className="text-lg font-bold mt-4 text-gray-900">Total: {order.totalAmount} SAR</p>
+        <div className="mt-5 pt-4 border-t border-gray-200">
+          {(() => {
+            const statusOrder = ['PENDING', 'PAID', 'ACCEPTED', 'SHIPPED', 'DELIVERED'];
+            const currentIdx = statusOrder.indexOf(current);
+            const nextActionIndex = currentIdx <= 1 ? 0 : currentIdx === 2 ? 1 : currentIdx === 3 ? 2 : -1;
+            const nextAction = nextActionIndex >= 0 ? SELLER_ACTIONS[nextActionIndex] : null;
+            if (!nextAction) return <p className="text-sm text-gray-500">Order completed.</p>;
+            return (
+              <>
+                <p className="text-sm font-medium text-gray-700 mb-3">Update status</p>
+                <button
+                  type="button"
+                  onClick={() => updateSaleStatus(order._id || order.id, nextAction.status)}
+                  className="w-full sm:w-auto px-6 py-3 rounded-lg text-sm font-medium bg-black text-white border border-black hover:bg-gray-800 transition-colors"
+                >
+                  {nextAction.label}
+                </button>
+              </>
+            );
+          })()}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -152,7 +254,7 @@ export default function OrdersPage() {
               {isLoading ? (
                 <p className="text-center text-gray-600 py-12">Loading sales...</p>
               ) : sales.length > 0 ? (
-                <div className="space-y-4">{sales.map(renderOrderCard)}</div>
+                <div className="space-y-4">{sales.map(renderSalesCard)}</div>
               ) : (
                 <div className="text-center py-12">
                   <Palette className="w-16 h-16 mx-auto text-gray-300 mb-4" />

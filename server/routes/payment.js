@@ -6,21 +6,12 @@ import Notification from '../models/Notification.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
 import { getPayPalAccessToken, PAYPAL_BASE_URL } from '../config/paypal.js';
 
-/** Create notifications for buyer and seller(s) with order number. Buyer gets order_placed → /orders; sellers get sale → /sales. */
+/** Notify only seller(s) when a new order is placed. Buyer is not notified here; they get notified when seller updates status. */
 async function createOrderNotifications(order, buyerId) {
   const orderNum = order._id ? order._id.toString().slice(-6).toUpperCase() : '—';
   const notifications = [];
 
-  // Buyer: "You've received a new order #XXX" → My Orders
-  notifications.push({
-    user: buyerId,
-    fromUser: buyerId,
-    order: order._id,
-    type: 'order_placed',
-    message: `You've received a new order #${orderNum}`,
-  });
-
-  // Each seller: "You've received a new order #XXX" → My Sales
+  // Each seller: "You've received a new order #XXX" → My Sales (buyer does not get a notification on place order)
   const artistIds = [...new Set(order.items.map((i) => i.artist?.toString()).filter(Boolean))];
   for (const artistId of artistIds) {
     if (artistId === buyerId.toString()) continue;
