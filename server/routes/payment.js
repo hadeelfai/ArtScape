@@ -2,8 +2,39 @@ import express from 'express';
 import axios from 'axios';
 import Cart from '../models/Cart.js';
 import Order from '../models/Order.js';
+import Notification from '../models/Notification.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
 import { getPayPalAccessToken, PAYPAL_BASE_URL } from '../config/paypal.js';
+
+/** Create notifications for buyer and seller(s) with order number. Buyer gets order_placed → /orders; sellers get sale → /sales. */
+async function createOrderNotifications(order, buyerId) {
+  const orderNum = order._id ? order._id.toString().slice(-6).toUpperCase() : '—';
+  const notifications = [];
+
+  // Buyer: "You've received a new order #XXX" → My Orders
+  notifications.push({
+    user: buyerId,
+    fromUser: buyerId,
+    order: order._id,
+    type: 'order_placed',
+    message: `You've received a new order #${orderNum}`,
+  });
+
+  // Each seller: "You've received a new order #XXX" → My Sales
+  const artistIds = [...new Set(order.items.map((i) => i.artist?.toString()).filter(Boolean))];
+  for (const artistId of artistIds) {
+    if (artistId === buyerId.toString()) continue;
+    notifications.push({
+      user: artistId,
+      fromUser: buyerId,
+      order: order._id,
+      type: 'sale',
+      message: `You've received a new order #${orderNum}`,
+    });
+  }
+
+  if (notifications.length > 0) await Notification.insertMany(notifications);
+}
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -49,7 +80,7 @@ router.post('/paypal/capture', async (req, res) => {
 
   const cart = await Cart.findOne({ user: req.user.id }).populate('items');
 
-  await Order.create({
+  const order = await Order.create({
     user: req.user.id,
     items: cart.items.map(a => ({
       artwork: a._id,
@@ -63,6 +94,7 @@ router.post('/paypal/capture', async (req, res) => {
   });
 
   await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
+  await createOrderNotifications(order, req.user.id);
 
   res.json({ success: true });
 });
@@ -75,7 +107,7 @@ router.post('/cod', authMiddleware,async (req, res) => {
 
   const total = cart.items.reduce((sum, i) => sum + Number(i.price), 0);
 
-  await Order.create({
+  const order = await Order.create({
     user: req.user.id,
     items: cart.items.map(a => ({
       artwork: a._id,
@@ -88,6 +120,7 @@ router.post('/cod', authMiddleware,async (req, res) => {
   });
 
   await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
+  await createOrderNotifications(order, req.user.id);
 
   res.json({ success: true });
 });

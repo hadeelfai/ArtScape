@@ -19,7 +19,8 @@ router.get('/', async (req, res) => {
     const notifications = await Notification.find({ user: userId })
       .sort({ createdAt: -1 }) //start from neweset
       .populate('fromUser', 'name username profileImage')//show name, username and profile image
-      .populate('post', 'text image'); //show text of the post and image
+      .populate('post', 'text image') //show text of the post and image
+      .populate('order', 'totalAmount status createdAt'); // for order_placed / sale (order number from _id on frontend)
 
     return res.json(notifications);
   } catch (error) {

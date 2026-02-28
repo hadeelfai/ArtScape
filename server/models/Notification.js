@@ -22,10 +22,16 @@ const notificationSchema = new mongoose.Schema(
       ref: 'Post',
     },
 
-    // "new_post", "like", "comment"
+    // Optional: related order (for order_placed / sale notifications)
+    order: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order',
+    },
+
+    // "new_post", "like", "comment", "order_placed" (buyer), "sale" (seller)
     type: {
       type: String,
-      enum: ['new_post', 'like', 'comment'],
+      enum: ['new_post', 'like', 'comment', 'order_placed', 'sale'],
       required: true,
     },
 

@@ -94,8 +94,12 @@ const NotificationsPage = () => {
   };
 
   const getNotificationLink = (n) => {
+    const orderId = n.order?._id || n.order;
     const postId = n.post?._id || n.post;
     const fromUserId = n.fromUser?._id || n.fromUser;
+    if (orderId) {
+      return n.type === 'sale' ? '/sales' : '/orders';
+    }
     if (postId) {
       return `/CommunityPage?post=${postId}`;
     }
@@ -134,6 +138,11 @@ const NotificationsPage = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-900">{n.message}</p>
 
+                  {n.order && (
+                    <p className="text-gray-600 text-xs mt-1">
+                      Order #{String(n.order._id || n.order.id || '').slice(-6).toUpperCase() || '—'}
+                    </p>
+                  )}
                   {n.post && (
                     <div className="flex items-center gap-3 flex-row-reverse mt-2">
                       {n.post?.image && (
