@@ -520,13 +520,14 @@ export default function CheckoutPage() {
                   type="button"
                   onClick={() => setPaymentMethod('COD')}
                   className={`flex flex-col items-center justify-center min-w-[120px] py-5 px-6 rounded-xl border-2 transition-all ${
-                    paymentMethod === 'COD'
+                    paymentMethod === 'COD' 
                       ? 'border-black bg-gray-50 text-black'
                       : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
                   <Banknote className="w-8 h-8 mb-2" strokeWidth={1.5} />
                   <span className="font-medium text-sm">COD</span>
+                  <p className="text-sm text-gray-500 mb-2">Available only for deliveries<br />within the seller’s city</p>
                 </button>
               </div>
               {paymentMethod === 'PAYPAL' && (

@@ -5,6 +5,7 @@ import Order from '../models/Order.js';
 import Notification from '../models/Notification.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
 import { getPayPalAccessToken, PAYPAL_BASE_URL } from '../config/paypal.js';
+import Artwork from '../models/Artwork.js';
 
 /** Notify only seller(s) when a new order is placed. Buyer is not notified here; they get notified when seller updates status. */
 async function createOrderNotifications(order, buyerId) {
@@ -123,6 +124,10 @@ router.post('/paypal/capture', async (req, res) => {
     giftMessage: typeof giftMessage === 'string' ? giftMessage : undefined,
   });
 
+  // Mark each artwork in the order as sold
+for (const item of cart.items) {
+  await Artwork.findByIdAndUpdate(item._id, { isSold: true });
+}
   await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
   await createOrderNotifications(order, req.user.id);
 
@@ -153,6 +158,10 @@ router.post('/cod', authMiddleware,async (req, res) => {
     giftMessage: typeof giftMessage === 'string' ? giftMessage : undefined,
   });
 
+// Mark each artwork in the order as sold
+for (const item of cart.items) {
+  await Artwork.findByIdAndUpdate(item._id, { isSold: true });
+}
   await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
   await createOrderNotifications(order, req.user.id);
 
