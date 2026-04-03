@@ -150,17 +150,20 @@ export default function ArtScapeProfile({
       ? profileData.artworks
       : (artworksProp.length > 0 ? artworksProp : []);
 
-    return artworksToUse.map(artwork => ({
-      id: artwork._id || artwork.id,
-      title: artwork.title || '',
-      description: artwork.description || '',
-      tags: normalizeTagList(artwork.tags),
-      dimensions: artwork.dimensions || '',
-      year: artwork.year || '',
-      artworkType: artwork.artworkType || 'Explore',
-      price: artwork.price || null,
-      image: artwork.image || artwork.imageUrl // Support both field names
-    }));
+    return artworksToUse
+      .map(artwork => ({
+        id: artwork._id || artwork.id,
+        title: artwork.title || '',
+        description: artwork.description || '',
+        tags: normalizeTagList(artwork.tags),
+        dimensions: artwork.dimensions || '',
+        year: artwork.year || '',
+        artworkType: artwork.artworkType || 'Explore',
+        price: artwork.price || null,
+        image: artwork.image || artwork.imageUrl, // Support both field names
+        createdAt: artwork.createdAt // Preserve creation date for sorting
+      }))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort by creation date (latest first)
   }, [profileData, artworksProp]);
 
   const [artworkList, setArtworkList] = useState(() => mappedArtworks);
@@ -259,7 +262,9 @@ export default function ArtScapeProfile({
             ...data.user,
             profileImage: getProfileImage(data.user.profileImage),
             bannerImage: getBannerImage(data.user.bannerImage),
-            artworks: data.artworks || []
+            artworks: (data.artworks || [])
+              .filter(art => art.isPublished) // Only include published artworks
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Sort by creation date (latest first)
           });
         }
       }
@@ -569,8 +574,11 @@ export default function ArtScapeProfile({
         if (allArtworksRes.ok) {
           const allArtworks = await allArtworksRes.json();
 
+          // Sort all artworks by creation date (latest first)
+          const sortedArtworks = allArtworks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
           // Filter for liked artworks and sort by order in liked array (most recent first)
-          const likedItems = allArtworks
+          const likedItems = sortedArtworks
             .filter(art => liked.includes(art._id || art.id))
             .map(art => ({
               id: art._id || art.id,
@@ -591,7 +599,7 @@ export default function ArtScapeProfile({
             });
 
           // Filter for saved artworks and sort by order in saved array (most recent first)
-          const savedItems = allArtworks
+          const savedItems = sortedArtworks
             .filter(art => saved.includes(art._id || art.id))
             .map(art => ({
               id: art._id || art.id,

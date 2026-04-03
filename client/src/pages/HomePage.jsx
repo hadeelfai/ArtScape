@@ -27,7 +27,7 @@ const steps = [
   {
     id: 3,
     title: "Browse & Discover",
-    subtitle: "Explore diverse collections and find inspiration"
+    subtitle: "Discover diverse collections in the marketplace and find inspiration"
   },
   {
     id: 4,
@@ -37,7 +37,7 @@ const steps = [
   {
     id: 5,
     title: "Connect & Discuss",
-    subtitle: "join conversations, exchange ideas, and grow with the community"
+    subtitle: "Join conversations, exchange ideas, and grow with the community"
   },
   {
     id: 6,
@@ -101,10 +101,10 @@ const HomePage = () => {
               artist: rec.artist_id,
               image: rec.image,
               price: rec.price,
-              artworkType: 'Marketplace'
-            }));
+              artworkType: 'Marketplace' // Ensure only Marketplace artworks
+            })).filter(art => art.artworkType === 'Marketplace');
           } else if (Array.isArray(data)) {
-            recommendedArtworks = data;
+            recommendedArtworks = data.filter(art => art.artworkType === 'Marketplace');
           }
           
           if (recommendedArtworks.length > 0) {

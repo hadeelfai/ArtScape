@@ -1,4 +1,3 @@
-cat > README.md << 'EOF'
 ---
 title: ArtScape
 emoji: 🎨
@@ -8,6 +7,3 @@ sdk: docker
 app_port: 7860
 pinned: false
 ---
-
-# ArtScape Recommendation Service
-EOF

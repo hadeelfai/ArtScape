@@ -78,7 +78,7 @@ class Config:
     TOP_K = int(os.getenv('TOP_K', 20))
     
     # Server Configuration
-    PORT = int(os.getenv('PORT', 5001))
+    PORT = int(os.getenv('PORT', 7860))
 
 
 def initialize_model():
