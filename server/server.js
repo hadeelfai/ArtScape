@@ -35,7 +35,7 @@ const corsOrigins = [
   'http://127.0.0.1:5500',
   'http://localhost:5500',
   process.env.FRONTEND_URL,
-  'https://artscape-sa.up.railway.app'
+  'https://artscape-woad.vercel.app'
 ].filter(Boolean);
 app.use(cors({
   origin: corsOrigins,
@@ -71,18 +71,18 @@ app.use(express.static('public'));
 const PORT = process.env.PORT || 5500;
 const MONGO_URL = process.env.MONGO_URL;
 
-mongoose.connect(MONGO_URL, { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true 
+mongoose.connect(MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 })
-.then(() => {
-  app.listen(PORT, () => {
-    console.log(`\n✅ Connected to DB & listening on port ${PORT}`);
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`\n✅ Connected to DB & listening on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
   });
-})
-.catch(err => {
-  console.error('MongoDB connection error:', err);
-});
 
 // ----- Error Handling -----
 app.use((req, res, next) => {

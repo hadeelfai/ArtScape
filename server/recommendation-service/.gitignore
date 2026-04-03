@@ -1,0 +1,9 @@
+echo ".env
+.venv
+venv/
+__pycache__/
+*.pyc
+models/
+*.bin
+*.pt
+*.pth" > .gitignore

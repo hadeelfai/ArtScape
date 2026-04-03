@@ -1,7 +1,7 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
+  "$schema": "https://huggingface.co/schema",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "huggingface"
   },
   "deploy": {
     "startCommand": "gunicorn recommendation_service:app --bind 0.0.0.0:$PORT --workers 1 --timeout 300",
