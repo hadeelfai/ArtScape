@@ -19,6 +19,7 @@ import ContactUs from './pages/ContactUs';
 import ForgotPasswordPage from './pages/ForgotPassword';
 import ResetPasswordPage from './pages/ResetPassword';
 import NotificationsPage from './pages/NotificationsPage';
+import MessagesPage from './pages/MessagesPage';
 import ArtworkDetailsPage from './pages/ArtworkDetailsPage';
 import CartPage from './pages/CartPage';
 import OrdersPage from './pages/OrdersPage';
@@ -81,6 +82,12 @@ const App = () => {
         <Route path="/admin" element={<AdminProfile />} />
         <Route path="/notifications" element={<Layout>
           <NotificationsPage />
+        </Layout>
+        }
+        />
+
+        <Route path="/messages" element={<Layout>
+          <MessagesPage />
         </Layout>
         }
         />

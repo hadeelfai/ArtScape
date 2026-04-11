@@ -10,7 +10,7 @@ let configError = null;
 
 export function getApiBaseUrl() {
   if (cachedApiBase) return cachedApiBase;
-  return import.meta.env.VITE_API_URL || 'https://adventurous-victory-production.up.railway.app';
+  return import.meta.env.VITE_API_URL || 'http://localhost:5500';
 }
 
 export function getConfigError() {
