@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Heart, Bookmark, Image, X, Edit2, Trash2, Search } from 'lucide-react';
+import { Heart, Bookmark, Image, X, Edit2, Trash2, Search, MessageCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
 import { toast } from 'sonner';
@@ -94,7 +94,8 @@ export default function ArtScapeProfile({
               ...data.user,
               profileImage: getProfileImage(data.user.profileImage),
               bannerImage: getBannerImage(data.user.bannerImage),
-              artworks: data.artworks || []
+              artworks: (data.artworks || [])
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Sort by creation date (latest first)
             });
           } else {
             // If no user data, use default profile
@@ -157,6 +158,7 @@ export default function ArtScapeProfile({
       ? profileData.artworks
       : (artworksProp.length > 0 ? artworksProp : []);
 
+<<<<<<< HEAD
     return artworksToUse.map(artwork => ({
       id: artwork._id || artwork.id,
       title: artwork.title || '',
@@ -170,6 +172,22 @@ image: artwork.image || artwork.imageUrl, // Support both field names
       isSold: Boolean(artwork.isSold),
       status: artwork.status || ''
     }));
+=======
+    return artworksToUse
+      .map(artwork => ({
+        id: artwork._id || artwork.id,
+        title: artwork.title || '',
+        description: artwork.description || '',
+        tags: normalizeTagList(artwork.tags),
+        dimensions: artwork.dimensions || '',
+        year: artwork.year || '',
+        artworkType: artwork.artworkType || 'Explore',
+        price: artwork.price || null,
+        image: artwork.image || artwork.imageUrl, // Support both field names
+        createdAt: artwork.createdAt // Preserve creation date for sorting
+      }))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort by creation date (latest first)
+>>>>>>> 0ff3d24e76fd03db228963d4fa4afa404c871c1d
   }, [profileData, artworksProp]);
 
   const [artworkList, setArtworkList] = useState(() => mappedArtworks);
@@ -268,7 +286,8 @@ image: artwork.image || artwork.imageUrl, // Support both field names
             ...data.user,
             profileImage: getProfileImage(data.user.profileImage),
             bannerImage: getBannerImage(data.user.bannerImage),
-            artworks: data.artworks || []
+            artworks: (data.artworks || [])
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Sort by creation date (latest first)
           });
         }
       }
@@ -582,8 +601,11 @@ image: artwork.image || artwork.imageUrl, // Support both field names
         if (allArtworksRes.ok) {
           const allArtworks = await allArtworksRes.json();
 
+          // Sort all artworks by creation date (latest first)
+          const sortedArtworks = allArtworks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
           // Filter for liked artworks and sort by order in liked array (most recent first)
-          const likedItems = allArtworks
+          const likedItems = sortedArtworks
             .filter(art => liked.includes(art._id || art.id))
             .map(art => ({
               id: art._id || art.id,
@@ -604,7 +626,7 @@ image: artwork.image || artwork.imageUrl, // Support both field names
             });
 
           // Filter for saved artworks and sort by order in saved array (most recent first)
-          const savedItems = allArtworks
+          const savedItems = sortedArtworks
             .filter(art => saved.includes(art._id || art.id))
             .map(art => ({
               id: art._id || art.id,
@@ -1029,15 +1051,24 @@ image: artwork.image || artwork.imageUrl, // Support both field names
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={handleFollowClick}
-                  className={`mb-6 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-full transition-colors font-medium text-sm sm:text-base ${isFollowing
-                    ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-                    : 'bg-black text-white hover:bg-gray-800'
-                    }`}
-                >
-                  {isFollowing ? 'Following' : 'Follow'}
-                </button>
+                <div className="flex items-center gap-2 sm:gap-3 pb-0 sm:pb-6">
+                  <button
+                    onClick={handleFollowClick}
+                    className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-full transition-colors font-medium text-sm sm:text-base ${isFollowing
+                      ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                      : 'bg-black text-white hover:bg-gray-800'
+                      }`}
+                  >
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                  <button
+                    onClick={() => navigate(`/messages?user=${resolvedProfileId}`)}
+                    className="flex items-center gap-2 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-full bg-black text-white hover:bg-gray-800 transition-colors font-medium text-sm sm:text-base"
+                  >
+                    <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>Message</span>
+                  </button>
+                </div>
               )}
             </div>
           </div>

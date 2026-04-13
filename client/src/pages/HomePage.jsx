@@ -27,7 +27,7 @@ const steps = [
   {
     id: 3,
     title: "Browse & Discover",
-    subtitle: "Explore diverse collections and find inspiration"
+    subtitle: "Discover diverse collections in the marketplace and find inspiration"
   },
   {
     id: 4,
@@ -37,7 +37,7 @@ const steps = [
   {
     id: 5,
     title: "Connect & Discuss",
-    subtitle: "join conversations, exchange ideas, and grow with the community"
+    subtitle: "Join conversations, exchange ideas, and grow with the community"
   },
   {
     id: 6,
@@ -83,17 +83,11 @@ const HomePage = () => {
           credentials: 'include',
         });
 
-        console.log('Recommendation response status:', response.status);
-        
         if (response.ok) {
           const data = await response.json();
-          console.log('Recommendations received:', data);
-          
-          // Handle the recommendation service response format
           let recommendedArtworks = [];
-          
+
           if (data.recommendations && Array.isArray(data.recommendations)) {
-            // Map recommendation format to artwork format
             recommendedArtworks = data.recommendations.map(rec => ({
               _id: rec.artwork_id,
               id: rec.artwork_id,
@@ -102,27 +96,20 @@ const HomePage = () => {
               image: rec.image,
               price: rec.price,
               artworkType: 'Marketplace'
-            }));
+            })).filter(art => art.artworkType === 'Marketplace');
           } else if (Array.isArray(data)) {
-            recommendedArtworks = data;
+            recommendedArtworks = data.filter(art => art.artworkType === 'Marketplace');
           }
-          
+
           if (recommendedArtworks.length > 0) {
-            console.log('Setting recommendations:', recommendedArtworks);
             setRecommendations(recommendedArtworks);
           } else {
-            console.log('No recommendations found, using latest pieces');
             setRecommendations(latestMarketplacePieces);
           }
         } else {
-          const errorData = await response.text();
-          console.error('Recommendation API error:', response.status, errorData);
-          // Fallback to latest pieces if recommendations fail
           setRecommendations(latestMarketplacePieces);
         }
       } catch (error) {
-        console.error('Error fetching recommendations:', error);
-        // Fallback to latest pieces on error
         setRecommendations(latestMarketplacePieces);
       } finally {
         setRecommendationsLoading(false);
@@ -131,6 +118,18 @@ const HomePage = () => {
 
     fetchRecommendations();
   }, [user?.token, latestMarketplacePieces]);
+
+  const sortedArtworks = useMemo(() => {
+    return artworks
+      .filter((art) => art.artworkType === "Marketplace")
+      .sort((a, b) => {
+        if (a.recommended && !b.recommended) return -1; // Recommended items first
+        if (!a.recommended && b.recommended) return 1; // Non-recommended items later
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return a.recommended === b.recommended ? timeB - timeA : 0; // Sort recommended by latest, non-recommended by earliest
+      });
+  }, [artworks]);
 
   return (
     <div>
@@ -144,13 +143,12 @@ const HomePage = () => {
         </h2>
       </div>
 
-      {/* Recommended pieces section */}
       <div>
         <div className='flex justify-between'>
           <h1 className='font-albert text-xl text-start md:text-3xl lg:text-5xl pl-10 pt-20 pb-4'>Recommended <span className='font-highcruiser'>For You</span></h1>
           <Link to={"/marketplace"}> <h1 className='font-albert text-lg md:text-xl lg:text-2xl underline underline-offset-4 pr-10 pt-20 pb-4'>See More</h1> </Link>
         </div>
-        <CardsList artworks={recommendations} loading={recommendationsLoading || loading} />
+        <CardsList artworks={sortedArtworks} loading={loading} />
       </div>
 
 

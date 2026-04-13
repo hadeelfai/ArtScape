@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 allowed_origins = [
-    os.getenv('FRONTEND_URL', 'http://localhost:5500'),
+    os.getenv('FRONTEND_URL', 'http://localhost:7860'),
 ]
 
 CORS(app, origins=allowed_origins, supports_credentials=True)
@@ -78,7 +78,7 @@ class Config:
     TOP_K = int(os.getenv('TOP_K', 20))
     
     # Server Configuration
-    PORT = int(os.getenv('PORT', 5001))
+    PORT = int(os.getenv('PORT', 7860))
 
 
 def initialize_model():

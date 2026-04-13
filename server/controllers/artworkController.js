@@ -46,7 +46,7 @@ export const createArtwork = async (req, res) => {
             tags: normalizedTags,
             dimensions,
             year,
-            artworkType: artworkType || 'Explore',
+            artworkType: 'Marketplace', // Default to Marketplace only
         })
         await artwork.save()
 

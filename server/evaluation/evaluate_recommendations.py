@@ -64,7 +64,7 @@ class RecommendationEvaluator:
             potential_db = potential_db.split('?')[0]
         
         self.db_name = potential_db if potential_db not in ['admin', 'config', 'local', ''] else 'test'
-        self.rec_service_url = recommendation_service_url or os.getenv('RECOMMENDATION_SERVICE_URL', 'http://localhost:5001')
+        self.rec_service_url = recommendation_service_url or os.getenv('RECOMMENDATION_SERVICE_URL', 'http://localhost:7860')
         self.client = None
         self.db = None
         

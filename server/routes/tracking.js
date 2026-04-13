@@ -10,8 +10,7 @@ router.post('/browse', authMiddleware, async (req, res) => {
     const { type, filter } = req.body;
     const inc = {};
 
-    if (type === 'explore') inc['browsingPreferences.exploreClicks'] = 1;
-    else if (type === 'marketplace') inc['browsingPreferences.marketplaceClicks'] = 1;
+    if (type === 'marketplace') inc['browsingPreferences.marketplaceClicks'] = 1;
 
     if (filter && typeof filter === 'object') {
       for (const [key] of Object.entries(filter)) {

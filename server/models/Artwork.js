@@ -43,8 +43,8 @@ const artworkSchema = new mongoose.Schema({
     },
     artworkType: {
         type: String,
-        enum: ['Explore', 'Marketplace'],
-        default: 'Explore'
+        enum: ['Marketplace'],
+        default: 'Marketplace'
     },
     artist: {
         type: mongoose.Schema.Types.ObjectId,

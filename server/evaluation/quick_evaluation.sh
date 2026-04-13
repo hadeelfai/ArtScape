@@ -10,10 +10,10 @@ echo "============================================"
 
 # Check if recommendation service is running
 echo "🔍 Checking recommendation service health..."
-if curl -s http://localhost:5001/health > /dev/null; then
+if curl -s http://localhost:7860/health > /dev/null; then
     echo "✅ Recommendation service is running"
 else
-    echo "❌ Recommendation service is not running on port 5001"
+    echo "❌ Recommendation service is not running on port 7860"
     echo "Please start the service first:"
     echo "cd server/recommendation-service && python recommendation_service.py"
     exit 1

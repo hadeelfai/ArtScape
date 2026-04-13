@@ -11,6 +11,7 @@ import CommentRoutes from './routes/Comments.js';
 import ArtworkRoutes from './routes/Artworks.js';
 import NewsRoutes from './routes/News.js';
 import NotificationsRoutes from './routes/Notification.js';
+import MessagesRoutes from './routes/Messages.js';
 import ContactRoutes from './routes/contact.js';
 import CartRoutes from './routes/Cart.js';
 import searchRouter from './routes/search.js';
@@ -35,7 +36,7 @@ const corsOrigins = [
   'http://127.0.0.1:5500',
   'http://localhost:5500',
   process.env.FRONTEND_URL,
-  'https://artscape-sa.up.railway.app'
+  'https://artscape-woad.vercel.app'
 ].filter(Boolean);
 app.use(cors({
   origin: corsOrigins,
@@ -56,6 +57,7 @@ app.use('/comments', authMiddleware, CommentRoutes);
 app.use('/artworks', ArtworkRoutes);
 app.use('/news', NewsRoutes);
 app.use('/notifications', NotificationsRoutes);
+app.use('/messages', MessagesRoutes);
 app.use('/contact', ContactRoutes);
 app.use('/cart', CartRoutes);
 app.use("/api/search", searchRouter);
@@ -71,18 +73,18 @@ app.use(express.static('public'));
 const PORT = process.env.PORT || 5500;
 const MONGO_URL = process.env.MONGO_URL;
 
-mongoose.connect(MONGO_URL, { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true 
+mongoose.connect(MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 })
-.then(() => {
-  app.listen(PORT, () => {
-    console.log(`\n✅ Connected to DB & listening on port ${PORT}`);
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`\n✅ Connected to DB & listening on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
   });
-})
-.catch(err => {
-  console.error('MongoDB connection error:', err);
-});
 
 // ----- Error Handling -----
 app.use((req, res, next) => {

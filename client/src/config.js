@@ -10,7 +10,7 @@ let configError = null;
 
 export function getApiBaseUrl() {
   if (cachedApiBase) return cachedApiBase;
-  return import.meta.env.VITE_API_URL || 'https://adventurous-victory-production.up.railway.app';
+  return import.meta.env.VITE_API_URL || 'https://artscape-client.vercel.app' || 'http://localhost:5500';
 }
 
 export function getConfigError() {
@@ -47,14 +47,14 @@ export async function loadApiConfig() {
           return cachedApiBase;
         }
       }
-      configError = 'VITE_API_URL is empty. Set it in Railway client service env vars.';
+      configError = 'VITE_API_URL is empty. Set it in Vercel client service env vars.';
     } catch (e) {
       if (!configError) configError = e?.message || 'Failed to load config';
     }
     cachedApiBase = import.meta.env.VITE_API_URL || 'http://localhost:5500';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    if (origin && (cachedApiBase === origin || !cachedApiBase || cachedApiBase === 'http://localhost:5500') && origin.includes('railway')) {
-      configError = configError || 'Set VITE_API_URL to your BACKEND Railway URL in client service env vars.';
+    if (origin && (cachedApiBase === origin || !cachedApiBase || cachedApiBase === 'http://localhost:5500') && origin.includes('vercel')) {
+      configError = configError || 'Set VITE_API_URL to your BACKEND Vercel URL in client service env vars.';
     }
     return cachedApiBase;
   })();
