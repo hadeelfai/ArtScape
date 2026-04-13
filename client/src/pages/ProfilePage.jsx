@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Heart, Bookmark, Image, X, Edit2, Trash2, Search } from 'lucide-react';
+import { Heart, Bookmark, Image, X, Edit2, Trash2, Search, MessageCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from '../components/Navbar';
 import { toast } from 'sonner';
@@ -87,7 +87,8 @@ export default function ArtScapeProfile({
               ...data.user,
               profileImage: getProfileImage(data.user.profileImage),
               bannerImage: getBannerImage(data.user.bannerImage),
-              artworks: data.artworks || []
+              artworks: (data.artworks || [])
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Sort by creation date (latest first)
             });
           } else {
             // If no user data, use default profile
@@ -263,7 +264,6 @@ export default function ArtScapeProfile({
             profileImage: getProfileImage(data.user.profileImage),
             bannerImage: getBannerImage(data.user.bannerImage),
             artworks: (data.artworks || [])
-              .filter(art => art.isPublished) // Only include published artworks
               .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Sort by creation date (latest first)
           });
         }
@@ -1024,15 +1024,24 @@ export default function ArtScapeProfile({
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={handleFollowClick}
-                  className={`mb-6 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-full transition-colors font-medium text-sm sm:text-base ${isFollowing
-                    ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-                    : 'bg-black text-white hover:bg-gray-800'
-                    }`}
-                >
-                  {isFollowing ? 'Following' : 'Follow'}
-                </button>
+                <div className="flex items-center gap-2 sm:gap-3 pb-0 sm:pb-6">
+                  <button
+                    onClick={handleFollowClick}
+                    className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-full transition-colors font-medium text-sm sm:text-base ${isFollowing
+                      ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                      : 'bg-black text-white hover:bg-gray-800'
+                      }`}
+                  >
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                  <button
+                    onClick={() => navigate(`/messages?user=${resolvedProfileId}`)}
+                    className="flex items-center gap-2 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-full bg-black text-white hover:bg-gray-800 transition-colors font-medium text-sm sm:text-base"
+                  >
+                    <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>Message</span>
+                  </button>
+                </div>
               )}
             </div>
           </div>

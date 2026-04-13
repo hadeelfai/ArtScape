@@ -1,7 +1,7 @@
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Bell, LogOut, User, Package, Palette, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Bell, LogOut, User, Package, Palette, ChevronDown, Mail } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext.jsx';
@@ -282,6 +282,13 @@ const Navbar = () => {
                       {notificationCount}
                     </span>
                   )}
+                </Link>
+
+                <Link
+                  to="/messages"
+                  className={`p-2 hover:opacity-60 transition-opacity relative ${isOpen ? "text-white" : "text-black"}`}
+                >
+                  <Mail className="w-5 h-5" />
                 </Link>
 
                 <div className={`${isOpen ? "text-white" : "text-black"}`}> 
