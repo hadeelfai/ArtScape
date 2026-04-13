@@ -51,6 +51,13 @@ const SORT_OPTIONS = [
   { value: "priceDesc", label: "Price high → low" },
 ];
 
+const isArtworkSold = (artwork) => {
+  if (!artwork) return false;
+  if (artwork.isSold) return true;
+  const normalizedStatus = String(artwork.status || "").trim().toLowerCase();
+  return normalizedStatus === "sold out" || normalizedStatus === "sold";
+};
+
 const MarketplacePage = () => {
   const { user } = useAuth();
   const { users, artworks, loading } = useGalleryData();
@@ -137,7 +144,7 @@ const MarketplacePage = () => {
   // Filtering + Sorting
   const filteredArtworks = useMemo(() => {
     let artworksToSort = artworks
-      .filter((art) => art.artworkType === "Marketplace"&& !art.isSold) //hide sold items
+      .filter((art) => art.artworkType === "Marketplace" && !isArtworkSold(art))
       .filter((art) => matchesCategory(art, category))
       .filter((art) => matchesSize(art, filters.size))
       .filter((art) => matchesColor(art, filters.color))

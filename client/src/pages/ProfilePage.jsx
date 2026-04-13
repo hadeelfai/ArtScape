@@ -39,6 +39,13 @@ const createEmptyArtworkState = () => ({
   imagePreview: ''
 });
 
+const isArtworkSold = (artwork) => {
+  if (!artwork) return false;
+  if (artwork.isSold) return true;
+  const normalizedStatus = String(artwork.status || '').trim().toLowerCase();
+  return normalizedStatus === 'sold out' || normalizedStatus === 'sold';
+};
+
 export default function ArtScapeProfile({
   userData: userDataProp = null,
   artworks: artworksProp = [],
@@ -159,7 +166,9 @@ export default function ArtScapeProfile({
       year: artwork.year || '',
       artworkType: artwork.artworkType || 'Explore',
       price: artwork.price || null,
-      image: artwork.image || artwork.imageUrl // Support both field names
+image: artwork.image || artwork.imageUrl, // Support both field names
+      isSold: Boolean(artwork.isSold),
+      status: artwork.status || ''
     }));
   }, [profileData, artworksProp]);
 
@@ -426,7 +435,9 @@ export default function ArtScapeProfile({
               year: result.artwork.year,
               artworkType: result.artwork.artworkType,
               price: result.artwork.price,
-              image: result.artwork.image
+              image: result.artwork.image,
+              isSold: Boolean(result.artwork.isSold),
+              status: result.artwork.status || ''
             }
             : art
         ));
@@ -442,7 +453,9 @@ export default function ArtScapeProfile({
           year: result.artwork.year,
           artworkType: result.artwork.artworkType,
           price: result.artwork.price,
-          image: result.artwork.image
+          image: result.artwork.image,
+          isSold: Boolean(result.artwork.isSold),
+          status: result.artwork.status || ''
         };
 
         setArtworkList((prev) => [artworkToAdd, ...prev]);
@@ -1079,6 +1092,11 @@ export default function ArtScapeProfile({
                         <div
                           className={`relative bg-white overflow-hidden ${artwork.artworkType === 'Marketplace' ? '' : ''}`}
                         >
+                         {isArtworkSold(artwork) && (
+                            <span className="absolute top-2 left-2 z-20 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold tracking-wide text-white shadow-sm">
+                              SOLD OUT
+                            </span>
+                          )}
                           <img
                             src={artwork.image && artwork.image.startsWith('http') ? artwork.image : '/Profileimages/User.jpg'}
                             alt={artwork.title || 'Artwork'}

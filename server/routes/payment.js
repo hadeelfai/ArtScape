@@ -63,11 +63,29 @@ function buildShippingData(shippingData) {
 const router = express.Router();
 router.use(authMiddleware);
 
+const isArtworkSold = (artwork) => {
+  if (!artwork) return false;
+  if (artwork.isSold) return true;
+  const normalizedStatus = String(artwork.status || '').trim().toLowerCase();
+  return normalizedStatus === 'sold out' || normalizedStatus === 'sold';
+};
+
+const getUnavailableItems = (cartItems = []) =>
+  cartItems.filter((item) => isArtworkSold(item));
+
 // CREATE PAYPAL ORDER
 router.post('/paypal/create', async (req, res) => {
   const cart = await Cart.findOne({ user: req.user.id }).populate('items');
   if (!cart || cart.items.length === 0)
     return res.status(400).json({ error: 'Cart is empty' });
+
+  const unavailableItems = getUnavailableItems(cart.items);
+  if (unavailableItems.length > 0) {
+    return res.status(409).json({
+      error: 'Some artworks are already sold out',
+      soldArtworkIds: unavailableItems.map((item) => item._id),
+    });
+  }
 
   const total = cart.items.reduce((sum, i) => sum + Number(i.price), 0);
   if (total <= 0)
@@ -106,6 +124,17 @@ router.post('/paypal/capture', async (req, res) => {
   );
 
   const cart = await Cart.findOne({ user: req.user.id }).populate('items');
+  if (!cart || cart.items.length === 0) {
+    return res.status(400).json({ error: 'Cart is empty' });
+  }
+
+  const unavailableItems = getUnavailableItems(cart.items);
+  if (unavailableItems.length > 0) {
+    return res.status(409).json({
+      error: 'Some artworks are already sold out',
+      soldArtworkIds: unavailableItems.map((item) => item._id),
+    });
+  }
 
   const shippingFields = buildShippingData(shippingData);
 
@@ -140,6 +169,14 @@ router.post('/cod', authMiddleware,async (req, res) => {
   if (!cart || cart.items.length === 0)
     return res.status(400).json({ error: 'Cart is empty' });
 
+    const unavailableItems = getUnavailableItems(cart.items);
+  if (unavailableItems.length > 0) {
+    return res.status(409).json({
+      error: 'Some artworks are already sold out',
+      soldArtworkIds: unavailableItems.map((item) => item._id),
+    });
+  }
+  
   const total = cart.items.reduce((sum, i) => sum + Number(i.price), 0);
   const { shipping: shippingData, giftMessage } = req.body;
   const shippingFields = buildShippingData(shippingData);

@@ -12,6 +12,13 @@ import { normalizeTagList } from '../utils/tagDefinitions';
 
 import { getApiBaseUrl } from '../config.js';
 
+const isArtworkSold = (item) => {
+  if (!item) return false;
+  if (item.isSold) return true;
+  const normalizedStatus = String(item.status || '').trim().toLowerCase();
+  return normalizedStatus === 'sold out' || normalizedStatus === 'sold';
+};
+
 const ArtworkDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -194,6 +201,8 @@ const ArtworkDetailsPage = () => {
 
   const isLiked = liked.includes(artwork._id || artwork.id);
   const isSaved = saved.includes(artwork._id || artwork.id);
+  const isSold = isArtworkSold(artwork);
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -327,6 +336,11 @@ const ArtworkDetailsPage = () => {
                 {artwork.price && <span className="text-xl text-gray-600">SAR</span>}
               </div>
               {artwork.artworkType === 'Marketplace' && (
+                isSold ? (
+                  <div className="w-full bg-gray-200 text-gray-700 py-4 rounded-lg font-semibold text-center mt-2">
+                    Sold Out
+                  </div>
+                ) : (
                 <button className="w-full bg-black text-white py-4 rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mt-2" onClick={async () => { 
                   const success = await addToCart(artwork, (error) => {
                     toast.error(error);
@@ -340,6 +354,7 @@ const ArtworkDetailsPage = () => {
                   </svg>
                   Add To Cart
                 </button>
+             )
               )}
             </div>
 

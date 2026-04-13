@@ -7,6 +7,13 @@ import { authMiddleware } from '../middleware/AuthMiddleware.js';
 
 const router = express.Router();
 
+const isArtworkSold = (artwork) => {
+  if (!artwork) return false;
+  if (artwork.isSold) return true;
+  const normalizedStatus = String(artwork.status || '').trim().toLowerCase();
+  return normalizedStatus === 'sold out' || normalizedStatus === 'sold';
+};
+
 // All cart routes require auth (suspended/blocked users are rejected by authMiddleware)
 router.use(authMiddleware);
 
@@ -47,6 +54,9 @@ router.post('/', async (req, res) => {
     const artwork = await Artwork.findById(artworkObj);
     if (!artwork) {
       return res.status(404).json({ error: 'Artwork not found' });
+    }
+    if (isArtworkSold(artwork)) {
+      return res.status(409).json({ error: 'This artwork is sold out' });
     }
     let cart = await Cart.findOne({ user: req.user.id });
     if (!cart) {
