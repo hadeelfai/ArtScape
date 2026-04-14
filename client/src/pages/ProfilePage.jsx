@@ -158,36 +158,22 @@ export default function ArtScapeProfile({
       ? profileData.artworks
       : (artworksProp.length > 0 ? artworksProp : []);
 
-<<<<<<< HEAD
-    return artworksToUse.map(artwork => ({
-      id: artwork._id || artwork.id,
-      title: artwork.title || '',
-      description: artwork.description || '',
-      tags: normalizeTagList(artwork.tags),
-      dimensions: artwork.dimensions || '',
-      year: artwork.year || '',
-      artworkType: artwork.artworkType || 'Explore',
-      price: artwork.price || null,
-image: artwork.image || artwork.imageUrl, // Support both field names
-      isSold: Boolean(artwork.isSold),
-      status: artwork.status || ''
-    }));
-=======
-    return artworksToUse
-      .map(artwork => ({
-        id: artwork._id || artwork.id,
-        title: artwork.title || '',
-        description: artwork.description || '',
-        tags: normalizeTagList(artwork.tags),
-        dimensions: artwork.dimensions || '',
-        year: artwork.year || '',
-        artworkType: artwork.artworkType || 'Explore',
-        price: artwork.price || null,
-        image: artwork.image || artwork.imageUrl, // Support both field names
-        createdAt: artwork.createdAt // Preserve creation date for sorting
-      }))
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort by creation date (latest first)
->>>>>>> 0ff3d24e76fd03db228963d4fa4afa404c871c1d
+return artworksToUse
+  .map(artwork => ({
+    id: artwork._id || artwork.id,
+    title: artwork.title || '',
+    description: artwork.description || '',
+    tags: normalizeTagList(artwork.tags),
+    dimensions: artwork.dimensions || '',
+    year: artwork.year || '',
+    artworkType: artwork.artworkType || 'Explore',
+    price: artwork.price || null,
+    image: artwork.image || artwork.imageUrl, // Support both field names
+    isSold: Boolean(artwork.isSold),
+    status: artwork.status || '',
+    createdAt: artwork.createdAt // keep sorting support
+  }))
+  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [profileData, artworksProp]);
 
   const [artworkList, setArtworkList] = useState(() => mappedArtworks);

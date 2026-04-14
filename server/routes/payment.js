@@ -100,7 +100,7 @@ router.post('/paypal/create', async (req, res) => {
       purchase_units: [
         {
           amount: {
-            currency_code: 'USD',
+            currency_code: 'SAR',
             value: total.toFixed(2),
           },
         },
@@ -153,14 +153,7 @@ router.post('/paypal/capture', async (req, res) => {
     giftMessage: typeof giftMessage === 'string' ? giftMessage : undefined,
   });
 
-  // Mark each artwork in the order as sold
-for (const item of cart.items) {
-  await Artwork.findByIdAndUpdate(item._id, { isSold: true });
-}
-  await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
-  await createOrderNotifications(order, req.user.id);
-
-  res.json({ success: true });
+  
 });
 
 // CASH ON DELIVERY
