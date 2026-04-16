@@ -24,14 +24,10 @@ export const useGalleryData = () => {
         } else {
           try {
             const responseText = await usersRes.text();
-            console.log('Raw users response:', responseText); // Debug raw response
             const usersData = JSON.parse(responseText);
-            console.log('Users data received:', usersData); // Debug log
             setUsers(Array.isArray(usersData) ? usersData : []);
           } catch (jsonError) {
             console.error('Failed to parse users response as JSON:', jsonError);
-            console.error('Response status:', usersRes.status);
-            console.error('Response headers:', Object.fromEntries(usersRes.headers.entries()));
             setUsers([]);
           }
         }
@@ -42,9 +38,7 @@ export const useGalleryData = () => {
         } else {
           try {
             const responseText = await artworksRes.text();
-            console.log('Raw artworks response:', responseText); // Debug raw response
             const artworksData = JSON.parse(responseText);
-            console.log('Artworks data received:', artworksData);
             // Ensure artworksData is an array
             if (Array.isArray(artworksData)) {
               const normalizedArtworks = artworksData.map(artwork => ({
@@ -57,8 +51,6 @@ export const useGalleryData = () => {
             }
           } catch (jsonError) {
             console.error('Failed to parse artworks response as JSON:', jsonError);
-            console.error('Response status:', artworksRes.status);
-            console.error('Response headers:', Object.fromEntries(artworksRes.headers.entries()));
             setArtworks([]);
           }
         }
@@ -68,6 +60,32 @@ export const useGalleryData = () => {
         setArtworks([]);
       } finally {
         setLoading(false);
+      }
+    };
+
+    const validateArtworkId = (artworkId) => {
+      if (!artworkId || typeof artworkId !== 'string') {
+        console.error('Invalid artworkId provided:', artworkId);
+        return false;
+      }
+      return true;
+    };
+
+    const fetchRecommendations = async (artworkId) => {
+      if (!validateArtworkId(artworkId)) return;
+
+      try {
+        const apiBase = getApiBaseUrl();
+        const response = await fetch(`${apiBase}/api/recommendations/similar?artworkId=${artworkId}&topK=10`);
+        if (!response.ok) {
+          console.error('Failed to fetch recommendations:', response.status);
+          return;
+        }
+        const data = await response.json();
+        console.log('Recommendations received:', data.recommendations);
+        return data.recommendations;
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
       }
     };
 
