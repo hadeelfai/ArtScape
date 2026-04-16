@@ -9,7 +9,6 @@ export const testRecommendationService = async () => {
   
   try {
     const health = await checkRecommendationServiceHealth()
-    console.log('Recommendation service health:', health)
     
     if (health.status === 'healthy') {
       console.log('✅ Recommendation service is running and accessible')
