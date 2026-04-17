@@ -1060,7 +1060,7 @@ return artworksToUse
           </div>
 
           {/* Divider line */}
-          <div className="border-b border-gray-200 mt-0"></div>
+          <div className="border-b border-gray-200 mt-0 pt-10 lg:pt-0 md:pt-0"></div>
 
           {/* Tabs Navigation */}
           <div className="bg-white border-b border-gray-200 mt-4 sm:mt-8">
