@@ -23,7 +23,7 @@ const GalleryPage = () => {
 
   const latestMarketplace = useMemo(() => (
     artworks
-      .filter(art => art.artworkType === 'Marketplace')
+      .filter(art => art.artworkType === 'Marketplace' && !art.isSold)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, MAX_DISPLAY)
   ), [artworks]);

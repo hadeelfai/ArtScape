@@ -152,6 +152,9 @@ router.post('/paypal/capture', async (req, res) => {
     ...shippingFields,
     giftMessage: typeof giftMessage === 'string' ? giftMessage : undefined,
   });
+  for (const item of cart.items) {
+  await Artwork.findByIdAndUpdate(item._id, { isSold: true });
+}
 
   
 });
@@ -161,6 +164,9 @@ router.post('/cod', authMiddleware,async (req, res) => {
   const cart = await Cart.findOne({ user: req.user.id }).populate('items');
   if (!cart || cart.items.length === 0)
     return res.status(400).json({ error: 'Cart is empty' });
+  for (const item of cart.items) {
+  await Artwork.findByIdAndUpdate(item._id, { isSold: true });
+}
 
     const unavailableItems = getUnavailableItems(cart.items);
   if (unavailableItems.length > 0) {

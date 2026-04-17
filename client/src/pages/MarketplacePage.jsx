@@ -145,8 +145,7 @@ const MarketplacePage = () => {
   const filteredArtworks = useMemo(() => {
     let artworksToSort = artworks
     
-      .filter((art) => art.artworkType === "Marketplace" && !isArtworkSold(art))
-      .filter((art) => art.artworkType === "Marketplace") // Include all marketplace items
+      .filter((art) => art.artworkType === "Marketplace" && !art.isSold)
       .filter((art) => matchesCategory(art, category))
       .filter((art) => matchesSize(art, filters.size))
       .filter((art) => matchesColor(art, filters.color))

@@ -165,7 +165,10 @@ export default function CheckoutPage() {
       if (res.ok) {
         clearCart();
         toast.success('Order placed successfully (Cash on Delivery)');
-        navigate('/orders');
+        
+        setTimeout(() => {
+          navigate('/orders');
+        }, 500);
       } else {
         const data = await res.json().catch(() => ({}));
         toast.error(data.error || 'Failed to place order');
@@ -252,7 +255,7 @@ export default function CheckoutPage() {
     } else {
       renderPayPal();
     }
-  }, [paymentMethod, cartItems.length, user?.token, clearCart, navigate, shipping, giftMessage, useSavedAddress, total]);
+  }, [paymentMethod, cartItems.length, user?.token, total]);
 
   if (!isAuthenticated || !user || cartItems.length === 0) return null;
 
