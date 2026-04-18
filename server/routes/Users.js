@@ -668,7 +668,15 @@ router.post('/follow/:id', async (req, res) => {
 // GET /users  -> list all users (no passwords) - Public for gallery lookup, admin modifications protected separately
 router.get('/', async (req, res) => {
     try {
-        const users = await User.find().select('-password');
+        const { username } = req.query;
+        const filter = {};
+
+        if (username && typeof username === 'string' && username.trim().length > 0) {
+            const normalized = username.trim().replace(/^@+/, '');
+            filter.username = { $regex: normalized, $options: 'i' };
+        }
+
+        const users = await User.find(filter).select('-password');
         res.json(users);
     } catch (error) {
         res.status(500).json({ error: error.message });

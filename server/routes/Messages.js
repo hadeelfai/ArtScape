@@ -49,7 +49,12 @@ router.get('/conversations', async (req, res) => {
           participantAvatar: otherParticipant.profileImage,
           lastMessage: msg.content,
           lastMessageTime: msg.createdAt,
+          unreadCount: 0,
         };
+      }
+
+      if (msg.recipient._id.toString() === userId && msg.read === false) {
+        conversationMap[conversationKey].unreadCount += 1;
       }
     });
 
