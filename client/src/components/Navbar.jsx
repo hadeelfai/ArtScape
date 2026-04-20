@@ -445,18 +445,6 @@ const Navbar = () => {
                   </div>
                 </Link>
 
-                <Link
-                  to="/messages"
-                  className={`p-2 relative ${isOpen ? "text-white" : "text-black"}`}
-                >
-                  <Mail className="w-5 h-5" />
-                  {unreadMessageCount > 0 && (
-                    <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
-                      {unreadMessageCount}
-                    </span>
-                  )}
-                </Link>
-
                 <div className={`${isOpen ? "text-white" : "text-black"}`}>
                   <SearchBar variant='icon' />
                 </div>
@@ -532,6 +520,22 @@ const Navbar = () => {
                           >
                             <Palette className="w-4 h-4 mr-3" />
                             My Sales
+                          </Link>
+                          <Link
+                            to="/messages"
+                            onClick={() => {
+                              setShowProfileDropdown(false);
+                              setIsOpen(false);
+                            }}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <Mail className="w-4 h-4 mr-3" />
+                            <span>Messages</span>
+                            {unreadMessageCount > 0 && (
+                              <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                {unreadMessageCount}
+                              </span>
+                            )}
                           </Link>
                           <div className="border-t border-gray-200 my-1"></div>
                           <button
