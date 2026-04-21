@@ -18,6 +18,9 @@ const MessagesPage = () => {
   const [messageInput, setMessageInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [userResults, setUserResults] = useState([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+  const [userSearchError, setUserSearchError] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showConversationList, setShowConversationList] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -40,68 +43,113 @@ const MessagesPage = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // ─── Load conversations ───────────────────────────────────────────────────
+  const loadConversations = async (showLoading = true) => {
+    if (!user?.id) return;
+    if (showLoading) setLoading(true);
+
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/messages/conversations`, {
+        credentials: 'include',
+        headers: authHeaders,
+      });
+
+      if (!res.ok) throw new Error('Failed to load conversations');
+
+      const { conversations: data = [] } = await res.json();
+      setConversations(data);
+
+      const targetUserId = searchParams.get('user');
+      if (!targetUserId) return;
+
+      const existing = data.find(c => c.participantId === targetUserId);
+      if (existing) {
+        setActiveConversation(existing);
+        return;
+      }
+
+      let participantName = 'Unknown User';
+      let participantAvatar = DEFAULT_AVATAR;
+
+      try {
+        const userRes = await fetch(`${getApiBaseUrl()}/users/profile/${targetUserId}`, {
+          credentials: 'include',
+        });
+        if (userRes.ok) {
+          const { user: userData } = await userRes.json();
+          participantName = userData?.name || participantName;
+          participantAvatar = userData?.profileImage || participantAvatar;
+        }
+      } catch {
+        // Silently fall back to defaults
+      }
+
+      setActiveConversation({
+        conversationId: null,
+        participantId: targetUserId,
+        participantName,
+        participantAvatar,
+        lastMessage: '',
+        lastMessageTime: new Date().toISOString(),
+        isNew: true,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load conversations');
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!user?.id) return;
-
-    const loadConversations = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`${getApiBaseUrl()}/messages/conversations`, {
-          credentials: 'include',
-          headers: authHeaders,
-        });
-
-        if (!res.ok) throw new Error('Failed to load conversations');
-
-        const { conversations: data = [] } = await res.json();
-        setConversations(data);
-
-        const targetUserId = searchParams.get('user');
-        if (!targetUserId) return;
-
-        const existing = data.find(c => c.participantId === targetUserId);
-        if (existing) {
-          setActiveConversation(existing);
-          return;
-        }
-
-        // Start a new conversation with the user from URL param
-        let participantName = 'Unknown User';
-        let participantAvatar = DEFAULT_AVATAR;
-
-        try {
-          const userRes = await fetch(`${getApiBaseUrl()}/users/profile/${targetUserId}`, {
-            credentials: 'include',
-          });
-          if (userRes.ok) {
-            const { user: userData } = await userRes.json();
-            participantName = userData?.name || participantName;
-            participantAvatar = userData?.profileImage || participantAvatar;
-          }
-        } catch {
-          // Silently fall back to defaults
-        }
-
-        setActiveConversation({
-          conversationId: null,
-          participantId: targetUserId,
-          participantName,
-          participantAvatar,
-          lastMessage: '',
-          lastMessageTime: new Date().toISOString(),
-          isNew: true,
-        });
-      } catch (err) {
-        console.error(err);
-        toast.error('Failed to load conversations');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadConversations();
   }, [user?.id, user?.token, searchParams]);
+
+  const fetchUserSearchResults = async (query) => {
+    const normalized = query.trim();
+    if (!normalized) {
+      setUserResults([]);
+      setUserSearchError('');
+      return;
+    }
+
+    setIsSearchingUsers(true);
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/users?username=${encodeURIComponent(normalized)}`, {
+        credentials: 'include',
+      });
+
+      if (!res.ok) throw new Error('Failed to search users');
+
+      const results = await res.json();
+      const filtered = Array.isArray(results)
+        ? results.filter(u => u._id !== user?.id && u.id !== user?.id)
+        : [];
+
+      setUserResults(filtered);
+      setUserSearchError('');
+    } catch (err) {
+      console.error(err);
+      setUserResults([]);
+      setUserSearchError('Unable to search users');
+    } finally {
+      setIsSearchingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!searchTerm.trim() || searchTerm.trim().length < 2) {
+      setUserResults([]);
+      setUserSearchError('');
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      fetchUserSearchResults(searchTerm);
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [searchTerm, user?.id]);
 
   // ─── Load messages for active conversation ────────────────────────────────
   useEffect(() => {
@@ -118,6 +166,15 @@ const MessagesPage = () => {
         if (!res.ok) throw new Error();
         const { messages: data = [] } = await res.json();
         setMessages(data);
+
+        setConversations(prev => prev.map(c =>
+          c.conversationId === activeConversation.conversationId
+            ? { ...c, unreadCount: 0 }
+            : c
+        ));
+
+        loadConversations(false);
+        window.dispatchEvent(new Event('directMessagesUpdated'));
       } catch {
         toast.error('Failed to load messages');
       }
@@ -234,6 +291,29 @@ const MessagesPage = () => {
     (c.participantName || c.participantId).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const openUserConversation = (selectedUser) => {
+    const participantId = selectedUser._id || selectedUser.id;
+    const existing = conversations.find(c => c.participantId === participantId);
+
+    if (existing) {
+      setActiveConversation(existing);
+    } else {
+      setActiveConversation({
+        conversationId: null,
+        participantId,
+        participantName: selectedUser.name || selectedUser.username || 'User',
+        participantAvatar: selectedUser.profileImage || DEFAULT_AVATAR,
+        lastMessage: '',
+        lastMessageTime: new Date().toISOString(),
+        isNew: true,
+      });
+    }
+
+    setSearchTerm('');
+    setUserResults([]);
+    if (isMobile) setShowConversationList(false);
+  };
+
   const openConversation = (conv) => {
     setActiveConversation(conv);
     if (isMobile) setShowConversationList(false);
@@ -253,7 +333,7 @@ const MessagesPage = () => {
                 <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search conversations..."
+                  placeholder="Search conversations or users..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
@@ -264,47 +344,106 @@ const MessagesPage = () => {
             <div className="flex-1 overflow-y-auto">
               {loading ? (
                 <p className="p-4 text-center text-gray-500">Loading conversations...</p>
-              ) : filteredConversations.length === 0 ? (
-                <p className="p-4 text-center text-gray-500">
-                  {searchTerm ? 'No conversations found' : 'No messages yet. Start a conversation!'}
-                </p>
               ) : (
-                filteredConversations.map(conv => (
-                  <button
-                    key={conv.conversationId || conv.participantId}
-                    onClick={() => openConversation(conv)}
-                    className={`group w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left flex items-center justify-between ${
-                      activeConversation?.participantId === conv.participantId
-                        ? 'bg-gray-50 border-l-2 border-l-black'
-                        : ''
-                    }`}
-                  >
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <img
-                        src={conv.participantAvatar || DEFAULT_AVATAR}
-                        alt={conv.participantName}
-                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 truncate">
-                          {conv.participantName || 'Unknown User'}
-                        </h3>
-                        <p className="text-sm text-gray-600 truncate">
-                          {conv.lastMessage || 'No messages yet'}
-                        </p>
-                      </div>
-                      <span className="text-xs text-gray-500 flex-shrink-0">
-                        {formatTime(conv.lastMessageTime)}
-                      </span>
+                <>
+                  {/* Conversations */}
+                  {filteredConversations.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-50 border-b border-gray-200">
+                        Conversations
+                      </h3>
+                      {filteredConversations.map(conv => (
+                        <button
+                          key={conv.conversationId || conv.participantId}
+                          onClick={() => openConversation(conv)}
+                          className={`group w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left flex items-center justify-between ${
+                            activeConversation?.participantId === conv.participantId
+                              ? 'bg-gray-50 border-l-2 border-l-black'
+                              : ''
+                          }`}
+                        >
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <img
+                              src={conv.participantAvatar || DEFAULT_AVATAR}
+                              alt={conv.participantName}
+                              className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-gray-900 truncate">
+                                {conv.participantName || 'Unknown User'}
+                              </h3>
+                              <p className="text-sm text-gray-600 truncate">
+                                {conv.lastMessage || 'No messages yet'}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1 text-right">
+                              <span className="text-xs text-gray-500">
+                                {formatTime(conv.lastMessageTime)}
+                              </span>
+                              {conv.unreadCount > 0 && (
+                                <span className="inline-flex items-center justify-center min-w-[1.5rem] px-2 py-0.5 text-[10px] font-semibold text-white bg-red-500 rounded-full">
+                                  {conv.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={e => { e.stopPropagation(); setDeleteTarget(conv); }}
+                            className="ml-2 p-2 opacity-0 group-hover:opacity-100 hover:bg-red-100 rounded-lg transition-all"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </button>
+                        </button>
+                      ))}
                     </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); setDeleteTarget(conv); }}
-                      className="ml-2 p-2 opacity-0 group-hover:opacity-100 hover:bg-red-100 rounded-lg transition-all"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </button>
-                  </button>
-                ))
+                  )}
+
+                  {/* Users */}
+                  {searchTerm.trim().length >= 2 && (
+                    <div>
+                      <h3 className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-50 border-b border-gray-200">
+                        People
+                      </h3>
+                      {isSearchingUsers ? (
+                        <p className="p-4 text-sm text-gray-500">Searching users...</p>
+                      ) : userSearchError ? (
+                        <p className="p-4 text-sm text-red-500">{userSearchError}</p>
+                      ) : userResults.length === 0 ? (
+                        <p className="p-4 text-sm text-gray-500">No users found.</p>
+                      ) : (
+                        userResults.map(result => (
+                          <button
+                            key={result._id || result.id}
+                            type="button"
+                            onClick={() => openUserConversation(result)}
+                            className="w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={result.profileImage || DEFAULT_AVATAR}
+                                alt={result.name || result.username}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-900 truncate">{result.name || 'Unknown User'}</p>
+                                <p className="text-xs text-gray-500 truncate">
+                                  {result.username ? `@${result.username.replace(/^@+/, '')}` : 'No username'}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  {/* No results */}
+                  {filteredConversations.length === 0 && (!searchTerm.trim() || searchTerm.trim().length < 2) && (
+                    <p className="p-4 text-center text-gray-500">
+                      {searchTerm ? 'No conversations found' : 'No messages yet. Start a conversation!'}
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -315,11 +454,15 @@ const MessagesPage = () => {
           <div className={`${isMobile ? 'w-full' : 'flex-1'} h-full flex flex-col bg-white`}>
             {/* Header */}
             <div className="p-4 border-b border-gray-200 flex items-center gap-3">
-              {isMobile && (
-                <button onClick={() => setShowConversationList(true)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                  <ArrowLeft className="w-5 h-5 text-gray-700" />
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setActiveConversation(null);
+                  if (isMobile) setShowConversationList(true);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-700" />
+              </button>
               <img
                 src={activeConversation.participantAvatar || DEFAULT_AVATAR}
                 alt={activeConversation.participantName}

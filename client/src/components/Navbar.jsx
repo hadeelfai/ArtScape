@@ -14,6 +14,7 @@ const Navbar = () => {
   const [showGallerySubmenu, setShowGallerySubmenu] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0); // Manage notification count from your notification system
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const profileDropdownRefDesktop = useRef(null);
   const profileDropdownRefMobile = useRef(null);
 
@@ -68,6 +69,33 @@ const Navbar = () => {
     }
   };
 
+  const fetchMessageCount = async () => {
+    if (!isAuthenticated || !user?.token) {
+      setUnreadMessageCount(0);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/messages/unread/count`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        console.error('Failed to load unread message count:', res.status);
+        return;
+      }
+
+      const data = await res.json();
+      setUnreadMessageCount(data.unreadCount || 0);
+    } catch (error) {
+      console.error('Error fetching unread message count:', error);
+    }
+  };
 
   // Decide where the profile avatar should go
   const profilePath = user
@@ -108,20 +136,26 @@ const Navbar = () => {
    // Checking notification count when user logs in,
   useEffect(() => {
     fetchNotificationCount();
+    fetchMessageCount();
   }, [isAuthenticated, user?.token, location.pathname]);
 
-    // Listen for global "notificationsRead" event (fired from NotificationsPage)
   useEffect(() => {
+    const handleDirectMessagesUpdated = () => {
+      fetchMessageCount();
+    };
+
     const handleNotificationsRead = () => {
       // Re-fetch count so the red badge disappears
       fetchNotificationCount();
     };
 
-    window.addEventListener("notificationsRead", handleNotificationsRead);
+    window.addEventListener('notificationsRead', handleNotificationsRead);
+    window.addEventListener('directMessagesUpdated', handleDirectMessagesUpdated);
 
     // Cleanup on unmount
     return () => {
-      window.removeEventListener("notificationsRead", handleNotificationsRead);
+      window.removeEventListener('notificationsRead', handleNotificationsRead);
+      window.removeEventListener('directMessagesUpdated', handleDirectMessagesUpdated);
     };
   }, [isAuthenticated, user?.token]); // re-bind if auth state changes
 
@@ -289,6 +323,11 @@ const Navbar = () => {
                   className={`p-2 hover:opacity-60 transition-opacity relative ${isOpen ? "text-white" : "text-black"}`}
                 >
                   <Mail className="w-5 h-5" />
+                  {unreadMessageCount > 0 && (
+                    <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                      {unreadMessageCount}
+                    </span>
+                  )}
                 </Link>
 
                 <div className={`${isOpen ? "text-white" : "text-black"}`}> 
@@ -406,18 +445,6 @@ const Navbar = () => {
                   </div>
                 </Link>
 
-                <Link
-                  to="/notifications"
-                  className={`p-2 relative ${isOpen ? "text-white" : "text-black"}`}
-                >
-                  <Bell className="w-5 h-5" />
-                  {notificationCount > 0 && (
-                    <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
-                      {notificationCount}
-                    </span>
-                  )}
-                </Link>
-
                 <div className={`${isOpen ? "text-white" : "text-black"}`}>
                   <SearchBar variant='icon' />
                 </div>
@@ -493,6 +520,22 @@ const Navbar = () => {
                           >
                             <Palette className="w-4 h-4 mr-3" />
                             My Sales
+                          </Link>
+                          <Link
+                            to="/messages"
+                            onClick={() => {
+                              setShowProfileDropdown(false);
+                              setIsOpen(false);
+                            }}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <Mail className="w-4 h-4 mr-3" />
+                            <span>Messages</span>
+                            {unreadMessageCount > 0 && (
+                              <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                {unreadMessageCount}
+                              </span>
+                            )}
                           </Link>
                           <div className="border-t border-gray-200 my-1"></div>
                           <button
