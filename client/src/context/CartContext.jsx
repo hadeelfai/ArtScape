@@ -4,6 +4,13 @@ import { getApiBaseUrl } from '../config.js';
 
 const CartContext = createContext();
 
+const isArtworkSold = (artwork) => {
+  if (!artwork) return false;
+  if (artwork.isSold) return true;
+  const normalizedStatus = String(artwork.status || '').trim().toLowerCase();
+  return normalizedStatus === 'sold out' || normalizedStatus === 'sold';
+};
+
 export function useCart() {
   return useContext(CartContext);
 }
@@ -56,6 +63,10 @@ export function CartProvider({ children }) {
     const artworkId = artwork._id || artwork.id;
     if (!artworkId) {
       if (onError) onError('Invalid artwork');
+      return false;
+    }
+    if (isArtworkSold(artwork)) {
+      if (onError) onError('This artwork is sold out');
       return false;
     }
     if (cartItems.some((item) => item.id === artworkId)) {
