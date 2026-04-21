@@ -20,7 +20,7 @@ const Navbar = () => {
 
   // Get user data from AuthContext
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
-  
+
   // Check if we're on a Gallery sub-page (explore or marketplace)
   const isGalleryActive = location.pathname === '/GalleryPage' || location.pathname === '/explore' || location.pathname === '/marketplace';
   const { cartItems } = useCart();
@@ -99,10 +99,10 @@ const Navbar = () => {
 
   // Decide where the profile avatar should go
   const profilePath = user
-  ? isAdmin
-    ? "/admin"
-    : `/profile/${user.id || user._id}`
-  : "/signin";
+    ? isAdmin
+      ? "/admin"
+      : `/profile/${user.id || user._id}`
+    : "/signin";
 
   // Note: Desktop dropdown uses hover (onMouseEnter/onMouseLeave), so no click-outside handler needed
   // Mobile dropdown still uses click for better touch experience
@@ -133,7 +133,7 @@ const Navbar = () => {
   ];
 
 
-   // Checking notification count when user logs in,
+  // Checking notification count when user logs in,
   useEffect(() => {
     fetchNotificationCount();
     fetchMessageCount();
@@ -330,13 +330,13 @@ const Navbar = () => {
                   )}
                 </Link>
 
-                <div className={`${isOpen ? "text-white" : "text-black"}`}> 
+                <div className={`${isOpen ? "text-white" : "text-black"}`}>
                   <SearchBar variant='icon' />
                 </div>
 
                 {user && (
-                  <div 
-                    className="relative" 
+                  <div
+                    className="relative"
                     ref={profileDropdownRefDesktop}
                     onMouseEnter={() => setShowProfileDropdown(true)}
                     onMouseLeave={() => setShowProfileDropdown(false)}
@@ -445,6 +445,19 @@ const Navbar = () => {
                   </div>
                 </Link>
 
+                <Link
+                  to="/notifications"
+                  className={`p-2 relative ${isOpen ? "text-white" : "text-black"}`}
+                >
+                  <Bell className="w-5 h-5" />
+                  {notificationCount > 0 && (
+                    <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                      {notificationCount}
+                    </span>
+                  )}
+                </Link>
+
+
                 <div className={`${isOpen ? "text-white" : "text-black"}`}>
                   <SearchBar variant='icon' />
                 </div>
@@ -485,7 +498,7 @@ const Navbar = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute right-0 mt-52 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                        className="absolute right-0 mt-60 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
                       >
                         <div className="py-1">
                           <Link
