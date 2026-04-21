@@ -100,7 +100,7 @@ router.post('/paypal/create', async (req, res) => {
       purchase_units: [
         {
           amount: {
-            currency_code: 'SAR',
+            currency_code: 'USD',
             value: total.toFixed(2),
           },
         },
