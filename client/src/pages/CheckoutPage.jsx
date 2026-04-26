@@ -8,6 +8,21 @@ import { getApiBaseUrl } from '../config.js';
 import { toast } from 'sonner';
 import { Wallet, Banknote } from 'lucide-react';
 
+const REQUIRED_SHIPPING_FIELDS = ['recipientName', 'phone', 'streetName', 'district', 'city'];
+const PAYPAL_CONTAINER_ID = 'checkout-paypal-container-sidebar';
+const PAYPAL_SDK_SCRIPT_ID = 'paypal-sdk-script';
+
+const getShippingValidationErrors = (shippingData) => {
+  const fields = {};
+  for (const field of REQUIRED_SHIPPING_FIELDS) {
+    const value = shippingData?.[field];
+    if (typeof value !== 'string' || !value.trim()) {
+      fields[field] = 'This field is required';
+    }
+  }
+  return fields;
+};
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { cartItems, clearCart } = useCart();
@@ -32,9 +47,39 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('PAYPAL');
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [placing, setPlacing] = useState(false);
+  const [shippingErrors, setShippingErrors] = useState({});
 
   const total = cartItems.reduce((sum, item) => sum + (item.price ? Number(item.price) : 0), 0);
   const firstItem = cartItems[0];
+  const selectedRecipientName = useSavedAddress ? (user?.name || shipping.recipientName || '') : (shipping.recipientName || '');
+  const shippingPayload = {
+    recipientName: selectedRecipientName,
+    phone: shipping.phone || '',
+    streetName: shipping.streetName || '',
+    additionalDetails: shipping.additionalDetails || '',
+    district: shipping.district || '',
+    city: shipping.city || '',
+    state: shipping.state || '',
+    zipCode: shipping.zipCode || '',
+    country: shipping.country || '',
+  };
+  const liveShippingErrors = getShippingValidationErrors(shippingPayload);
+  const isShippingValid = Object.keys(liveShippingErrors).length === 0;
+
+  const validateShippingBeforePayment = () => {
+    const errors = getShippingValidationErrors(shippingPayload);
+    setShippingErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const getInputErrorClass = (field) =>
+    shippingErrors[field] ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300';
+
+  const handleBlockedPaymentAttempt = () => {
+    if (!validateShippingBeforePayment()) {
+      toast.error('Please complete Name, Contact, Street, District, and City before payment.');
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -119,7 +164,7 @@ export default function CheckoutPage() {
               if (useSavedAddress) setShipping(addr);
             }
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -137,9 +182,12 @@ export default function CheckoutPage() {
       toast.error('Please sign in to place an order.');
       return;
     }
+    if (!validateShippingBeforePayment()) {
+      toast.error('Please complete all required shipping fields.');
+      return;
+    }
     setPlacing(true);
     try {
-      const recipientName = useSavedAddress ? (user?.name || '') : (shipping.recipientName || '');
       const res = await fetch(`${getApiBaseUrl()}/payment/cod`, {
         method: 'POST',
         headers: {
@@ -148,24 +196,14 @@ export default function CheckoutPage() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          shipping: {
-            recipientName,
-            phone: shipping.phone || '',
-            streetName: shipping.streetName || '',
-            additionalDetails: shipping.additionalDetails || '',
-            district: shipping.district || '',
-            city: shipping.city || '',
-            state: shipping.state || '',
-            zipCode: shipping.zipCode || '',
-            country: shipping.country || '',
-          },
+          shipping: shippingPayload,
           giftMessage: giftMessage || undefined,
         }),
       });
       if (res.ok) {
         clearCart();
         toast.success('Order placed successfully (Cash on Delivery)');
-        
+
         setTimeout(() => {
           navigate('/orders');
         }, 500);
@@ -184,78 +222,151 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (paymentMethod !== 'PAYPAL' || cartItems.length === 0 || !user?.token) return;
     if (total <= 0) return;
-    const container = document.getElementById('checkout-paypal-container-sidebar');
-    if (container) container.innerHTML = '';
 
-    function renderPayPal() {
-      if (!window.paypal) return;
-      window.paypal
-        .Buttons({
-          createOrder: async () => {
-            const res = await fetch(`${getApiBaseUrl()}/payment/paypal/create`, {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${user.token}` },
-              credentials: 'include',
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-              const msg = data.error || 'Could not create payment. Try again.';
-              toast.error(msg);
-              throw new Error(msg);
-            }
-            if (!data.id) {
-              toast.error('Invalid response from payment server.');
-              throw new Error('No order ID');
-            }
-            return data.id;
-          },
-          onApprove: async (data) => {
-            const recipientName = useSavedAddress ? (user?.name || '') : (shipping.recipientName || '');
-            await fetch(`${getApiBaseUrl()}/payment/paypal/capture`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${user.token}`,
-              },
-              credentials: 'include',
-              body: JSON.stringify({
-                orderID: data.orderID,
-                shipping: {
-                  recipientName,
-                  phone: shipping.phone || '',
-                  streetName: shipping.streetName || '',
-                  additionalDetails: shipping.additionalDetails || '',
-                  district: shipping.district || '',
-                  city: shipping.city || '',
-                  state: shipping.state || '',
-                  zipCode: shipping.zipCode || '',
-                  country: shipping.country || '',
+    const container = document.getElementById(PAYPAL_CONTAINER_ID);
+    if (!container) return;
+    container.innerHTML = '';
+
+    let cancelled = false;
+
+    const loadPayPalSdk = () => {
+      if (window.paypal) return Promise.resolve(window.paypal);
+
+      return new Promise((resolve, reject) => {
+        const existingScript = document.getElementById(PAYPAL_SDK_SCRIPT_ID);
+        if (existingScript) {
+          existingScript.addEventListener(
+            'load',
+            () => resolve(window.paypal),
+            { once: true }
+          );
+          existingScript.addEventListener(
+            'error',
+            () => reject(new Error('Failed to load PayPal SDK')),
+            { once: true }
+          );
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.id = PAYPAL_SDK_SCRIPT_ID;
+        script.src =
+          'https://www.paypal.com/sdk/js?client-id=AcQkwsfa0-vpAqfcu8n-BSClA28pkb4tPWWL59qnwazkMlcSeCJQS_klST0U61wGefCq0x2g_5IgS4YS';
+        script.async = true;
+        script.onload = () => resolve(window.paypal);
+        script.onerror = () => reject(new Error('Failed to load PayPal SDK'));
+        document.body.appendChild(script);
+      });
+    };
+
+    const renderPayPalButtons = async () => {
+      try {
+        const paypal = await loadPayPalSdk();
+        if (cancelled) return;
+
+        const currentContainer = document.getElementById(PAYPAL_CONTAINER_ID);
+        if (!currentContainer || !paypal?.Buttons) return;
+        currentContainer.innerHTML = '';
+
+        await paypal
+          .Buttons({
+              onClick: (data, actions) => {
+    if (!validateShippingBeforePayment()) {
+      toast.error('Please complete all required shipping fields.');
+      return actions.reject();
+    }
+
+    return actions.resolve();
+  },
+            createOrder: async () => {
+              if (!validateShippingBeforePayment()) {
+                toast.error('Please complete all required shipping fields.');
+                throw new Error('Shipping information is incomplete');
+              }
+
+              const res = await fetch(`${getApiBaseUrl()}/payment/paypal/create`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${user.token}` },
+                credentials: 'include',
+              });
+
+              const data = await res.json().catch(() => ({}));
+
+              if (!res.ok) {
+                const msg = data.error || 'Could not create payment. Try again.';
+                toast.error(msg);
+                throw new Error(msg);
+              }
+
+              if (!data.id) {
+                toast.error('Invalid response from payment server.');
+                throw new Error('No order ID');
+              }
+
+              return data.id;
+            },
+            onApprove: async (data) => {
+              if (!validateShippingBeforePayment()) {
+                toast.error('Please complete all required shipping fields.');
+                return;
+              }
+              await fetch(`${getApiBaseUrl()}/payment/paypal/capture`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${user.token}`,
                 },
-                giftMessage: giftMessage || undefined,
-              }),
-            });
-            clearCart();
-            toast.success('Payment successful!');
-            navigate('/orders');
-          },
-          onError: (err) => {
-            console.error('PayPal error:', err);
-            toast.error(err?.message || 'Payment failed. Please try again.');
-          },
-        })
-        .render('#checkout-paypal-container-sidebar');
-    }
+                credentials: 'include',
+                body: JSON.stringify({
+                  orderID: data.orderID,
+                  shipping: shippingPayload,
+                  giftMessage: giftMessage || undefined,
+                }),
+              });
+              clearCart();
+              toast.success('Payment successful!');
+              navigate('/orders');
+            },
+            onError: (err) => {
+              console.error('PayPal error:', err);
+              toast.error(err?.message || 'Payment failed. Please try again.');
+            },
+          })
+          .render(`#${PAYPAL_CONTAINER_ID}`);
+      } catch (error) {
+        if (!cancelled) {
+          console.error('PayPal SDK load/render error:', error);
+          toast.error('Could not load PayPal. Please refresh and try again.');
+        }
+      }
+    };
 
-    if (!window.paypal) {
-      const script = document.createElement('script');
-      script.src =
-        'https://www.paypal.com/sdk/js?client-id=AcQkwsfa0-vpAqfcu8n-BSClA28pkb4tPWWL59qnwazkMlcSeCJQS_klST0U61wGefCq0x2g_5IgS4YS';
-      script.onload = renderPayPal;
-      document.body.appendChild(script);
-    } else {
-      renderPayPal();
-    }
-  }, [paymentMethod, cartItems.length, user?.token, total]);
+    renderPayPalButtons();
+
+    return () => {
+      cancelled = true;
+      const currentContainer = document.getElementById(PAYPAL_CONTAINER_ID);
+      if (currentContainer) currentContainer.innerHTML = '';
+    };
+  }, [
+    paymentMethod,
+    cartItems.length,
+    user?.token,
+    total,
+    isShippingValid,
+    giftMessage,
+    useSavedAddress,
+    user?.name,
+    shipping.recipientName,
+    shipping.phone,
+    shipping.streetName,
+    shipping.additionalDetails,
+    shipping.district,
+    shipping.city,
+    shipping.state,
+    shipping.zipCode,
+    shipping.country,
+  ]);
 
   if (!isAuthenticated || !user || cartItems.length === 0) return null;
 
@@ -298,7 +409,6 @@ export default function CheckoutPage() {
   };
 
   const savedAddressLines = profileAddress ? formatAddressLines(profileAddress, user?.name || '', profileAddress.phone) : null;
-  const selectedRecipientName = useSavedAddress ? (user?.name || '') : (shipping.recipientName || '');
   const selectedAddressLines = formatAddressLines(shipping, selectedRecipientName, shipping.phone);
   const savedAddressSingleLine = profileAddress ? formatAddressSingleLine(profileAddress) : '';
   const hasSelectedAddress = selectedAddressLines.line1 || selectedAddressLines.line2 || selectedAddressLines.line3;
@@ -316,192 +426,202 @@ export default function CheckoutPage() {
             <section className="bg-white rounded-xl border border-gray-200 p-8">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">Shipping Address</h2>
               {loadingProfile ? (
-            <p className="text-sm text-gray-500">Loading saved address...</p>
-          ) : (
-            <>
-              {savedAddressSingleLine && (
-                <label className="flex items-start gap-3 mb-6 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="addressSource"
-                    checked={useSavedAddress}
-                    onChange={() => setUseSavedAddress(true)}
-                    className="mt-1.5"
-                  />
-                  <div className="min-w-0">
-                    <span className="font-medium text-gray-900">Use address from profile</span>
-                    <div className="text-sm text-gray-600 mt-1 space-y-0.5">
-                      {savedAddressLines.line1 && <p className="break-words">{savedAddressLines.line1}</p>}
-                      {savedAddressLines.line2 && <p className="break-words">{savedAddressLines.line2}</p>}
-                      {savedAddressLines.line3 && <p className="break-words">{savedAddressLines.line3}</p>}
-                    </div>
-                    <Link to="/edit-profile" className="text-sm text-black underline mt-2 inline-block">
-                      Edit in profile
-                    </Link>
-                  </div>
-                </label>
-              )}
-              <label className="flex items-start gap-3 cursor-pointer mb-6">
-                <input
-                  type="radio"
-                  name="addressSource"
-                  checked={!useSavedAddress}
-                  onChange={() => {
-                    setUseSavedAddress(false);
-                    if (savedAddressSingleLine) {
-                      setShipping({
-                        address: '',
-                        address2: '',
-                        district: '',
-                        streetName: '',
-                        additionalDetails: '',
-                        city: '',
-                        state: '',
-                        country: '',
-                        zipCode: '',
-                        phone: '',
-                        recipientName: '',
-                      });
-                    } else {
-                      setShipping((prev) => ({
-                        ...prev,
-                        recipientName: prev.recipientName || user?.name || '',
-                        phone: prev.phone || profileAddress?.phone || '',
-                      }));
-                    }
-                  }}
-                  className="mt-1.5"
-                />
-                <span className="font-medium text-gray-900">
-                  {savedAddressSingleLine ? 'Ship to someone else or send as a gift.' : 'Enter your shipping address'}
-                </span>
-              </label>
-              {!useSavedAddress && (
-                <div className="space-y-5">
-                  {/* Universal section heading: works for both self-shipping and gifts */}
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900">Delivery Information</h3>
-                  </div>
-
-                  {/* 1. Recipient Information */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Recipient Full Name</label>
+                <p className="text-sm text-gray-500">Loading saved address...</p>
+              ) : (
+                <>
+                  {savedAddressSingleLine && (
+                    <label className="flex items-start gap-3 mb-6 cursor-pointer">
                       <input
-                        type="text"
-                        placeholder={savedAddressSingleLine ? "Who is receiving the art?" : "Pre-filled with your name"}
-                        value={shipping.recipientName}
-                        onChange={(e) => setShipping((s) => ({ ...s, recipientName: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
+                        type="radio"
+                        name="addressSource"
+                        checked={useSavedAddress}
+                        onChange={() => setUseSavedAddress(true)}
+                        className="mt-1.5"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
-                      <input
-                        type="tel"
-                        placeholder={savedAddressSingleLine ? "Their contact for delivery coordination" : "e.g., +966..."}
-                        value={shipping.phone}
-                        onChange={(e) => setShipping((s) => ({ ...s, phone: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 2. Specific Address Details */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Street Name</label>
-                      <input
-                        type="text"
-                        placeholder="e.g., King Sattam St"
-                        value={shipping.streetName}
-                        onChange={(e) => setShipping((s) => ({ ...s, streetName: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
-                      <input
-                        type="text"
-                        placeholder="e.g., Al-Waha"
-                        value={shipping.district}
-                        onChange={(e) => setShipping((s) => ({ ...s, district: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Building / Apartment / Suite</label>
-                      <input
-                        type="text"
-                        placeholder="Building 5, Apt 12"
-                        value={shipping.additionalDetails}
-                        onChange={(e) => setShipping((s) => ({ ...s, additionalDetails: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 3. Regional Details (3 columns + Country) */}
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                        <input
-                          type="text"
-                          placeholder="e.g., Jeddah"
-                          value={shipping.city}
-                          onChange={(e) => setShipping((s) => ({ ...s, city: e.target.value }))}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
-                        />
+                      <div className="min-w-0">
+                        <span className="font-medium text-gray-900">Use address from profile</span>
+                        <div className="text-sm text-gray-600 mt-1 space-y-0.5">
+                          {savedAddressLines.line1 && <p className="break-words">{savedAddressLines.line1}</p>}
+                          {savedAddressLines.line2 && <p className="break-words">{savedAddressLines.line2}</p>}
+                          {savedAddressLines.line3 && <p className="break-words">{savedAddressLines.line3}</p>}
+                        </div>
+                        <Link to="/edit-profile" className="text-sm text-black underline mt-2 inline-block">
+                          Edit in profile
+                        </Link>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">State / Province</label>
-                        <input
-                          type="text"
-                          placeholder="e.g., Makkah Province"
-                          value={shipping.state}
-                          onChange={(e) => setShipping((s) => ({ ...s, state: e.target.value }))}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
-                        <input
-                          type="text"
-                          placeholder="e.g., 23431"
-                          value={shipping.zipCode}
-                          onChange={(e) => setShipping((s) => ({ ...s, zipCode: e.target.value }))}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                      <input
-                        type="text"
-                        placeholder="Default: Saudi Arabia"
-                        value={shipping.country}
-                        onChange={(e) => setShipping((s) => ({ ...s, country: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Gift Message (Optional)</label>
-                    <textarea
-                      placeholder="Write a special note to the recipient... (e.g., Happy Birthday!)"
-                      value={giftMessage}
-                      onChange={(e) => setGiftMessage(e.target.value)}
-                      rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400 resize-none"
+                    </label>
+                  )}
+                  <label className="flex items-start gap-3 cursor-pointer mb-6">
+                    <input
+                      type="radio"
+                      name="addressSource"
+                      checked={!useSavedAddress}
+                      onChange={() => {
+                        setUseSavedAddress(false);
+                        if (savedAddressSingleLine) {
+                          setShipping({
+                            address: '',
+                            address2: '',
+                            district: '',
+                            streetName: '',
+                            additionalDetails: '',
+                            city: '',
+                            state: '',
+                            country: '',
+                            zipCode: '',
+                            phone: '',
+                            recipientName: '',
+                          });
+                        } else {
+                          setShipping((prev) => ({
+                            ...prev,
+                            recipientName: prev.recipientName || user?.name || '',
+                            phone: prev.phone || profileAddress?.phone || '',
+                          }));
+                        }
+                      }}
+                      className="mt-1.5"
                     />
-                  </div>
-                </div>
+                    <span className="font-medium text-gray-900">
+                      {savedAddressSingleLine ? 'Ship to someone else or send as a gift.' : 'Enter your shipping address'}
+                    </span>
+                  </label>
+                  {!useSavedAddress && (
+                    <div className="space-y-5">
+                      {/* Universal section heading: works for both self-shipping and gifts */}
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-900">Delivery Information</h3>
+                      </div>
+
+                      {/* 1. Recipient Information */}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Recipient Full Name</label>
+                          <input
+                            type="text"
+                            placeholder={savedAddressSingleLine ? "Who is receiving the art?" : "Pre-filled with your name"}
+                            value={shipping.recipientName}
+                            onChange={(e) => setShipping((s) => ({ ...s, recipientName: e.target.value }))}
+                            required
+                            className={`w-full border rounded-lg px-4 py-3 text-sm placeholder:text-gray-400 ${getInputErrorClass('recipientName')}`}
+                          />
+                          {shippingErrors.recipientName && <p className="mt-1 text-xs text-red-600">{shippingErrors.recipientName}</p>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                          <input
+                            type="tel"
+                            placeholder={savedAddressSingleLine ? "Their contact for delivery coordination" : "e.g., +966..."}
+                            value={shipping.phone}
+                            onChange={(e) => setShipping((s) => ({ ...s, phone: e.target.value }))}
+                            required
+                            className={`w-full border rounded-lg px-4 py-3 text-sm placeholder:text-gray-400 ${getInputErrorClass('phone')}`}
+                          />
+                          {shippingErrors.phone && <p className="mt-1 text-xs text-red-600">{shippingErrors.phone}</p>}
+                        </div>
+                      </div>
+
+                      {/* 2. Specific Address Details */}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Street Name</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., King Sattam St"
+                            value={shipping.streetName}
+                            onChange={(e) => setShipping((s) => ({ ...s, streetName: e.target.value }))}
+                            required
+                            className={`w-full border rounded-lg px-4 py-3 text-sm placeholder:text-gray-400 ${getInputErrorClass('streetName')}`}
+                          />
+                          {shippingErrors.streetName && <p className="mt-1 text-xs text-red-600">{shippingErrors.streetName}</p>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., Al-Waha"
+                            value={shipping.district}
+                            onChange={(e) => setShipping((s) => ({ ...s, district: e.target.value }))}
+                            required
+                            className={`w-full border rounded-lg px-4 py-3 text-sm placeholder:text-gray-400 ${getInputErrorClass('district')}`}
+                          />
+                          {shippingErrors.district && <p className="mt-1 text-xs text-red-600">{shippingErrors.district}</p>}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Building / Apartment / Suite</label>
+                          <input
+                            type="text"
+                            placeholder="Building 5, Apt 12"
+                            value={shipping.additionalDetails}
+                            onChange={(e) => setShipping((s) => ({ ...s, additionalDetails: e.target.value }))}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
+                          />
+                        </div>
+                      </div>
+
+                      {/* 3. Regional Details (3 columns + Country) */}
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                            <input
+                              type="text"
+                              placeholder="e.g., Jeddah"
+                              value={shipping.city}
+                              onChange={(e) => setShipping((s) => ({ ...s, city: e.target.value }))}
+                              required
+                              className={`w-full border rounded-lg px-4 py-3 text-sm placeholder:text-gray-400 ${getInputErrorClass('city')}`}
+                            />
+                            {shippingErrors.city && <p className="mt-1 text-xs text-red-600">{shippingErrors.city}</p>}
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">State / Province</label>
+                            <input
+                              type="text"
+                              placeholder="e.g., Makkah Province"
+                              value={shipping.state}
+                              onChange={(e) => setShipping((s) => ({ ...s, state: e.target.value }))}
+                              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
+                            <input
+                              type="text"
+                              placeholder="e.g., 23431"
+                              value={shipping.zipCode}
+                              onChange={(e) => setShipping((s) => ({ ...s, zipCode: e.target.value }))}
+                              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                          <input
+                            type="text"
+                            placeholder="Default: Saudi Arabia"
+                            value={shipping.country}
+                            onChange={(e) => setShipping((s) => ({ ...s, country: e.target.value }))}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Gift Message (Optional)</label>
+                        <textarea
+                          placeholder="Write a special note to the recipient... (e.g., Happy Birthday!)"
+                          value={giftMessage}
+                          onChange={(e) => setGiftMessage(e.target.value)}
+                          rows={3}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm placeholder:text-gray-400 resize-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </section>
+            </section>
 
             {/* Stage 2: Payment Method — icon buttons */}
             <section className="bg-white rounded-xl border border-gray-200 p-8">
@@ -510,11 +630,10 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('PAYPAL')}
-                  className={`flex flex-col items-center justify-center min-w-[120px] py-5 px-6 rounded-xl border-2 transition-all ${
-                    paymentMethod === 'PAYPAL'
+                  className={`flex flex-col items-center justify-center min-w-[120px] py-5 px-6 rounded-xl border-2 transition-all ${paymentMethod === 'PAYPAL'
                       ? 'border-black bg-gray-50 text-black'
                       : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  }`}
+                    }`}
                 >
                   <Wallet className="w-8 h-8 mb-2" strokeWidth={1.5} />
                   <span className="font-medium text-sm">PayPal</span>
@@ -522,11 +641,10 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('COD')}
-                  className={`flex flex-col items-center justify-center min-w-[120px] py-5 px-6 rounded-xl border-2 transition-all ${
-                    paymentMethod === 'COD' 
+                  className={`flex flex-col items-center justify-center min-w-[120px] py-5 px-6 rounded-xl border-2 transition-all ${paymentMethod === 'COD'
                       ? 'border-black bg-gray-50 text-black'
                       : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  }`}
+                    }`}
                 >
                   <Banknote className="w-8 h-8 mb-2" strokeWidth={1.5} />
                   <span className="font-medium text-sm">COD</span>
@@ -613,7 +731,7 @@ export default function CheckoutPage() {
                     <p className="mt-1">PayPal and card payments require an order total greater than 0. Add items to your cart or use Cash on Delivery if your total is correct.</p>
                   </div>
                 ) : (
-                  <div id="checkout-paypal-container-sidebar" className="min-h-[45px]" />
+                  <div id={PAYPAL_CONTAINER_ID} className="min-h-[45px]" />
                 )}
               </div>
             </section>

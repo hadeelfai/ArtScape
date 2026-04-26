@@ -6,7 +6,6 @@ import Notification from '../models/Notification.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
 import { getPayPalAccessToken, PAYPAL_BASE_URL } from '../config/paypal.js';
 import Artwork from '../models/Artwork.js';
-import { getSarToUsdRate } from '../services/currencyService.js';
 
 /** Notify only seller(s) when a new order is placed. Buyer is not notified here; they get notified when seller updates status. */
 async function createOrderNotifications(order, buyerId) {
@@ -74,110 +73,44 @@ const isArtworkSold = (artwork) => {
 const getUnavailableItems = (cartItems = []) =>
   cartItems.filter((item) => isArtworkSold(item));
 
-// CREATE PAYPAL ORDER
-router.post('/paypal/create', async (req, res) => {
-  try {
-    const cart = await Cart.findOne({ user: req.user.id }).populate('items');
-    if (!cart || cart.items.length === 0) return res.status(400).json({ error: 'Cart is empty' });
+const REQUIRED_SHIPPING_FIELDS = ['recipientName', 'phone', 'streetName', 'district', 'city'];
 
-    //  Original SAR total from database
-    const totalSAR = cart.items.reduce((sum, i) => sum + Number(i.price), 0);
-    
-    //  Fetch the dynamic rate (updates every 24h)
-    const rate = await getSarToUsdRate();
-    
-    //  Convert to USD string for PayPal
-    const totalUSD = (totalSAR * rate).toFixed(2);
+function validateShippingPayload(shippingData) {
+  if (!shippingData || typeof shippingData !== 'object') {
+    return { valid: false, missing: REQUIRED_SHIPPING_FIELDS };
+  }
+  const missing = REQUIRED_SHIPPING_FIELDS.filter((field) => {
+    const value = shippingData[field];
+    return typeof value !== 'string' || !value.trim();
+  });
+  return { valid: missing.length === 0, missing };
+}
 
-    console.log(`[DYNAMIC] Rate: ${rate} | Total: ${totalSAR} SAR -> ${totalUSD} USD`);
-
-    const token = await getPayPalAccessToken();
-
-    const response = await axios.post(
-      `${PAYPAL_BASE_URL}/v2/checkout/orders`,
-      {
-        intent: 'CAPTURE',
-        purchase_units: [{
-          amount: {
-            currency_code: 'USD',
-            value: totalUSD,
-          },
-          description: `Artscape Purchase - Rate: ${rate}`
-        }],
+async function reserveArtworkStock(cartItems = []) {
+  for (const item of cartItems) {
+    const artworkId = item?._id;
+    if (!artworkId) continue;
+    const currentStock =
+      typeof item.stockQuantity === 'number'
+        ? item.stockQuantity
+        : (item.isSold ? 0 : 1);
+    const nextStock = Math.max(0, currentStock - 1);
+    await Artwork.findByIdAndUpdate(artworkId, {
+      $set: {
+        stockQuantity: nextStock,
+        isSold: nextStock <= 0,
+        status: nextStock <= 0 ? 'Sold Out' : 'Available',
       },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    res.json(response.data);
-  } catch (error) {
-    console.error("PayPal Create Error:", error);
-    res.status(500).json({ error: 'Failed to create dynamic PayPal order' });
-  }
-});
-
-
-// CAPTURE PAYPAL ORDER
-router.post('/paypal/capture', async (req, res) => {
-  const { orderID, shipping: shippingData, giftMessage } = req.body;
-  const token = await getPayPalAccessToken();
-
-  const capture = await axios.post(
-    `${PAYPAL_BASE_URL}/v2/checkout/orders/${orderID}/capture`,
-    {},
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-
-  const cart = await Cart.findOne({ user: req.user.id }).populate('items');
-  if (!cart || cart.items.length === 0) {
-    return res.status(400).json({ error: 'Cart is empty' });
-  }
-
-  const unavailableItems = getUnavailableItems(cart.items);
-  if (unavailableItems.length > 0) {
-    return res.status(409).json({
-      error: 'Some artworks are already sold out',
-      soldArtworkIds: unavailableItems.map((item) => item._id),
     });
   }
+}
 
-  // Calculate SAR total from cart (not USD from PayPal)
-  const totalSAR = cart.items.reduce((sum, i) => sum + Number(i.price), 0);
-
-  const shippingFields = buildShippingData(shippingData);
-
-  const order = await Order.create({
-    user: req.user.id,
-    items: cart.items.map(a => ({
-      artwork: a._id,
-      price: a.price,
-      artist: a.artist,
-    })),
-    totalAmount: totalSAR, // Store SAR, not USD
-    paymentMethod: 'PAYPAL',
-    status: 'PAID',
-    paypalOrderId: orderID,
-    ...shippingFields,
-    giftMessage: typeof giftMessage === 'string' ? giftMessage : undefined,
-  });
-
-  for (const item of cart.items) {
-    await Artwork.findByIdAndUpdate(item._id, { isSold: true });
-  }
-
-  await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
-  await createOrderNotifications(order, req.user.id);
-
-  res.json({ success: true });
-});
-
-
-// CASH ON DELIVERY / COD
-router.post('/cod', authMiddleware, async (req, res) => {
+// CREATE PAYPAL ORDER
+router.post('/paypal/create', async (req, res) => {
   const cart = await Cart.findOne({ user: req.user.id }).populate('items');
   if (!cart || cart.items.length === 0)
     return res.status(400).json({ error: 'Cart is empty' });
 
-  // check availability BEFORE marking as sold
   const unavailableItems = getUnavailableItems(cart.items);
   if (unavailableItems.length > 0) {
     return res.status(409).json({
@@ -187,32 +120,139 @@ router.post('/cod', authMiddleware, async (req, res) => {
   }
 
   const total = cart.items.reduce((sum, i) => sum + Number(i.price), 0);
-  const { shipping: shippingData, giftMessage } = req.body;
-  const shippingFields = buildShippingData(shippingData);
+  if (total <= 0)
+    return res.status(400).json({ error: 'Order total must be greater than 0 to use PayPal.' });
 
-  const order = await Order.create({
-    user: req.user.id,
-    items: cart.items.map(a => ({
-      artwork: a._id,
-      price: a.price,
-      artist: a.artist,
-    })),
-    totalAmount: total,
-    paymentMethod: 'COD',
-    status: 'PENDING',
-    ...shippingFields,
-    giftMessage: typeof giftMessage === 'string' ? giftMessage : undefined,
-  });
+  const token = await getPayPalAccessToken();
 
-  // mark as sold AFTER creating the order successfully
-  for (const item of cart.items) {
-    await Artwork.findByIdAndUpdate(item._id, { isSold: true });
+  const response = await axios.post(
+    `${PAYPAL_BASE_URL}/v2/checkout/orders`,
+    {
+      intent: 'CAPTURE',
+      purchase_units: [
+        {
+          amount: {
+            currency_code: 'USD',
+            value: total.toFixed(2),
+          },
+        },
+      ],
+    },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  res.json(response.data);
+});
+
+// CAPTURE PAYPAL ORDER
+router.post('/paypal/capture', async (req, res) => {
+  try {
+    const { orderID, shipping: shippingData, giftMessage } = req.body;
+    const shippingValidation = validateShippingPayload(shippingData);
+    if (!shippingValidation.valid) {
+      return res.status(400).json({
+        error: 'Shipping address is incomplete',
+        missingFields: shippingValidation.missing,
+      });
+    }
+
+    const token = await getPayPalAccessToken();
+    const capture = await axios.post(
+      `${PAYPAL_BASE_URL}/v2/checkout/orders/${orderID}/capture`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const cart = await Cart.findOne({ user: req.user.id }).populate('items');
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ error: 'Cart is empty' });
+    }
+
+    const unavailableItems = getUnavailableItems(cart.items);
+    if (unavailableItems.length > 0) {
+      return res.status(409).json({
+        error: 'Some artworks are already sold out',
+        soldArtworkIds: unavailableItems.map((item) => item._id),
+      });
+    }
+
+    const shippingFields = buildShippingData(shippingData);
+    const order = await Order.create({
+      user: req.user.id,
+      items: cart.items.map((a) => ({
+        artwork: a._id,
+        price: a.price,
+        artist: a.artist,
+      })),
+      totalAmount: capture.data.purchase_units[0].payments.captures[0].amount.value,
+      paymentMethod: 'PAYPAL',
+      status: 'PAID',
+      paypalOrderId: orderID,
+      ...shippingFields,
+      giftMessage: typeof giftMessage === 'string' ? giftMessage : undefined,
+    });
+
+    await reserveArtworkStock(cart.items);
+    await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
+    await createOrderNotifications(order, req.user.id);
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('PayPal capture error:', error);
+    return res.status(500).json({ error: 'Failed to capture payment' });
   }
+});
 
-  await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
-  await createOrderNotifications(order, req.user.id);
+// CASH ON DELIVERY
+router.post('/cod', authMiddleware, async (req, res) => {
+  try {
+    const cart = await Cart.findOne({ user: req.user.id }).populate('items');
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ error: 'Cart is empty' });
+    }
 
-  res.json({ success: true });
+    const unavailableItems = getUnavailableItems(cart.items);
+    if (unavailableItems.length > 0) {
+      return res.status(409).json({
+        error: 'Some artworks are already sold out',
+        soldArtworkIds: unavailableItems.map((item) => item._id),
+      });
+    }
+
+    const total = cart.items.reduce((sum, i) => sum + Number(i.price), 0);
+    const { shipping: shippingData, giftMessage } = req.body;
+    const shippingValidation = validateShippingPayload(shippingData);
+    if (!shippingValidation.valid) {
+      return res.status(400).json({
+        error: 'Shipping address is incomplete',
+        missingFields: shippingValidation.missing,
+      });
+    }
+
+    const shippingFields = buildShippingData(shippingData);
+    const order = await Order.create({
+      user: req.user.id,
+      items: cart.items.map((a) => ({
+        artwork: a._id,
+        price: a.price,
+        artist: a.artist,
+      })),
+      totalAmount: total,
+      paymentMethod: 'COD',
+      status: 'PENDING',
+      ...shippingFields,
+      giftMessage: typeof giftMessage === 'string' ? giftMessage : undefined,
+    });
+
+    await reserveArtworkStock(cart.items);
+    await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
+    await createOrderNotifications(order, req.user.id);
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('COD order error:', error);
+    return res.status(500).json({ error: 'Failed to place order' });
+  }
 });
 
 export default router;

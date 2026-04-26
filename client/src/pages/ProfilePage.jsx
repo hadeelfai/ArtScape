@@ -41,8 +41,10 @@ const createEmptyArtworkState = () => ({
 
 const isArtworkSold = (artwork) => {
   if (!artwork) return false;
-  if (artwork.isSold) return true;
   const normalizedStatus = String(artwork.status || '').trim().toLowerCase();
+  if (normalizedStatus === 'available') return false;
+  if (typeof artwork.stockQuantity === 'number') return artwork.stockQuantity <= 0;
+  if (artwork.isSold) return true;
   return normalizedStatus === 'sold out' || normalizedStatus === 'sold';
 };
 
@@ -169,6 +171,9 @@ return artworksToUse
     artworkType: artwork.artworkType || 'Explore',
     price: artwork.price || null,
     image: artwork.image || artwork.imageUrl, // Support both field names
+    stockQuantity: typeof artwork.stockQuantity === 'number'
+      ? artwork.stockQuantity
+      : (artwork.isSold ? 0 : 1),
     isSold: Boolean(artwork.isSold),
     status: artwork.status || '',
     createdAt: artwork.createdAt // keep sorting support
@@ -441,6 +446,9 @@ return artworksToUse
               artworkType: result.artwork.artworkType,
               price: result.artwork.price,
               image: result.artwork.image,
+              stockQuantity: typeof result.artwork.stockQuantity === 'number'
+                ? result.artwork.stockQuantity
+                : (result.artwork.isSold ? 0 : 1),
               isSold: Boolean(result.artwork.isSold),
               status: result.artwork.status || ''
             }
@@ -459,6 +467,9 @@ return artworksToUse
           artworkType: result.artwork.artworkType,
           price: result.artwork.price,
           image: result.artwork.image,
+          stockQuantity: typeof result.artwork.stockQuantity === 'number'
+            ? result.artwork.stockQuantity
+            : (result.artwork.isSold ? 0 : 1),
           isSold: Boolean(result.artwork.isSold),
           status: result.artwork.status || ''
         };
@@ -1123,6 +1134,7 @@ return artworksToUse
                           {/* Edit and Delete Buttons - Only show for own profile */}
                           {isOwnProfile && (
                             <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              {Number(artwork.stockQuantity ?? 0) > 0 && ( 
                               <button
                                 onClick={e => {
                                   e.preventDefault();
@@ -1134,6 +1146,7 @@ return artworksToUse
                               >
                                 <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-700" />
                               </button>
+                              )}
                               <button
                                 onClick={e => {
                                   e.preventDefault();
