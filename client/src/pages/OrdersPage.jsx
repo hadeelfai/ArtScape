@@ -266,10 +266,15 @@ export default function OrdersPage() {
     const { recipientName, phone, addr, hasAny: hasShipping } = getOrderShippingDisplay(order);
     const displayNum = getOrderDisplayNumber(order);
 
-    const statusOrder = ['PENDING', 'PAID', 'ACCEPTED', 'SHIPPED', 'DELIVERED', 'PAYMENT_RECEIVED'];
-    const currentIdx = statusOrder.indexOf(current);
-    let nextAction = null;
     const isCOD = (order.paymentMethod || '').toUpperCase() === 'COD';
+
+    /**const statusOrder = ['PENDING', 'PAID', 'ACCEPTED','DECLINED', 'SHIPPED', 'DELIVERED', 'PAYMENT_RECEIVED'];
+const currentIdx = statusOrder.indexOf(current);
+let nextAction = null;
+if (current === 'DECLINED') {
+  nextAction = null;
+}
+const isCOD = (order.paymentMethod || '').toUpperCase() === 'COD';
 
 let showAcceptDecline = false;
 
@@ -283,6 +288,30 @@ if (currentIdx <= 1 && isCOD) {
   nextAction = SELLER_ACTIONS[3];
 } else if (currentIdx === 4 && isCOD) {
   nextAction = SELLER_ACTIONS[4];
+} */
+
+let nextAction = null;
+let showAcceptDecline = false;
+
+if (current === 'DECLINED') {
+  // STOP everything
+  nextAction = null;
+  showAcceptDecline = false;
+}
+else if ((current === 'PENDING' || current === 'PAID') && isCOD) {
+  showAcceptDecline = true;
+}
+else if (current === 'PENDING' || current === 'PAID') {
+  nextAction = SELLER_ACTIONS[0]; // Accept only
+}
+else if (current === 'ACCEPTED') {
+  nextAction = SELLER_ACTIONS[2]; // Shipped
+}
+else if (current === 'SHIPPED') {
+  nextAction = SELLER_ACTIONS[3]; // Delivered
+}
+else if (current === 'DELIVERED' && isCOD) {
+  nextAction = SELLER_ACTIONS[4]; // Payment received
 }
     const copyPhone = () => {
       if (!phone) {
