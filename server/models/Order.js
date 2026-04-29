@@ -22,7 +22,7 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['PAID', 'PENDING', 'ACCEPTED', 'SHIPPED', 'DELIVERED', 'PAYMENT_RECEIVED'],
+      enum: ['PAID', 'PENDING', 'ACCEPTED', 'SHIPPED', 'DELIVERED', 'PAYMENT_RECEIVED','DECLINED'],
       default: 'PENDING',
     },
     paypalOrderId: String,
