@@ -24,6 +24,14 @@ const normalizeTagsInput = (tags) => {
     return []
 }
 
+const ALLOWED_ARTWORK_TYPES = new Set(['Marketplace', 'Explore'])
+const normalizeArtworkType = (artworkType) => {
+    if (typeof artworkType !== 'string') return 'Explore'
+    const trimmedType = artworkType.trim()
+    return ALLOWED_ARTWORK_TYPES.has(trimmedType) ? trimmedType : 'Explore'
+}
+
+
 /**
  * Create new artwork
  * Generate embedding asynchronously (doesn't block response)
@@ -37,16 +45,16 @@ export const createArtwork = async (req, res) => {
             return res.status(400).json({ error: 'Please provide at least three tags related to the artwork.' })
         }
 
-        const artwork = new Artwork({ 
-            title, 
-            image, 
-            price, 
+        const artwork = new Artwork({
+            title,
+            image,
+            price,
             artist: req.user.id,
             description,
             tags: normalizedTags,
             dimensions,
             year,
-            artworkType: 'Marketplace', // Default to Marketplace only
+            artworkType: normalizeArtworkType(artworkType),
         })
         await artwork.save()
 
@@ -67,7 +75,7 @@ export const updateArtwork = async (req, res) => {
     try {
         const { title, image, price, description, tags, artworkType, dimensions, year } = req.body
         const artwork = await Artwork.findById(req.params.id)
-        
+
         if (!artwork) {
             return res.status(404).json({ error: 'Artwork not found' })
         }
@@ -92,7 +100,7 @@ export const updateArtwork = async (req, res) => {
             }
             artwork.tags = normalizedTags
         }
-        if (artworkType !== undefined) artwork.artworkType = artworkType
+        if (artworkType !== undefined) artwork.artworkType = normalizeArtworkType(artworkType)
         if (dimensions !== undefined) artwork.dimensions = dimensions
         if (year !== undefined) artwork.year = year
 
@@ -127,10 +135,10 @@ export const getUserArtworks = async (req, res) => {
 export const getLikesSaves = async (req, res) => {
     try {
         const userId = req.params.userId
-        
+
         const likedArtworks = await Artwork.find({ likes: userId }).select('_id')
         const savedArtworks = await Artwork.find({ savedBy: userId }).select('_id')
-        
+
         res.json({
             liked: likedArtworks.map(art => art._id.toString()),
             saved: savedArtworks.map(art => art._id.toString())
