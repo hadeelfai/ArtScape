@@ -11,12 +11,12 @@ export const testRecommendationService = async () => {
     const health = await checkRecommendationServiceHealth()
     
     if (health.status === 'healthy') {
-      console.log('✅ Recommendation service is running and accessible')
+      console.log('Recommendation service is running and accessible')
     } else {
-      console.log('❌ Recommendation service is not healthy')
+      console.log('Recommendation service is not healthy')
     }
   } catch (error) {
-    console.error('❌ Failed to check recommendation service health:', error.message)
+    console.error('Failed to check recommendation service health:', error.message)
   }
 }
 

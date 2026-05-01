@@ -7,7 +7,6 @@ import { LikeSaveProvider } from './context/LikeSaveContext.jsx';
 
 export default function AppBootstrap() {
   const [ready, setReady] = useState(false);
-  const [err, setErr] = useState(null);
 
   useEffect(() => {
     loadApiConfig()

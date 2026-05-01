@@ -59,13 +59,10 @@ export default function ArtScapeProfile({
   const { user: authUser } = useAuth();
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState(null);
 
   // Fetch profile data from API
   useEffect(() => {
     const fetchProfile = async () => {
-      setLoadError(null);
-
       if (userDataProp) {
         setProfileData({
           ...userDataProp,
@@ -102,18 +99,15 @@ export default function ArtScapeProfile({
           } else {
             // If no user data, use default profile
             setProfileData(null);
-            setLoadError('User profile not found.');
           }
         } else {
           console.error('Failed to fetch profile');
           // Use default profile on error
           setProfileData(null);
-          setLoadError('Failed to fetch profile.');
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
         setProfileData(null);
-        setLoadError('Error fetching profile.');
       } finally {
         setIsLoading(false);
       }
@@ -655,8 +649,6 @@ return artworksToUse
       fetchLikedSavedArtworks();
     }
   }, [liked, saved, isOwnProfile]);
-  const [open, setOpen] = useState(false);
-
   // If the user is signed out, auto-redirect to home (not SignIn)
   useEffect(() => {
     if (!isLoading && !profileData) {
@@ -770,7 +762,7 @@ return artworksToUse
                 {/* Title */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Title
+                    Title <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -801,7 +793,7 @@ return artworksToUse
                 {/* Tags */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tags <span className="text-xs text-gray-500">(select at least 3)</span>
+                    Tags <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(select at least 3)</span>
                   </label>
                   <div className="border border-gray-200 rounded-2xl p-4 space-y-4">
                     <div className="flex flex-wrap gap-2 min-h-[44px]">
@@ -902,7 +894,7 @@ return artworksToUse
                 {newArtwork.artworkType === 'Marketplace' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Price (SAR)
+                      Price (SAR) <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
@@ -921,7 +913,7 @@ return artworksToUse
                 {/* Upload Image */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Upload Image
+                    Upload Image {!editingArtwork && <span className="text-red-500">*</span>}
                   </label>
                   <input
                     type="file"

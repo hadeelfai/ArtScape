@@ -57,10 +57,10 @@ class MetricsChecker:
             with open(report_file, 'r') as f:
                 return json.load(f)
         except FileNotFoundError:
-            print(f"❌ Report file not found: {report_file}")
+            print(f"Report file not found: {report_file}")
             sys.exit(1)
         except json.JSONDecodeError as e:
-            print(f"❌ Invalid JSON in report file: {e}")
+            print(f"Invalid JSON in report file: {e}")
             sys.exit(1)
     
     def extract_metrics(self, report: Dict) -> Dict:
@@ -158,7 +158,7 @@ class MetricsChecker:
     def print_results(self, issues: List[Dict], overall_pass: bool):
         """Print formatted results"""
         print("\n" + "="*70)
-        print("🎯 METRICS THRESHOLD VALIDATION RESULTS")
+        print("METRICS THRESHOLD VALIDATION RESULTS")
         print("="*70)
         
         # Group by status
@@ -166,7 +166,7 @@ class MetricsChecker:
         failed = [issue for issue in issues if issue["status"] == "FAILED"]
         
         if passed:
-            print(f"\n✅ PASSED METRICS ({len(passed)}):")
+            print(f"\nPASSED METRICS ({len(passed)}):")
             print("-" * 40)
             for issue in passed:
                 metric = issue["metric"]
@@ -181,10 +181,10 @@ class MetricsChecker:
                         print(f"   {metric}: {current:.2%} (required: ≥{required:.2%})")
                 else:
                     print(f"   {metric}: {current} (required: {required})")
-                print(f"      → {desc}")
+                print(f"      {desc}")
         
         if failed:
-            print(f"\n❌ FAILED METRICS ({len(failed)}):")
+            print(f"\nFAILED METRICS ({len(failed)}):")
             print("-" * 40)
             for issue in failed:
                 metric = issue["metric"]
@@ -200,15 +200,15 @@ class MetricsChecker:
                         print(f"   {metric}: {current:.2%} (required: ≥{required:.2%})")
                 else:
                     print(f"   {metric}: {current} (required: {required})")
-                print(f"      → {desc}")
+                print(f"      {desc}")
         
         # Overall result
-        print(f"\n🏁 OVERALL RESULT: {'✅ PASS' if overall_pass else '❌ FAIL'}")
+        print(f"\nOVERALL RESULT: {'PASS' if overall_pass else 'FAIL'}")
         print("="*70)
         
         # Recommendations
         if failed:
-            print(f"\n🔧 RECOMMENDATIONS:")
+            print(f"\nRECOMMENDATIONS:")
             for issue in failed:
                 metric = issue["metric"]
                 if metric == "embedding_coverage":
@@ -241,7 +241,7 @@ class MetricsChecker:
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2, default=str)
         
-        print(f"\n📄 Validation results saved to: {output_file}")
+        print(f"\nValidation results saved to: {output_file}")
 
 
 def main():

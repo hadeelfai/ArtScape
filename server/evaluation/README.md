@@ -22,30 +22,30 @@ python3 show_charts.py
 
 The evaluation system automatically generates 5 comprehensive charts:
 
-### 📊 1. System Performance Overview
+### 1. System Performance Overview
 - **Artwork Coverage**: Total artworks vs. those with embeddings
 - **User Engagement**: Pie chart of engaged vs. non-engaged users  
 - **Service Health**: System status indicator
 - **System Info**: Device and model information
 
-### 🎯 2. Recommendation Quality Metrics
+### 2. Recommendation Quality Metrics
 - **Success Rate**: Request success percentage with target comparison
 - **Response Time**: Average response time vs. 500ms target
 - **Similarity Distribution**: Histogram of cosine similarity scores
 - **Artist Diversity**: Diversity percentage vs. 70% target
 
-### 👤 3. Personalization Analysis
+### 3. Personalization Analysis
 - **User History Coverage**: Users with interaction history
 - **Profile Items**: Average items per user profile
 - **Profile Utilization**: How well user data is used (target: 40%)
 - **Recommendation Coverage**: Distribution of recommendations per user
 
-### 🎯 4. Threshold Compliance Analysis
+### 4. Threshold Compliance Analysis
 - **Side-by-side comparison** of current vs. target values for all metrics
 - **Visual indicators** for passing/failing thresholds
 - **Percentage labels** for easy reading
 
-### 🔍 5. Similarity Analysis
+### 5. Similarity Analysis
 - **Statistics Bar Chart**: Mean, std, min, max, median similarities
 - **Distribution Histogram**: Actual similarity score distribution
 
@@ -78,9 +78,9 @@ Core evaluation engine with visualization methods:
 ## Understanding the Visualizations
 
 ### Color Coding
-- 🟢 **Green**: Meeting or exceeding targets
-- 🟡 **Yellow**: Needs attention but acceptable  
-- 🔴 **Red**: Below target thresholds
+- **Green**: Meeting or exceeding targets
+- **Yellow**: Needs attention but acceptable  
+- **Red**: Below target thresholds
 
 ### Key Metrics Visualized
 

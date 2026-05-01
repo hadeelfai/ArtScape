@@ -153,7 +153,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
   };
 
   // Like / unlike a post (server is the source of truth)
-  const handleLike = async (postId, isCurrentlyLiked) => {
+  const handleLike = async (postId) => {
     const token = loggedInUser?.token;
     if (!token) {
       toast.error("Please sign in to like posts");
@@ -361,7 +361,7 @@ function PostFeeds({ refreshKey, onStartEditing, activeTab, focusPostId }) {
                 <button
                   type="button"
                   className="flex items-center gap-2 hover:text-red"
-                  onClick={() => handleLike(post._id, post.isLikedByUser)}
+                  onClick={() => handleLike(post._id)}
                 >
                   <Heart
                     className={

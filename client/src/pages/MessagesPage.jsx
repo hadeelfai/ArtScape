@@ -245,7 +245,7 @@ const MessagesPage = () => {
 
   // ─── Delete conversation ──────────────────────────────────────────────────
   const handleDeleteConversation = async () => {
-    const { conversationId, participantName } = deleteTarget;
+    const { conversationId } = deleteTarget;
     if (!conversationId) {
       toast.error('Cannot delete this conversation');
       setDeleteTarget(null);

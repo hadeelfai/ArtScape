@@ -35,13 +35,6 @@ const ART_TYPE_FILTERS = [
     { value: 'drawing', label: 'Drawing' }
 ];
 
-const SORT_OPTIONS = [
-    { value: 'recommended', label: 'Recommended For You' },
-    { value: 'mostLiked', label: 'Most liked' },
-    { value: 'mostRecent', label: 'Most recent' },
-    { value: 'oldest', label: 'Most oldest' }
-];
-
 const ExplorePage = () => {
     const { user } = useAuth();
     const { users, artworks, loading } = useGalleryData();
@@ -53,7 +46,6 @@ const ExplorePage = () => {
     const [category, setCategory] = useState('For You');
     const [sortOption, setSortOption] = useState('recommended');
     const [recommendations, setRecommendations] = useState([]);
-    const [recommendationsLoading, setRecommendationsLoading] = useState(false);
     const [limit, setLimit] = useState(12);
     const sentinelRef = useRef(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -79,7 +71,6 @@ const ExplorePage = () => {
                 setRecommendations([]);
                 return;
             }
-            setRecommendationsLoading(true);
             try {
                 const response = await fetch(`${getApiBaseUrl()}/api/recommendations/personalized?topK=100`, {
                     headers: {
@@ -111,8 +102,6 @@ const ExplorePage = () => {
             } catch (error) {
                 console.error('Error fetching recommendations:', error);
                 setRecommendations([]);
-            } finally {
-                setRecommendationsLoading(false);
             }
         };
 

@@ -12,7 +12,7 @@ async function createOrderNotifications(order, buyerId) {
   const orderNum = order._id ? order._id.toString().slice(-6).toUpperCase() : '—';
   const notifications = [];
 
-  // Each seller: "You've received a new order #XXX" → My Sales (buyer does not get a notification on place order)
+  // Each seller: "You've received a new order #XXX" to My Sales (buyer does not get a notification on place order)
   const artistIds = [...new Set(order.items.map((i) => i.artist?.toString()).filter(Boolean))];
   for (const artistId of artistIds) {
     if (artistId === buyerId.toString()) continue;

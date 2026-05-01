@@ -79,7 +79,7 @@ mongoose.connect(MONGO_URL, {
 })
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`\n✅ Connected to DB & listening on port ${PORT}`);
+      console.log(`\nConnected to DB and listening on port ${PORT}`);
     });
   })
   .catch(err => {

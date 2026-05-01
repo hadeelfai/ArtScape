@@ -63,32 +63,6 @@ export const useGalleryData = () => {
       }
     };
 
-    const validateArtworkId = (artworkId) => {
-      if (!artworkId || typeof artworkId !== 'string') {
-        console.error('Invalid artworkId provided:', artworkId);
-        return false;
-      }
-      return true;
-    };
-
-    const fetchRecommendations = async (artworkId) => {
-      if (!validateArtworkId(artworkId)) return;
-
-      try {
-        const apiBase = getApiBaseUrl();
-        const response = await fetch(`${apiBase}/api/recommendations/similar?artworkId=${artworkId}&topK=10`);
-        if (!response.ok) {
-          console.error('Failed to fetch recommendations:', response.status);
-          return;
-        }
-        const data = await response.json();
-        console.log('Recommendations received:', data.recommendations);
-        return data.recommendations;
-      } catch (error) {
-        console.error('Error fetching recommendations:', error);
-      }
-    };
-
     fetchData();
   }, []);
 

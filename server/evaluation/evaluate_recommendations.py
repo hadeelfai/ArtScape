@@ -741,7 +741,7 @@ class RecommendationEvaluator:
         
         # System Performance
         perf = report["system_performance"]
-        print(f"\n📊 SYSTEM PERFORMANCE:")
+        print(f"\nSYSTEM PERFORMANCE:")
         print(f"   Total Artworks: {perf['total_artworks']}")
         print(f"   Embedding Coverage: {perf['embedding_coverage']:.2%}")
         print(f"   User Engagement Rate: {perf['user_engagement_rate']:.2%}")
@@ -750,7 +750,7 @@ class RecommendationEvaluator:
         # Recommendation Quality
         if "recommendation_quality" in report:
             rq = report["recommendation_quality"]
-            print(f"\n🎯 RECOMMENDATION QUALITY:")
+            print(f"\nRECOMMENDATION QUALITY:")
             print(f"   Success Rate: {rq['successful_recommendations']}/{rq['total_evaluated']}")
             print(f"   Avg Response Time: {rq.get('avg_response_time', 0):.3f}s")
             if "avg_similarity" in rq:
@@ -761,7 +761,7 @@ class RecommendationEvaluator:
         # Personalized Recommendations
         if "personalized_recommendations" in report:
             pr = report["personalized_recommendations"]
-            print(f"\n👤 PERSONALIZED RECOMMENDATIONS:")
+            print(f"\nPERSONALIZED RECOMMENDATIONS:")
             print(f"   Users with History: {pr['users_with_history']}/{pr['total_evaluated']}")
             print(f"   Avg Items in Profile: {pr['avg_items_in_profile']:.1f}")
             if "avg_profile_utilization" in pr:
@@ -770,7 +770,7 @@ class RecommendationEvaluator:
         # Text Search
         if "text_search_quality" in report:
             ts = report["text_search_quality"]
-            print(f"\n🔍 TEXT SEARCH QUALITY:")
+            print(f"\nTEXT SEARCH QUALITY:")
             print(f"   Success Rate: {ts['successful_searches']}/{ts['total_queries']}")
             print(f"   Avg Response Time: {ts.get('avg_response_time', 0):.3f}s")
             if "avg_search_similarity" in ts:
@@ -790,10 +790,10 @@ def main():
         # Print summary
         evaluator.print_summary_report(report)
         
-        print(f"\n📄 Full report saved to: recommendation_evaluation_report.json")
+        print(f"\nFull report saved to: recommendation_evaluation_report.json")
         
     except Exception as e:
-        print(f"❌ Evaluation failed: {e}")
+        print(f"Evaluation failed: {e}")
         logging.error(f"Evaluation error: {e}")
 
 

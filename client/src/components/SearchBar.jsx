@@ -140,7 +140,7 @@ const SearchBar = ({ variant = "icon" }) => {
                               }}
                               className="text-sm font-medium hover:underline flex items-center gap-1"
                             >
-                              Show more results →
+                              Show more results
                             </button>
                           </div>
                         </div>

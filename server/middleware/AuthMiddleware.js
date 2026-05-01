@@ -30,7 +30,7 @@ export const authMiddleware = async (req, res, next) => {
       name: user.name,
       email: user.email,
       avatar: user.avatar,
-      role: user.role, // ✅ Added for role-based access control
+      role: user.role, // Added for role-based access control
     };
 
     next();

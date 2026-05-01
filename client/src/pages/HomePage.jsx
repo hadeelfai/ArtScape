@@ -54,29 +54,24 @@ const HomePage = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
 
-  // Get latest marketplace pieces as fallback
-  const latestMarketplacePieces = useMemo(() => {
-    return artworks
-      .filter((art) => art.artworkType === "Marketplace")
-      .sort((a, b) => {
-        const timeA = new Date(a.createdAt || 0).getTime();
-        const timeB = new Date(b.createdAt || 0).getTime();
-        return timeB - timeA;
-      })
-      .slice(0, 8); // Get top 8 latest pieces
-  }, [artworks]);
+  const isArtworkSold = (artwork) => {
+    if (!artwork) return false;
+    if (artwork.isSold) return true;
+    const normalizedStatus = String(artwork.status || "").trim().toLowerCase();
+    return normalizedStatus === "sold out" || normalizedStatus === "sold";
+  };
 
   // Fetch recommendations from the recommendation service
   useEffect(() => {
     const token = user?.token;
     const fetchRecommendations = async () => {
       if (!token) {
-        setRecommendations(latestMarketplacePieces);
+        setRecommendations([]);
         return;
       }
       setRecommendationsLoading(true);
       try {
-        const response = await fetch(`${getApiBaseUrl()}/api/recommendations/personalized?topK=8`, {
+        const response = await fetch(`${getApiBaseUrl()}/api/recommendations/personalized?topK=100`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -85,51 +80,56 @@ const HomePage = () => {
 
         if (response.ok) {
           const data = await response.json();
-          let recommendedArtworks = [];
-
           if (data.recommendations && Array.isArray(data.recommendations)) {
-            recommendedArtworks = data.recommendations.map(rec => ({
-              _id: rec.artwork_id,
-              id: rec.artwork_id,
-              title: rec.title,
-              artist: rec.artist_id,
-              image: rec.image,
-              price: rec.price,
-              artworkType: 'Marketplace'
-            })).filter(art => art.artworkType === 'Marketplace');
-          } else if (Array.isArray(data)) {
-            recommendedArtworks = data.filter(art => art.artworkType === 'Marketplace');
-          }
-
-          if (recommendedArtworks.length > 0) {
-            setRecommendations(recommendedArtworks);
+            const recommendedIds = data.recommendations
+              .map((rec) => rec.artwork_id)
+              .filter(Boolean);
+            setRecommendations(recommendedIds);
           } else {
-            setRecommendations(latestMarketplacePieces);
+            setRecommendations([]);
           }
         } else {
-          setRecommendations(latestMarketplacePieces);
+          setRecommendations([]);
         }
-      } catch (error) {
-        setRecommendations(latestMarketplacePieces);
+      } catch {
+        setRecommendations([]);
       } finally {
         setRecommendationsLoading(false);
       }
     };
 
     fetchRecommendations();
-  }, [user?.token, latestMarketplacePieces]);
+  }, [user?.token]);
 
-  const sortedArtworks = useMemo(() => {
+  const personalizedMarketplaceRecommendations = useMemo(() => {
+    if (!recommendations.length) return [];
+
+    const availableMarketplaceArtworks = artworks.filter(
+      (art) => art.artworkType === "Marketplace" && !isArtworkSold(art)
+    );
+    const artworksById = new Map(
+      availableMarketplaceArtworks.map((art) => [String(art._id || art.id), art])
+    );
+
+    return recommendations
+      .map((artworkId) => artworksById.get(String(artworkId)))
+      .filter(Boolean)
+      .slice(0, 6);
+  }, [artworks, recommendations]);
+
+  const latestMarketplaceArtworks = useMemo(() => {
     return artworks
-      .filter((art) => art.artworkType === "Marketplace")
-      .sort((a, b) => {
-        if (a.recommended && !b.recommended) return -1; // Recommended items first
-        if (!a.recommended && b.recommended) return 1; // Non-recommended items later
-        const timeA = new Date(a.createdAt || 0).getTime();
-        const timeB = new Date(b.createdAt || 0).getTime();
-        return a.recommended === b.recommended ? timeB - timeA : 0; // Sort recommended by latest, non-recommended by earliest
-      });
+      .filter((art) => art.artworkType === "Marketplace" && !isArtworkSold(art))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 6);
   }, [artworks]);
+
+  const homeRecommendations = useMemo(() => {
+    if (!user?.token) {
+      return latestMarketplaceArtworks;
+    }
+    return personalizedMarketplaceRecommendations;
+  }, [user?.token, latestMarketplaceArtworks, personalizedMarketplaceRecommendations]);
 
   return (
     <div>
@@ -148,7 +148,11 @@ const HomePage = () => {
           <h1 className='font-albert text-xl text-start md:text-3xl lg:text-5xl pl-10 pt-20 pb-4'>Recommended <span className='font-highcruiser'>For You</span></h1>
           <Link to={"/marketplace"}> <h1 className='font-albert text-lg md:text-xl lg:text-2xl underline underline-offset-4 pr-10 pt-20 pb-4'>See More</h1> </Link>
         </div>
-        <CardsList artworks={sortedArtworks} loading={loading} />
+        <CardsList
+          artworks={homeRecommendations}
+          loading={loading || recommendationsLoading}
+          showFallback={false}
+        />
       </div>
 
 

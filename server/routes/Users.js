@@ -298,7 +298,7 @@ router.post('/logout', (req, res) => {
 })
 
 // ========================================
-// ✅ NEW: FORGOT PASSWORD ROUTES START
+// NEW: FORGOT PASSWORD ROUTES START
 // ========================================
 
 // POST - Forgot Password (generate reset token)
@@ -689,7 +689,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ✅ SECURITY FIX: Add authMiddleware to protect admin endpoints
+// SECURITY FIX: Add authMiddleware to protect admin endpoints
 // PATCH /users/:id/status  -> set accountStatus: active | suspended | blocked
 router.patch('/:id/status', authMiddleware, async (req, res) => {
     try {
@@ -719,7 +719,7 @@ router.patch('/:id/status', authMiddleware, async (req, res) => {
     }
 });
 
-// ✅ SECURITY FIX: Add authMiddleware to protect admin endpoints
+// SECURITY FIX: Add authMiddleware to protect admin endpoints
 // DELETE /users/:id  -> admin permanently deletes user
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {

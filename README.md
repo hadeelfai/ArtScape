@@ -1,11 +1,11 @@
-# 🎨 ArtScape
+# ArtScape
 
 A community-driven digital art platform where artists and collectors can **share, discover, and transact artwork**.  
 ArtScape offers galleries, posts, comments, notifications, and a marketplace—powered by a modern **React + Node.js + MongoDB** stack.
 
 ---
 
-## 📌 Table of Contents
+## Table of Contents
 - [Overview](#overview)
 - [Project Goals](#project-goals)
 - [Features](#features)
@@ -18,7 +18,7 @@ ArtScape offers galleries, posts, comments, notifications, and a marketplace—p
 
 ---
 
-## 🚀 Overview
+## Overview
 
 ArtScape is designed as both a **social** and **commercial** hub for digital art.  
 Users can:
@@ -31,30 +31,30 @@ Users can:
 
 ---
 
-## 🎯 Project Goals
+## Project Goals
 
-- 🧩 Smooth onboarding (email/username registration)  
-- 🖼 Curated discovery through galleries and search  
-- 🛒 Marketplace tools for listings and purchases  
-- 🛡 Admin moderation tools for safe community interaction  
-- ⚡ Fast, modern UX using React + Vite  
-
----
-
-## ✨ Features
-
-- 🔐 **User Authentication** — JWT + httpOnly cookies  
-- 🖼 **Artwork Uploads** — Cloudinary integration  
-- 📰 **News & Articles** — Admin-managed content  
-- 💬 **Posts & Comments** — Role-based permissions  
-- 🔔 **Real-time Notifications**  
-- 🛒 **Marketplace** — Listing, browsing, and transactions  
-- 🔍 **Global Search** — Search artworks, posts, news, etc.  
-- 🧠 **Recommendation System** — Embedding-based suggestions  
+- Smooth onboarding (email/username registration)  
+- Curated discovery through galleries and search  
+- Marketplace tools for listings and purchases  
+- Admin moderation tools for safe community interaction  
+- Fast, modern UX using React + Vite  
 
 ---
 
-## 🛠 Tech Stack
+## Features
+
+- **User Authentication** — JWT + httpOnly cookies  
+- **Artwork Uploads** — Cloudinary integration  
+- **News & Articles** — Admin-managed content  
+- **Posts & Comments** — Role-based permissions  
+- **Real-time Notifications**  
+- **Marketplace** — Listing, browsing, and transactions  
+- **Global Search** — Search artworks, posts, news, etc.  
+- **Recommendation System** — Embedding-based suggestions  
+
+---
+
+## Tech Stack
 
 ### **Frontend**
 - React  
@@ -73,7 +73,7 @@ Users can:
 
 ---
 
-## 📡 API Overview
+## API Overview
 
 All backend routes are in `server/routes/`.
 
@@ -95,7 +95,7 @@ All backend routes are in `server/routes/`.
 
 ---
 
-## 🔑 Authentication
+## Authentication
 
 - Token stored in:
   - **httpOnly cookie** (`token`)
@@ -105,7 +105,7 @@ All backend routes are in `server/routes/`.
 
 ---
 
-## 🔐 Security
+## Security
 
 - Passwords hashed with **bcrypt**  
 - Cookies: `httpOnly` and `secure` in production  
@@ -115,7 +115,7 @@ All backend routes are in `server/routes/`.
 
 ---
 
-## 🧪 Testing & Linting
+## Testing & Linting
 
 ### **Frontend**
 - Framework: **Vitest**  
@@ -127,7 +127,7 @@ All backend routes are in `server/routes/`.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 <pre>
 ArtScape/

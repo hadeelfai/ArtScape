@@ -12,15 +12,15 @@ dotenv.config();
 
 const sampleInteractions = async () => {
     try {
-        console.log('🔗 Connecting to MongoDB...');
+        console.log('Connecting to MongoDB...');
         await mongoose.connect(process.env.MONGO_URL);
         
-        console.log('📊 Getting users and artworks...');
+        console.log('Getting users and artworks...');
         const users = await User.find({}).limit(10);
         const artworks = await Artwork.find({}).limit(30);
         
         if (users.length === 0 || artworks.length === 0) {
-            console.log('❌ No users or artworks found');
+            console.log('No users or artworks found');
             return;
         }
         
@@ -78,13 +78,13 @@ const sampleInteractions = async () => {
                 cartAdditions
             });
             
-            console.log(`✅ ${user.username}: ❤️${likedArtworks.length} 🔖${savedArtworks.length} 👁️${viewedArtworks.length} 🛒${cartAdditions.length}`);
+            console.log(`${user.username}: likes=${likedArtworks.length}, saved=${savedArtworks.length}, viewed=${viewedArtworks.length}, cart=${cartAdditions.length}`);
         }
         
-        console.log('\n🎉 Sample interaction data created successfully!');
+        console.log('\nSample interaction data created successfully.');
         
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('Error:', error);
     } finally {
         await mongoose.disconnect();
     }

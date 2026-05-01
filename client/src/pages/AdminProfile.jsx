@@ -149,7 +149,10 @@ function AdminProfile() {
         // Update existing item
         res = await fetch(`${getApiBaseUrl()}/news/${editingId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+          },
           credentials: 'include',
           body: JSON.stringify(payload),
         });
@@ -157,7 +160,10 @@ function AdminProfile() {
         // Create new item
         res = await fetch(`${getApiBaseUrl()}/news`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+          },
           credentials: 'include',
           body: JSON.stringify(payload),
         });
@@ -228,6 +234,9 @@ function AdminProfile() {
     try {
       const res = await fetch(`${getApiBaseUrl()}/news/${id}`, {
         method: "DELETE",
+        headers: {
+          ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+        },
         credentials: 'include',
       });
       if (!res.ok) throw new Error("Failed to delete");
@@ -314,7 +323,10 @@ function AdminProfile() {
     try {
       const res = await fetch(`${getApiBaseUrl()}/users/${id}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+        },
         body: JSON.stringify({ status }),
       });
 
@@ -342,6 +354,9 @@ function AdminProfile() {
     try {
       const res = await fetch(`${getApiBaseUrl()}/users/${id}`, {
         method: "DELETE",
+        headers: {
+          ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+        },
       });
       if (!res.ok) throw new Error("Failed to delete user");
 

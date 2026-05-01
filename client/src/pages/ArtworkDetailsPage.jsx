@@ -131,7 +131,7 @@ const ArtworkDetailsPage = () => {
             }
           }
         }
-      } catch (err) {
+      } catch {
         setError('Unable to load artwork.');
       } finally {
         setLoading(false);
@@ -149,7 +149,7 @@ const ArtworkDetailsPage = () => {
       } else {
         window.prompt('Copy this link:', shareUrl);
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to copy.');
     }
   };

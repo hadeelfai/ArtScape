@@ -117,7 +117,7 @@ const SearchPage = () => {
 
                 return (
                   <div key={type} className="mb-10">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">{type === 'User' ? 'People' : `${type}s`}</h2>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4">{type === 'User' ? 'People' : `${type}`}</h2>
                     <div className="grid grid-cols-1 gap-4">
                       {typeResults.map((item) => (
                         <div

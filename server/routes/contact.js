@@ -9,7 +9,7 @@ const upload = multer({    //for file uploads in the form
 
 const router = express.Router();
 
-// ✅ SECURITY FIX: Helper function for basic input validation
+// SECURITY FIX: Helper function for basic input validation
 function validateContactForm(name, email, message) {
     const errors = [];
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
@@ -25,7 +25,7 @@ function validateContactForm(name, email, message) {
 }
 
 //contact form route
-// ✅ SECURITY FIX: Added input validation and basic rate limiting setup
+// SECURITY FIX: Added input validation and basic rate limiting setup
 router.post("/", upload.single("file"),async (req, res) => {
   try {
     const { name, email, message } = req.body;

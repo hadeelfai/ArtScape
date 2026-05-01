@@ -12,7 +12,7 @@ def show_charts():
     plots_dir = 'evaluation_plots'
     
     if not os.path.exists(plots_dir):
-        print(f"❌ Plots directory not found: {plots_dir}")
+        print(f"Plots directory not found: {plots_dir}")
         print("Run evaluation first: ./quick_evaluation.sh")
         return
     
@@ -27,7 +27,7 @@ def show_charts():
     for chart_file, title in charts:
         chart_path = os.path.join(plots_dir, chart_file)
         if os.path.exists(chart_path):
-            print(f"📊 Displaying: {title}")
+            print(f"Displaying: {title}")
             
             # Load and display image
             img = mpimg.imread(chart_path)
@@ -38,7 +38,7 @@ def show_charts():
             plt.tight_layout()
             plt.show()
         else:
-            print(f"⚠️ Chart not found: {chart_file}")
+            print(f"Chart not found: {chart_file}")
 
 if __name__ == "__main__":
     show_charts()

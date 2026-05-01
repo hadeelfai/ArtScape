@@ -3,7 +3,7 @@ import SearchBar from "../components/SearchBar";
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Link } from "react-router-dom";
-import { Filter, SlidersHorizontal, ShoppingCart } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { useGalleryData } from '../hooks/useGalleryData';
 import { useCart } from '../context/CartContext.jsx';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ const MAX_DISPLAY = 8;
 
 const GalleryPage = () => {
   const { users, artworks, loading } = useGalleryData();
-  const { addToCart, cartItems } = useCart();
+  const { addToCart } = useCart();
 
   const latestExplore = useMemo(() => (
     artworks

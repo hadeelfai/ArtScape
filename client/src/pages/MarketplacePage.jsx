@@ -47,8 +47,8 @@ const ART_TYPE_FILTERS = [
 
 const SORT_OPTIONS = [
   { value: "recommended", label: "Recommended" },
-  { value: "priceAsc", label: "Price low → high" },
-  { value: "priceDesc", label: "Price high → low" },
+  { value: "priceAsc", label: "Price low to high" },
+  { value: "priceDesc", label: "Price high to low" },
 ];
 
 const isArtworkSold = (artwork) => {
@@ -72,7 +72,6 @@ const MarketplacePage = () => {
   const [category, setCategory] = useState("For You");
   const [sortOption, setSortOption] = useState("recommended");
   const [recommendations, setRecommendations] = useState([]);
-  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
 
   const [limit, setLimit] = useState(12);
   const sentinelRef = useRef(null);
@@ -101,7 +100,6 @@ const MarketplacePage = () => {
       return;
     }
     const fetchRecommendations = async () => {
-      setRecommendationsLoading(true);
       try {
         const response = await fetch(`${getApiBaseUrl()}/api/recommendations/personalized?topK=100`, {
           headers: {
@@ -133,8 +131,6 @@ const MarketplacePage = () => {
       } catch (error) {
         console.error('Error fetching recommendations:', error);
         setRecommendations([]);
-      } finally {
-        setRecommendationsLoading(false);
       }
     };
 
@@ -144,8 +140,7 @@ const MarketplacePage = () => {
   // Filtering + Sorting
   const filteredArtworks = useMemo(() => {
     let artworksToSort = artworks
-    
-      .filter((art) => art.artworkType === "Marketplace" && !art.isSold)
+      .filter((art) => art.artworkType === "Marketplace" && !isArtworkSold(art))
       .filter((art) => matchesCategory(art, category))
       .filter((art) => matchesSize(art, filters.size))
       .filter((art) => matchesColor(art, filters.color))
@@ -153,24 +148,22 @@ const MarketplacePage = () => {
 
     return artworksToSort.sort((a, b) => {
       if (sortOption === "recommended") {
-        // Recommended items first, sorted by latest
-        if (a.recommended && !b.recommended) return -1;
-        if (!a.recommended && b.recommended) return 1;
-        const timeA = new Date(a.createdAt || 0).getTime();
-        const timeB = new Date(b.createdAt || 0).getTime();
-        return a.recommended === b.recommended ? timeB - timeA : 0;
-      }
+        // Follow recommendation service ranking when available
+        if (recommendations.length > 0) {
+          const aIndex = recommendations.findIndex(
+            (rec) => rec._id === a._id || rec.id === a._id
+          );
+          const bIndex = recommendations.findIndex(
+            (rec) => rec._id === b._id || rec.id === b._id
+          );
 
-      if (sortOption === "mostRecent") {
-        const timeA = new Date(a.createdAt || 0).getTime();
-        const timeB = new Date(b.createdAt || 0).getTime();
-        return timeB - timeA;
-      }
+          if (aIndex !== -1 && bIndex === -1) return -1;
+          if (aIndex === -1 && bIndex !== -1) return 1;
+          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        }
 
-      if (sortOption === "mostLiked") {
-        const likesA = Array.isArray(a.likes) ? a.likes.length : (a.likes || 0);
-        const likesB = Array.isArray(b.likes) ? b.likes.length : (b.likes || 0);
-        return likesB - likesA;
+        // Fallback to most recent when no recommendation match exists
+        return new Date(b.createdAt) - new Date(a.createdAt);
       }
 
       const priceA = a.price || 0;

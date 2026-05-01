@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext.jsx';
 import { toast } from 'sonner';
 import { useGalleryData } from "../hooks/useGalleryData";
 
-const CardsList = ({ artworks, loading }) => {
+const CardsList = ({ artworks, loading, showFallback = true }) => {
     const { addToCart } = useCart();
     const { users } = useGalleryData();
 
@@ -16,11 +16,11 @@ const CardsList = ({ artworks, loading }) => {
         { id: 4, url: '/Hero-carousel/orange.jpg' },
         { id: 5, url: '/Hero-carousel/pink.jpg' },
         { id: 6, url: '/Hero-carousel/dis.jpg' },
-        { id: 7, url: '/Hero-carousel/wadi.jpg' },
     ];
 
     // Use provided artworks or fallback to default items
-    const items = artworks && artworks.length > 0 ? artworks : defaultItems;
+    const hasArtworks = Array.isArray(artworks) && artworks.length > 0;
+    const items = (hasArtworks ? artworks : (showFallback ? defaultItems : [])).slice(0, 6);
 
     // Lookup user
     const lookupUser = (id) =>
@@ -110,6 +110,16 @@ const CardsList = ({ artworks, loading }) => {
             <div className="pl-28">
                 <div className="flex items-center justify-center py-16">
                     <p className="text-gray-600">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!items.length) {
+        return (
+            <div className="pl-28">
+                <div className="flex items-center justify-center py-16">
+                    <p className="text-gray-600">No personalized recommendations yet.</p>
                 </div>
             </div>
         );

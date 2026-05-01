@@ -455,7 +455,7 @@ export default function EditProfilePage() {
         throw new Error(errorData.error || 'Failed to update profile');
       }
 
-      const data = await response.json();
+      await response.json();
 
       if (authUser && setUser) {
         setUser({

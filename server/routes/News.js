@@ -1,10 +1,10 @@
 import express from "express";
 import News from "../models/News.js";
-import { authMiddleware } from "../middleware/AuthMiddleware.js"; // ✅ SECURITY FIX: Add auth import
+import { authMiddleware } from "../middleware/AuthMiddleware.js"; // SECURITY FIX: Add auth import
 
 const router = express.Router();
 
-// GET /news  → all items (news + articles)
+// GET /news  - all items (news + articles)
 router.get("/", async (req, res) => {
   try {
     const items = await News.find().sort({ createdAt: -1 });
@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /news/type/:type → filter by type ("news" or "article")
+// GET /news/type/:type - filter by type ("news" or "article")
 router.get("/type/:type", async (req, res) => {
   try {
     const { type } = req.params; // "news" or "article"
@@ -27,7 +27,7 @@ router.get("/type/:type", async (req, res) => {
   }
 });
 
-// GET /news/:id → single item for detail page
+// GET /news/:id - single item for detail page
 router.get("/:id", async (req, res) => {
   try {
     const item = await News.findById(req.params.id);
@@ -39,8 +39,8 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// ✅ SECURITY FIX: Protect POST with authMiddleware (admin-only intended)
-// POST /news → create new
+// SECURITY FIX: Protect POST with authMiddleware (admin-only intended)
+// POST /news - create new
 router.post("/", authMiddleware, async (req, res) => {
   try {
     const { title, badge, text, content, date, image, type, isHero } = req.body;
@@ -64,8 +64,8 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
-// ✅ SECURITY FIX: Protect PUT with authMiddleware (admin-only intended)
-// PUT /news/:id → update existing
+// SECURITY FIX: Protect PUT with authMiddleware (admin-only intended)
+// PUT /news/:id - update existing
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
     const { title, badge, text, content, date, image, type, isHero } = req.body;
@@ -96,8 +96,8 @@ router.put("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// ✅ SECURITY FIX: Protect DELETE with authMiddleware (admin-only intended)
-// DELETE /news/:id → delete
+// SECURITY FIX: Protect DELETE with authMiddleware (admin-only intended)
+// DELETE /news/:id - delete
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const item = await News.findByIdAndDelete(req.params.id);

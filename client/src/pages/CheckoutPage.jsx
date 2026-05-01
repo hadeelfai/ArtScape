@@ -653,7 +653,7 @@ export default function CheckoutPage() {
               </div>
               {paymentMethod === 'PAYPAL' && (
                 <div className="mt-6 pt-6 border-t border-gray-100">
-                  <p className="text-sm text-gray-500 mb-2">Complete payment in the Order Summary →</p>
+                  <p className="text-sm text-gray-500 mb-2">Complete payment in the Order Summary.</p>
                 </div>
               )}
             </section>

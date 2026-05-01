@@ -57,7 +57,7 @@ function HomeArticlesSection() {
               <img
                 src={article.image}
                 alt={article.title}
-                className="w-full h-full object-cover"
+                className="w-full h-44 object-cover"
               />
             </div>
 
