@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, Bell, LogOut, User, Package, Palette, ChevronDown, Mail } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import { getApiBaseUrl } from '../config.js';
 
@@ -20,6 +21,7 @@ const Navbar = () => {
 
   // Get user data from AuthContext
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { socket } = useSocket();
   
   // Check if we're on a Gallery sub-page (explore or marketplace)
   const isGalleryActive = location.pathname === '/GalleryPage' || location.pathname === '/explore' || location.pathname === '/marketplace';
@@ -152,12 +154,31 @@ const Navbar = () => {
     window.addEventListener('notificationsRead', handleNotificationsRead);
     window.addEventListener('directMessagesUpdated', handleDirectMessagesUpdated);
 
+    if (socket) {
+      socket.on('dm:unreadCount', (payload) => {
+        if (payload?.unreadCount !== undefined) {
+          setUnreadMessageCount(payload.unreadCount);
+        } else {
+          fetchMessageCount();
+        }
+      });
+
+      socket.on('dm:new', () => {
+        fetchMessageCount();
+      });
+    }
+
     // Cleanup on unmount
     return () => {
       window.removeEventListener('notificationsRead', handleNotificationsRead);
       window.removeEventListener('directMessagesUpdated', handleDirectMessagesUpdated);
+
+      if (socket) {
+        socket.off('dm:unreadCount');
+        socket.off('dm:new');
+      }
     };
-  }, [isAuthenticated, user?.token]); // re-bind if auth state changes
+  }, [isAuthenticated, user?.token, socket]); // re-bind if auth state changes
 
 
 

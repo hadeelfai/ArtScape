@@ -4,6 +4,7 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { CartProvider } from './context/CartContext.jsx';
 import { LikeSaveProvider } from './context/LikeSaveContext.jsx';
+import { SocketProvider } from './context/SocketContext.jsx';
 
 export default function AppBootstrap() {
   const [ready, setReady] = useState(false);
@@ -55,11 +56,13 @@ export default function AppBootstrap() {
 
   return (
     <AuthProvider>
-      <LikeSaveProvider>
-        <CartProvider>
-          <App />
-        </CartProvider>
-      </LikeSaveProvider>
+      <SocketProvider>
+        <LikeSaveProvider>
+          <CartProvider>
+            <App />
+          </CartProvider>
+        </LikeSaveProvider>
+      </SocketProvider>
     </AuthProvider>
   );
 }

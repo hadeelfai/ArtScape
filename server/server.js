@@ -1,4 +1,5 @@
 import express from 'express';
+import http from 'http';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -17,6 +18,7 @@ import CartRoutes from './routes/Cart.js';
 import searchRouter from './routes/search.js';
 import recommendationRoutes from './routes/recommendationRoutes.js';
 import trackingRouter from './routes/tracking.js';
+import { initSocketServer } from './utils/socketManager.js';
 
 // Middleware
 import { authMiddleware } from './middleware/AuthMiddleware.js';
@@ -70,12 +72,23 @@ app.use(express.static('public'));
 const PORT = process.env.PORT || 5500;
 const MONGO_URL = process.env.MONGO_URL;
 
-mongoose.connect(MONGO_URL, { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true 
+const httpServer = http.createServer(app);
+
+mongoose.connect(MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
 })
 .then(() => {
-  app.listen(PORT, () => {
+  initSocketServer(httpServer, [
+    'http://127.0.0.1:5173',
+    'http://localhost:5173',
+    'http://127.0.0.1:5500',
+    'http://localhost:5500',
+    process.env.FRONTEND_URL,
+    'https://artscape-sa.up.railway.app'
+  ].filter(Boolean));
+
+  httpServer.listen(PORT, () => {
     console.log(`\n✅ Connected to DB & listening on port ${PORT}`);
   });
 })

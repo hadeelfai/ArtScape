@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Send, ArrowLeft, Search, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext.jsx';
 import { getApiBaseUrl } from '../config.js';
 import { toast } from 'sonner';
 
@@ -26,6 +27,7 @@ const MessagesPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const messagesEndRef = useRef(null);
+  const { socket } = useSocket();
 
   const authHeaders = {
     'Authorization': `Bearer ${user?.token}`,
@@ -42,6 +44,88 @@ const MessagesPage = () => {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = ({ message, conversationId, senderId }) => {
+      const incomingFromCurrent = activeConversation?.conversationId === conversationId;
+
+      setConversations(prev => {
+        const existing = prev.find(c => c.conversationId === conversationId);
+        if (existing) {
+          return prev.map(c =>
+            c.conversationId === conversationId
+              ? {
+                  ...c,
+                  lastMessage: message.content,
+                  lastMessageTime: message.createdAt,
+                  unreadCount: c.conversationId === conversationId && activeConversation?.conversationId !== conversationId
+                    ? (c.unreadCount || 0) + 1
+                    : c.unreadCount,
+                }
+              : c
+          );
+        }
+
+        return [
+          {
+            conversationId,
+            participantId: senderId,
+            participantName: message.sender?.name || 'Unknown User',
+            participantAvatar: message.sender?.profileImage || DEFAULT_AVATAR,
+            lastMessage: message.content,
+            lastMessageTime: message.createdAt,
+            unreadCount: 1,
+          },
+          ...prev,
+        ];
+      });
+
+      if (incomingFromCurrent) {
+        setMessages(prev => [...prev, message]);
+      }
+    };
+
+    const handleConversationUpdate = ({ conversation }) => {
+      if (!conversation) return;
+
+      setConversations(prev => {
+        const existing = prev.find(c => c.conversationId === conversation.conversationId);
+        if (existing) {
+          return prev.map(c =>
+            c.conversationId === conversation.conversationId
+              ? { ...c, ...conversation }
+              : c
+          );
+        }
+        return [conversation, ...prev];
+      });
+
+      if (activeConversation?.conversationId === conversation.conversationId) {
+        setActiveConversation(prev => ({ ...prev, ...conversation }));
+      }
+    };
+
+    const handleReadUpdate = ({ conversationId }) => {
+      if (!conversationId) return;
+      setConversations(prev =>
+        prev.map(c =>
+          c.conversationId === conversationId ? { ...c, unreadCount: 0 } : c
+        )
+      );
+    };
+
+    socket.on('dm:new', handleNewMessage);
+    socket.on('dm:conversation:update', handleConversationUpdate);
+    socket.on('dm:read', handleReadUpdate);
+
+    return () => {
+      socket.off('dm:new', handleNewMessage);
+      socket.off('dm:conversation:update', handleConversationUpdate);
+      socket.off('dm:read', handleReadUpdate);
+    };
+  }, [socket, activeConversation?.conversationId]);
 
   const loadConversations = async (showLoading = true) => {
     if (!user?.id) return;
@@ -173,6 +257,18 @@ const MessagesPage = () => {
             : c
         ));
 
+        if (socket && socket.connected) {
+          socket.timeout(5000).emit('dm:readConversation', { conversationId: activeConversation.conversationId }, (err, response) => {
+            if (err) {
+              console.error('Socket readConversation timeout:', err);
+              return;
+            }
+            if (!response?.success) {
+              console.error('Socket readConversation failed:', response?.error);
+            }
+          });
+        }
+
         loadConversations(false);
         window.dispatchEvent(new Event('directMessagesUpdated'));
       } catch {
@@ -181,32 +277,44 @@ const MessagesPage = () => {
     };
 
     loadMessages();
-  }, [activeConversation?.conversationId, user?.token]);
+  }, [activeConversation?.conversationId, user?.token, socket]);
 
-  // ─── Auto-scroll ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // ─── Send message ─────────────────────────────────────────────────────────
   const handleSendMessage = async (e) => {
     e.preventDefault();
     const content = messageInput.trim();
     if (!content) return;
 
     try {
-      const res = await fetch(`${getApiBaseUrl()}/messages/send`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({ recipientId: activeConversation.participantId, content }),
-      });
+      let data = null;
 
-      if (!res.ok) throw new Error();
-      const data = await res.json();
+      if (socket && socket.connected) {
+        data = await new Promise((resolve, reject) => {
+          socket.timeout(10000).emit(
+            'dm:send',
+            { recipientId: activeConversation.participantId, content },
+            (err, response) => {
+              if (err) return reject(err);
+              if (!response?.success) return reject(new Error(response?.error || 'Failed to send message'));
+              resolve(response);
+            }
+          );
+        });
+      }
 
-      const newMessage = {
-        _id: data.message._id,
+      if (!data) {
+        const res = await fetch(`${getApiBaseUrl()}/messages/send`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', ...authHeaders },
+          body: JSON.stringify({ recipientId: activeConversation.participantId, content }),
+        });
+
+        if (!res.ok) throw new Error();
+        data = await res.json();
+      }
+
+      const messagePayload = data?.message || {
+        _id: `${Date.now()}-${Math.random()}`,
         sender: { _id: user.id, name: user.name || '', profileImage: user.profileImage || '' },
         recipient: activeConversation.participantId,
         content,
@@ -214,31 +322,39 @@ const MessagesPage = () => {
         read: false,
       };
 
-      setMessages(prev => [...prev, newMessage]);
+      setMessages(prev => [...prev, messagePayload]);
       setMessageInput('');
       toast.success('Message sent');
 
-      if (activeConversation.conversationId) {
+      const conversationId = activeConversation.conversationId || data?.conversationId;
+      if (conversationId) {
         setConversations(prev =>
           prev.map(c =>
-            c.conversationId === activeConversation.conversationId
-              ? { ...c, lastMessage: content, lastMessageTime: newMessage.createdAt }
+            c.conversationId === conversationId
+              ? { ...c, lastMessage: content, lastMessageTime: messagePayload.createdAt }
               : c
           )
         );
-      } else {
+
+        if (!activeConversation.conversationId && data?.conversationId) {
+          setActiveConversation(prev => ({ ...prev, conversationId: data.conversationId, isNew: false }));
+        }
+      }
+
+      if (!activeConversation.conversationId && data?.conversationId) {
         const newConv = {
           conversationId: data.conversationId,
           participantId: activeConversation.participantId,
           participantName: activeConversation.participantName,
           participantAvatar: activeConversation.participantAvatar,
           lastMessage: content,
-          lastMessageTime: newMessage.createdAt,
+          lastMessageTime: messagePayload.createdAt,
         };
         setConversations(prev => [newConv, ...prev]);
         setActiveConversation(prev => ({ ...prev, conversationId: data.conversationId, isNew: false }));
       }
-    } catch {
+    } catch (err) {
+      console.error('Send message error:', err);
       toast.error('Failed to send message');
     }
   };

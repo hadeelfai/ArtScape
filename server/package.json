@@ -9,8 +9,24 @@
     "dev": "nodemon server.js"
   },
   "nodemonConfig": {
-    "ignore": ["node_modules/", "*.log", ".env", ".git/", "public/", "coverage/", "dist/", "build/"],
-    "watch": ["server.js", "routes", "models", "middleware", "utils", "controllers"],
+    "ignore": [
+      "node_modules/",
+      "*.log",
+      ".env",
+      ".git/",
+      "public/",
+      "coverage/",
+      "dist/",
+      "build/"
+    ],
+    "watch": [
+      "server.js",
+      "routes",
+      "models",
+      "middleware",
+      "utils",
+      "controllers"
+    ],
     "ext": "js",
     "delay": 500
   },
@@ -19,7 +35,8 @@
   "license": "ISC",
   "dependencies": {
     "@tensorflow-models/mobilenet": "^2.1.1",
-    "@tensorflow/tfjs": "^4.22.0",
+    "@tcket.io": "^5.4.0",
+    "soensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-node": "^4.22.0",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
@@ -35,6 +52,7 @@
     "nodemailer": "^7.0.11",
     "python-shell": "^5.0.0",
     "sharp": "^0.34.5",
+    "socket.io": "^4.8.3",
     "sonner": "^2.0.7"
   },
   "devDependencies": {
