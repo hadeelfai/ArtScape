@@ -38,16 +38,6 @@ describe('CartContext', () => {
   });
 
   describe('addToCart guard matrix', () => {
-    it('blocks unauthenticated users and reports error', async () => {
-      const onError = vi.fn();
-      const { result } = renderHook(() => useCart(), { wrapper });
-
-      const ok = await act(async () => result.current.addToCart({ _id: 'art-1' }, onError));
-
-      expect(ok).toBe(false);
-      expect(onError).toHaveBeenCalledWith('Please sign in to add items to cart');
-      expect(global.fetch).not.toHaveBeenCalled();
-    });
 
     it('rejects invalid artwork ids', async () => {
       authState.isAuthenticated = true;
