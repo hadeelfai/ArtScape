@@ -11,6 +11,7 @@ const STATUS_DISPLAY = [
   { value: 'PENDING', label: 'Pending', emoji: '🟡' },
   { value: 'PAID', label: 'Pending', emoji: '🟡' },
   { value: 'ACCEPTED', label: 'Order Accepted', emoji: '✓' },
+  { value: 'DECLINED', label: 'Order Declined', emoji: '❌' },
   { value: 'SHIPPED', label: 'Shipped', emoji: '🚚' },
   { value: 'DELIVERED', label: 'Delivered', emoji: '✅' },
   { value: 'PAYMENT_RECEIVED', label: 'Payment Received', emoji: '💰' },
@@ -18,6 +19,7 @@ const STATUS_DISPLAY = [
 
 const SELLER_ACTIONS = [
   { status: 'ACCEPTED', label: 'Accept Order' },
+  { status: 'DECLINED', label: 'Decline Order' },
   { status: 'SHIPPED', label: 'Mark as Shipped' },
   { status: 'DELIVERED', label: 'Mark as Delivered' },
   { status: 'PAYMENT_RECEIVED', label: 'Mark Payment Received' },
@@ -264,14 +266,53 @@ export default function OrdersPage() {
     const { recipientName, phone, addr, hasAny: hasShipping } = getOrderShippingDisplay(order);
     const displayNum = getOrderDisplayNumber(order);
 
-    const statusOrder = ['PENDING', 'PAID', 'ACCEPTED', 'SHIPPED', 'DELIVERED', 'PAYMENT_RECEIVED'];
-    const currentIdx = statusOrder.indexOf(current);
-    let nextAction = null;
-    if (currentIdx <= 1) nextAction = SELLER_ACTIONS[0];
-    else if (currentIdx === 2) nextAction = SELLER_ACTIONS[1];
-    else if (currentIdx === 3) nextAction = SELLER_ACTIONS[2];
-    else if (currentIdx === 4 && (order.paymentMethod || '').toUpperCase() === 'COD') nextAction = SELLER_ACTIONS[3];
+    const isCOD = (order.paymentMethod || '').toUpperCase() === 'COD';
 
+    /**const statusOrder = ['PENDING', 'PAID', 'ACCEPTED','DECLINED', 'SHIPPED', 'DELIVERED', 'PAYMENT_RECEIVED'];
+const currentIdx = statusOrder.indexOf(current);
+let nextAction = null;
+if (current === 'DECLINED') {
+  nextAction = null;
+}
+const isCOD = (order.paymentMethod || '').toUpperCase() === 'COD';
+
+let showAcceptDecline = false;
+
+if (currentIdx <= 1 && isCOD) {
+  showAcceptDecline = true;
+} else if (currentIdx <= 1) {
+  nextAction = SELLER_ACTIONS[0];
+} else if (currentIdx === 2) {
+  nextAction = SELLER_ACTIONS[2];
+} else if (currentIdx === 3) {
+  nextAction = SELLER_ACTIONS[3];
+} else if (currentIdx === 4 && isCOD) {
+  nextAction = SELLER_ACTIONS[4];
+} */
+
+let nextAction = null;
+let showAcceptDecline = false;
+
+if (current === 'DECLINED') {
+  // STOP everything
+  nextAction = null;
+  showAcceptDecline = false;
+}
+else if ((current === 'PENDING' || current === 'PAID') && isCOD) {
+  showAcceptDecline = true;
+}
+else if (current === 'PENDING' || current === 'PAID') {
+  nextAction = SELLER_ACTIONS[0]; // Accept only
+}
+else if (current === 'ACCEPTED') {
+  nextAction = SELLER_ACTIONS[2]; // Shipped
+}
+else if (current === 'SHIPPED') {
+  nextAction = SELLER_ACTIONS[3]; // Delivered
+}
+else if (current === 'DELIVERED' && isCOD) {
+  nextAction = SELLER_ACTIONS[4]; // Payment received
+}
     const copyPhone = () => {
       if (!phone) {
         toast.error('No phone number');
@@ -353,7 +394,25 @@ export default function OrdersPage() {
             </div>
           )}
 
-          {nextAction ? (
+          {showAcceptDecline ? (
+  <div className="flex gap-3">
+    <button
+      type="button"
+      onClick={() => updateSaleStatus(order._id || order.id, 'ACCEPTED')}
+      className="px-6 py-3 rounded-lg text-sm font-medium bg-black text-white hover:bg-gray-800 transition-colors"
+    >
+      Accept Order
+    </button>
+
+    <button
+      type="button"
+      onClick={() => updateSaleStatus(order._id || order.id, 'DECLINED')}
+      className="px-6 py-3 rounded-lg text-sm font-medium border border-red-500 text-red-600 hover:bg-red-50 transition-colors"
+    >
+      Decline Order
+    </button>
+  </div>
+) : nextAction ? (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <p className="text-sm font-medium text-gray-700">Update status</p>
               <button

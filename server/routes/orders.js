@@ -2,6 +2,7 @@ import express from 'express';
 import Order from '../models/Order.js';
 import Notification from '../models/Notification.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
+import Artwork from '../models/Artwork.js';
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -40,38 +41,92 @@ router.get('/sales', async (req, res) => {
 // PATCH /orders/:id/status - seller only: update order status; notifies the buyer
 router.patch('/:id/status', async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).lean();
-    if (!order) return res.status(404).json({ error: 'Order not found' });
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
 
+    // Ensure only seller can update
     const isSeller = order.items.some(
-      (i) => i.artist && i.artist.toString() === req.user.id
+      (item) => item.artist && item.artist.toString() === req.user.id
     );
-    if (!isSeller) return res.status(403).json({ error: 'Only the seller can update this order status' });
 
-    const raw = (req.body.status || '').toString().trim().toUpperCase();
-    const allowed = ['PENDING', 'ACCEPTED', 'SHIPPED', 'DELIVERED', 'PAYMENT_RECEIVED'];
-    const status = allowed.includes(raw) ? raw : order.status;
+    if (!isSeller) {
+      return res.status(403).json({
+        error: 'Only the seller can update this order status',
+      });
+    }
 
-    const updated = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    )
+    const rawStatus = (req.body.status || '')
+      .toString()
+      .trim()
+      .toUpperCase();
+
+    const allowedStatuses = [
+      'PENDING',
+      'ACCEPTED',
+      'SHIPPED',
+      'DELIVERED',
+      'PAYMENT_RECEIVED',
+      'DECLINED',
+    ];
+
+    if (!allowedStatuses.includes(rawStatus)) {
+      return res.status(400).json({
+        error: 'Invalid status',
+      });
+    }
+
+    const oldStatus = order.status;
+
+    // Update artwork visibility based on seller decision
+    if (rawStatus === 'ACCEPTED') {
+      for (const item of order.items) {
+        await Artwork.findByIdAndUpdate(item.artwork, {
+          isSold: true,
+          soldOut: true,
+          status: 'SOLD',
+        });
+      }
+    }
+
+    if (rawStatus === 'DECLINED') {
+      for (const item of order.items) {
+        await Artwork.findByIdAndUpdate(item.artwork, {
+          isSold: false,
+          soldOut: false,
+          status: 'AVAILABLE',
+        });
+      }
+    }
+
+    // Update order status
+    order.status = rawStatus;
+    await order.save();
+
+    const updated = await Order.findById(order._id)
       .populate('user', 'name username profileImage')
       .populate('items.artwork')
       .populate('items.artist');
 
-    // Notify the buyer when seller updates the order status
-    const buyerId = order.user && order.user.toString();
-    if (buyerId && status !== (order.status || '').toString()) {
-      const orderNum = order._id ? order._id.toString().slice(-6).toUpperCase() : '—';
+    // Notify buyer
+    const buyerId = order.user?.toString();
+
+    if (buyerId && oldStatus !== rawStatus) {
+      const orderNum = order._id
+        ? order._id.toString().slice(-6).toUpperCase()
+        : '—';
+
       const messages = {
         ACCEPTED: `Your order #${orderNum} has been accepted.`,
+        DECLINED: `Your order #${orderNum} has been declined.`,
         SHIPPED: `Your order #${orderNum} has been shipped.`,
         DELIVERED: `Your order #${orderNum} has been delivered.`,
         PAYMENT_RECEIVED: `Payment received for order #${orderNum}.`,
       };
-      const message = messages[status];
+
+      const message = messages[rawStatus];
+
       if (message) {
         await Notification.create({
           user: buyerId,
@@ -86,7 +141,9 @@ router.patch('/:id/status', async (req, res) => {
     res.json({ order: updated });
   } catch (err) {
     console.error('Update order status error:', err);
-    res.status(500).json({ error: 'Failed to update status' });
+    res.status(500).json({
+      error: 'Failed to update status',
+    });
   }
 });
 
