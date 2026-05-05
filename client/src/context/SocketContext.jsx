@@ -59,10 +59,6 @@ export const SocketProvider = ({ children }) => {
       window.dispatchEvent(new Event('directMessagesUpdated'));
     });
 
-    socket.on('dm:read', (payload) => {
-      window.dispatchEvent(new CustomEvent('dm:read', { detail: payload }));
-    });
-
     return () => {
       socket.disconnect();
       socketRef.current = null;
@@ -75,7 +71,7 @@ export const SocketProvider = ({ children }) => {
       socket: socketRef.current,
       connected,
     }),
-    [connected]
+    [connected, socketRef.current] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
