@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import DirectMessage from '../models/DirectMessage.js';
 import User from '../models/User.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
+import { getIo } from '../utils/socketManager.js';
 
 const router = express.Router();
 
@@ -93,6 +94,21 @@ router.get('/:conversationId', async (req, res) => {
       { read: true }
     );
 
+    const io = getIo();
+    if (io) {
+      const otherUserId = userId === user1 ? user2 : user1;
+      const unreadCount = await DirectMessage.countDocuments({
+        recipient: userId,
+        read: false,
+      });
+
+      io.to(userId).emit('dm:unreadCount', { unreadCount });
+      io.to(otherUserId).emit('dm:read', {
+        conversationId,
+        readerId: userId,
+      });
+    }
+
     // Get all messages between these two users (with updated read status)
     const messages = await DirectMessage.find({
       $or: [
@@ -144,9 +160,49 @@ router.post('/send', async (req, res) => {
     // Create/update conversation ID
     const conversationId = [senderId, recipientId].sort().join('-');
 
+    const messageObject = message.toObject();
+    const io = getIo();
+    if (io) {
+      const unreadCount = await DirectMessage.countDocuments({
+        recipient: recipientId,
+        read: false,
+      });
+
+      io.to(recipientId).emit('dm:new', {
+        message: messageObject,
+        conversationId,
+        senderId,
+      });
+
+      io.to(recipientId).emit('dm:conversation:update', {
+        conversation: {
+          conversationId,
+          participantId: senderId,
+          participantName: messageObject.sender.name,
+          participantAvatar: messageObject.sender.profileImage,
+          lastMessage: messageObject.content,
+          lastMessageTime: messageObject.createdAt,
+          unreadCount,
+        },
+      });
+
+      io.to(recipientId).emit('dm:unreadCount', { unreadCount });
+      io.to(senderId).emit('dm:conversation:update', {
+        conversation: {
+          conversationId,
+          participantId: recipientId,
+          participantName: messageObject.recipient.name,
+          participantAvatar: messageObject.recipient.profileImage,
+          lastMessage: messageObject.content,
+          lastMessageTime: messageObject.createdAt,
+          unreadCount: 0,
+        },
+      });
+    }
+
     res.json({
       success: true,
-      message: message.toObject(),
+      message: messageObject,
       conversationId,
     });
   } catch (error) {
