@@ -21,12 +21,8 @@ const Navbar = () => {
 
   // Get user data from AuthContext
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
-<<<<<<< HEAD
-
-=======
   const { socket } = useSocket();
   
->>>>>>> 3f47a645eaca88f369c2f17c89259a90d2577da2
   // Check if we're on a Gallery sub-page (explore or marketplace)
   const isGalleryActive = location.pathname === '/GalleryPage' || location.pathname === '/explore' || location.pathname === '/marketplace';
   const { cartItems } = useCart();
