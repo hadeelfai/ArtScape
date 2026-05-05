@@ -35,7 +35,7 @@
   "license": "ISC",
   "dependencies": {
     "@tensorflow-models/mobilenet": "^2.1.1",
-    "soensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-node": "^4.22.0",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
