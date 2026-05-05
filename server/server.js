@@ -20,36 +20,35 @@ import recommendationRoutes from './routes/recommendationRoutes.js';
 import trackingRouter from './routes/tracking.js';
 import paymentRoutes from './routes/payment.js';
 import ordersRoutes from './routes/orders.js';
-import { initSocketServer } from './utils/socketManager.js';
 
 // Middleware
 import { authMiddleware } from './middleware/AuthMiddleware.js';
 
-
+// Socket
+import { initSocketServer } from './utils/socketManager.js';
 
 dotenv.config();
 
 const app = express();
+const httpServer = http.createServer(app);
 
-// ----- Middleware -----
-// CORS: allow client origin (set FRONTEND_URL, or we allow common Railway client URLs)
+// ----- CORS Configuration -----
 const corsOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:5173',
-  'http://127.0.0.1:5500',
-  'http://localhost:5500',
-  process.env.FRONTEND_URL,
-  'https://artscape-woad.vercel.app'
+  process.env.FRONTEND_URL // Render or Vercel frontend
 ].filter(Boolean);
+
 app.use(cors({
   origin: corsOrigins,
   credentials: true
 }));
+
+// ----- Middleware -----
 app.use(express.json());
 app.use(cookieParser());
 
 // ----- Routes -----
-// API Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'API is working' });
 });
@@ -63,7 +62,7 @@ app.use('/notifications', NotificationsRoutes);
 app.use('/messages', MessagesRoutes);
 app.use('/contact', ContactRoutes);
 app.use('/cart', CartRoutes);
-app.use("/api/search", searchRouter);
+app.use('/api/search', searchRouter);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/tracking', trackingRouter);
 app.use('/payment', paymentRoutes);
@@ -71,44 +70,6 @@ app.use('/orders', ordersRoutes);
 
 // ----- Static Files -----
 app.use(express.static('public'));
-
-// ----- MongoDB Connection and Server Start -----
-const PORT = process.env.PORT || 5500;
-const MONGO_URL = process.env.MONGO_URL;
-
-<<<<<<< HEAD
-mongoose.connect(MONGO_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`\nConnected to DB and listening on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('MongoDB connection error:', err);
-=======
-const httpServer = http.createServer(app);
-
-mongoose.connect(MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => {
-  initSocketServer(httpServer, [
-    'http://127.0.0.1:5173',
-    'http://localhost:5173',
-    'http://127.0.0.1:5500',
-    'http://localhost:5500',
-    process.env.FRONTEND_URL,
-    'https://artscape-sa.up.railway.app'
-  ].filter(Boolean));
-
-  httpServer.listen(PORT, () => {
-    console.log(`\n✅ Connected to DB & listening on port ${PORT}`);
->>>>>>> 3f47a645eaca88f369c2f17c89259a90d2577da2
-  });
 
 // ----- Error Handling -----
 app.use((req, res, next) => {
@@ -118,4 +79,28 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error('Server Error:', err);
   res.status(500).json({ message: 'Internal server error' });
+});
+
+// ----- Server + DB -----
+const PORT = process.env.PORT || 5500;
+const MONGO_URL = process.env.MONGO_URL;
+
+// Use same origins for sockets
+const socketOrigins = corsOrigins;
+
+mongoose.connect(MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => {
+  // Initialize socket server
+  initSocketServer(httpServer, socketOrigins);
+
+  // Start server
+  httpServer.listen(PORT, () => {
+    console.log(`\n✅ Connected to DB & listening on port ${PORT}`);
+  });
+})
+.catch(err => {
+  console.error('❌ MongoDB connection error:', err);
 });
