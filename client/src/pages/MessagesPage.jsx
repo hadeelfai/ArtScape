@@ -114,6 +114,12 @@ const MessagesPage = () => {
           c.conversationId === conversationId ? { ...c, unreadCount: 0 } : c
         )
       );
+      // Update read status for messages in the current conversation
+      if (activeConversation?.conversationId === conversationId) {
+        setMessages(prev =>
+          prev.map(msg => ({ ...msg, read: true }))
+        );
+      }
     };
 
     socket.on('dm:new', handleNewMessage);

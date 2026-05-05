@@ -65,14 +65,13 @@ export const SocketProvider = ({ children }) => {
       setConnected(false);
     };
   }, [isAuthenticated, user?.token]);
-
-  const value = useMemo(
-    () => ({
-      socket: socketRef.current,
-      connected,
-    }),
-    [connected, socketRef.current] // eslint-disable-line react-hooks/exhaustive-deps
-  );
+const value = useMemo(
+  () => ({
+    socket: socketRef.current,
+    connected,
+  }),
+  [connected, socketRef.current] // eslint-disable-line react-hooks/exhaustive-deps
+);
 
   return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
 };
