@@ -27,6 +27,7 @@ const MessagesPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const messagesEndRef = useRef(null);
+  const lastReadConversationIdRef = useRef(null);
   const { socket } = useSocket();
 
   const authHeaders = {
@@ -60,9 +61,9 @@ const MessagesPage = () => {
                   ...c,
                   lastMessage: message.content,
                   lastMessageTime: message.createdAt,
-                  unreadCount: c.conversationId === conversationId && activeConversation?.conversationId !== conversationId
-                    ? (c.unreadCount || 0) + 1
-                    : c.unreadCount,
+                  unreadCount: incomingFromCurrent
+                    ? c.unreadCount
+                    : (c.unreadCount || 0) + 1,
                 }
               : c
           );
@@ -76,14 +77,28 @@ const MessagesPage = () => {
             participantAvatar: message.sender?.profileImage || DEFAULT_AVATAR,
             lastMessage: message.content,
             lastMessageTime: message.createdAt,
-            unreadCount: 1,
+            unreadCount: incomingFromCurrent ? 0 : 1,
           },
           ...prev,
         ];
       });
 
       if (incomingFromCurrent) {
-        setMessages(prev => [...prev, message]);
+        const incomingMessage = { ...message, read: true };
+        setMessages(prev => [...prev, incomingMessage]);
+
+        if (socket && socket.connected && conversationId) {
+          socket.timeout(5000).emit('dm:readConversation', { conversationId }, (err, response) => {
+            if (err) {
+              console.error('Socket readConversation timeout on incoming message:', err);
+              return;
+            }
+
+            if (!response?.success) {
+              console.error('Socket readConversation failed on incoming message:', response?.error);
+            }
+          });
+        }
       }
     };
 
@@ -114,7 +129,6 @@ const MessagesPage = () => {
           c.conversationId === conversationId ? { ...c, unreadCount: 0 } : c
         )
       );
-      // Update read status for messages in the current conversation
       if (activeConversation?.conversationId === conversationId) {
         setMessages(prev =>
           prev.map(msg => ({ ...msg, read: true }))
@@ -122,16 +136,48 @@ const MessagesPage = () => {
       }
     };
 
+    const handleDeliveredUpdate = ({ conversationId, messageId }) => {
+      if (!conversationId || !messageId) return;
+      if (activeConversation?.conversationId !== conversationId) return;
+
+      setMessages(prev =>
+        prev.map(msg =>
+          msg._id === messageId ? { ...msg, delivered: true } : msg
+        )
+      );
+    };
+
     socket.on('dm:new', handleNewMessage);
     socket.on('dm:conversation:update', handleConversationUpdate);
     socket.on('dm:read', handleReadUpdate);
+    socket.on('dm:delivered', handleDeliveredUpdate);
 
     return () => {
       socket.off('dm:new', handleNewMessage);
       socket.off('dm:conversation:update', handleConversationUpdate);
       socket.off('dm:read', handleReadUpdate);
+      socket.off('dm:delivered', handleDeliveredUpdate);
     };
   }, [socket, activeConversation?.conversationId]);
+
+  useEffect(() => {
+    if (!socket || !socket.connected || !activeConversation?.conversationId) return;
+
+    const conversationId = activeConversation.conversationId;
+    if (lastReadConversationIdRef.current === conversationId) return;
+
+    socket.timeout(5000).emit('dm:readConversation', { conversationId }, (err, response) => {
+      if (err) {
+        console.error('Socket readConversation timeout on reconnect:', err);
+        return;
+      }
+      if (!response?.success) {
+        console.error('Socket readConversation failed on reconnect:', response?.error);
+      } else {
+        lastReadConversationIdRef.current = conversationId;
+      }
+    });
+  }, [socket, socket?.connected, activeConversation?.conversationId]);
 
   const loadConversations = async (showLoading = true) => {
     if (!user?.id) return;
@@ -620,7 +666,7 @@ const MessagesPage = () => {
                         </span>
                         {isSent && (
                           <span className="text-gray-500 font-medium">
-                            {msg.read ? '✓✓ Read' : '✓ Delivered'}
+                            {msg.read ? '✓✓ Read' : msg.delivered ? '✓ Delivered' : '✓ Sent'}
                           </span>
                         )}
                       </div>

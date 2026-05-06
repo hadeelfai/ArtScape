@@ -54,6 +54,15 @@ export const SocketProvider = ({ children }) => {
       window.dispatchEvent(new CustomEvent('dm:conversation:update', { detail: payload }));
     });
 
+    socket.on('dm:read', (payload) => {
+      window.dispatchEvent(new CustomEvent('dm:read', { detail: payload }));
+      window.dispatchEvent(new Event('directMessagesUpdated'));
+    });
+
+    socket.on('dm:delivered', (payload) => {
+      window.dispatchEvent(new CustomEvent('dm:delivered', { detail: payload }));
+    });
+
     socket.on('dm:unreadCount', (payload) => {
       window.dispatchEvent(new CustomEvent('dm:unreadCount', { detail: payload }));
       window.dispatchEvent(new Event('directMessagesUpdated'));

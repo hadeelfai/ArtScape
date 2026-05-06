@@ -105,6 +105,15 @@ export const initSocketServer = (httpServer, corsOrigins = []) => {
           senderId,
         });
 
+        const recipientRoom = io.sockets.adapter.rooms.get(recipientId);
+        const recipientOnline = Boolean(recipientRoom && recipientRoom.size > 0);
+        if (recipientOnline) {
+          io.to(senderId).emit('dm:delivered', {
+            conversationId,
+            messageId: responseMessage._id,
+          });
+        }
+
         io.to(recipientId).emit('dm:conversation:update', {
           conversation: recipientSummary,
         });
