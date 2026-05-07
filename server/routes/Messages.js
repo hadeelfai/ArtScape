@@ -15,29 +15,27 @@ router.get('/conversations', async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get all messages involving this user
     const messages = await DirectMessage.find({
       $or: [
         { sender: userId },
         { recipient: userId },
       ],
+      deletedBy: { $ne: userId },
     })
       .sort({ createdAt: -1 })
       .populate('sender', 'name profileImage username')
       .populate('recipient', 'name profileImage username')
       .lean();
 
-    // Group by conversation (two-way between sender and recipient)
     const conversationMap = {};
 
     messages.forEach(msg => {
-      // Determine the other participant
-      const otherParticipantId = msg.sender._id.toString() === userId 
-        ? msg.recipient._id 
+      const otherParticipantId = msg.sender._id.toString() === userId
+        ? msg.recipient._id
         : msg.sender._id;
-      
-      const otherParticipant = msg.sender._id.toString() === userId 
-        ? msg.recipient 
+
+      const otherParticipant = msg.sender._id.toString() === userId
+        ? msg.recipient
         : msg.sender;
 
       const conversationKey = [userId, otherParticipantId.toString()].sort().join('-');
@@ -76,15 +74,12 @@ router.get('/:conversationId', async (req, res) => {
     const { conversationId } = req.params;
     const userId = req.user.id;
 
-    // Parse conversationId (format: "userId1-userId2")
     const [user1, user2] = conversationId.split('-');
-    
-    // Verify the user is part of this conversation
+
     if (userId !== user1 && userId !== user2) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    // Mark messages as read for the current user first
     await DirectMessage.updateMany(
       {
         recipient: userId,
@@ -109,12 +104,12 @@ router.get('/:conversationId', async (req, res) => {
       });
     }
 
-    // Get all messages between these two users (with updated read status)
     const messages = await DirectMessage.find({
       $or: [
         { sender: user1, recipient: user2 },
         { sender: user2, recipient: user1 },
       ],
+      deletedBy: { $ne: userId },
     })
       .sort({ createdAt: 1 })
       .populate('sender', '_id name profileImage')
@@ -134,18 +129,15 @@ router.post('/send', async (req, res) => {
     const { recipientId, content } = req.body;
     const senderId = req.user.id;
 
-    // Validate input
     if (!recipientId || !content || !content.trim()) {
       return res.status(400).json({ error: 'Invalid message data' });
     }
 
-    // Verify recipient exists
     const recipient = await User.findById(recipientId);
     if (!recipient) {
       return res.status(404).json({ error: 'Recipient not found' });
     }
 
-    // Create the message
     const message = await DirectMessage.create({
       sender: senderId,
       recipient: recipientId,
@@ -153,14 +145,12 @@ router.post('/send', async (req, res) => {
       read: false,
     });
 
-    // Populate sender and recipient info
     await message.populate('sender', '_id name profileImage');
     await message.populate('recipient', '_id name profileImage');
 
-    // Create/update conversation ID
     const conversationId = [senderId, recipientId].sort().join('-');
-
     const messageObject = message.toObject();
+
     const io = getIo();
     if (io) {
       const unreadCount = await DirectMessage.countDocuments({
@@ -211,7 +201,7 @@ router.post('/send', async (req, res) => {
   }
 });
 
-// GET /messages/unread-count - Get count of unread messages
+// GET /messages/unread/count - Get count of unread messages
 router.get('/unread/count', async (req, res) => {
   try {
     const userId = req.user.id;
@@ -228,33 +218,32 @@ router.get('/unread/count', async (req, res) => {
   }
 });
 
-// DELETE /messages/:conversationId - Delete all messages in a conversation
+// DELETE /messages/:conversationId - Delete conversation for current user only
 router.delete('/:conversationId', async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.user.id.toString();
 
-    // Parse conversationId (format: "userId1-userId2")
     const [user1, user2] = conversationId.split('-');
-    
-    // Verify the user is part of this conversation
+
     if (userId !== user1 && userId !== user2) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    // Convert string IDs to MongoDB ObjectIds for proper querying
     const user1Id = new mongoose.Types.ObjectId(user1);
     const user2Id = new mongoose.Types.ObjectId(user2);
 
-    // Delete all messages in this conversation
-    const result = await DirectMessage.deleteMany({
-      $or: [
-        { sender: user1Id, recipient: user2Id },
-        { sender: user2Id, recipient: user1Id },
-      ],
-    });
+    const result = await DirectMessage.updateMany(
+      {
+        $or: [
+          { sender: user1Id, recipient: user2Id },
+          { sender: user2Id, recipient: user1Id },
+        ],
+      },
+      { $addToSet: { deletedBy: userId } }
+    );
 
-    res.json({ success: true, message: 'Conversation deleted', deletedCount: result.deletedCount });
+    res.json({ success: true, message: 'Conversation deleted', updatedCount: result.modifiedCount });
   } catch (error) {
     console.error('Error deleting conversation:', error);
     res.status(500).json({ error: 'Failed to delete conversation' });
