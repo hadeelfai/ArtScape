@@ -7,7 +7,6 @@ export const getSarToUsdRate = async () => {
   const API_KEY = '4d064090edd72eadf5a3cb24'; // API key
   const now = Date.now();
 
-  // If we haven't fetched today, get the fresh rate
   if (!lastFetched || (now - lastFetched) > 86400000) {
     try {
       const response = await axios.get(
